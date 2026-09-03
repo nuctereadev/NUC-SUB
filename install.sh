@@ -3,19 +3,24 @@
 #  NUC-SUB — one-line installer (by NUCTEREA)
 #
 #  Installs beautiful, switchable subscription page themes for the 3x-ui
-#  (Sanaei) panel, plus a command-line manager (nucsub) and an optional
-#  ultra-light web panel (pure HTML/JS/CSS served by Python3).
+#  (Sanaei) panel, plus a command-line manager (nucsub).
+#
+#  The web panel is OPTIONAL and is NOT installed by default. After install,
+#  the interactive setup menu opens so you can pick a theme right away and,
+#  if you want, enable the web panel later from the menu (option 6) — that
+#  step prints a URL and an access token.
 #
 #  Usage:
 #    bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
 #
 #  Env for non-interactive installs:
-#    XUI_SUB_PORT       port for the web panel (default 8080)
 #    XUI_SUB_INSTALL_DIR  install dir (default /opt/nuc-sub)
+#    XUI_SUB_NONINTERACTIVE=1   skip the interactive menu at the end
 # =============================================================================
 set -euo pipefail
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+BOLD='\033[1m'; DIM='\033[2m'
 
 # ---- repository source (override for forked/local builds) -------------------
 # When running from a git checkout, use local files; otherwise fetch from GitHub.
@@ -36,7 +41,6 @@ INSTALL_DIR="${XUI_SUB_INSTALL_DIR:-/opt/nuc-sub}"
 THEMES_DIR="$INSTALL_DIR/themes"
 WEB_DIR="$INSTALL_DIR/webpanel"
 CLI_DIR="$INSTALL_DIR/cli"
-WEB_PORT="${XUI_SUB_PORT:-8080}"
 XUI_SERVICE="x-ui"
 
 # Detected source dir when running from a checkout
@@ -75,30 +79,6 @@ banner() {
 }
 
 # ------------------------------------------------------------------ helpers ---
-detect_ip() {
-    local urls=(
-      "https://api4.ipify.org"
-      "https://ipv4.icanhazip.com"
-      "https://v4.api.ipinfo.io/ip"
-    )
-    local ip=""
-    for u in "${urls[@]}"; do
-        ip="$(curl -s --max-time 4 "$u" 2>/dev/null | tr -d '[:space:]')"
-        if [[ "$ip" =~ ^[0-9]+(\.[0-9]+){3}$ ]]; then
-            echo "$ip"; return 0
-        fi
-    done
-    echo ""
-}
-
-gen_token() {
-    if command -v openssl >/dev/null 2>&1; then
-        openssl rand -hex 24
-    else
-        head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 48
-    fi
-}
-
 prompt() {  # prompt VAR DEFAULT
     local __var="$1" __default="$2"
     if [[ "$NONINTERACTIVE" == "1" ]]; then
@@ -110,25 +90,6 @@ prompt() {  # prompt VAR DEFAULT
 }
 
 # ------------------------------------------------------------------ install ---
-install_python() {
-    # python3 is only needed for the web panel; if absent, warn & skip serve.
-    if command -v python3 >/dev/null 2>&1; then
-        return 0
-    fi
-    case "$DISTRO" in
-        ubuntu|debian|armbian)
-            apt-get update -qq >/dev/null 2>&1
-            apt-get install -y -qq python3 >/dev/null 2>&1 || true
-            ;;
-        fedora|rhel|almalinux|rocky|ol|amzn)
-            dnf install -y -q python3 >/dev/null 2>&1 || true
-            ;;
-        arch|manjaro|parch)
-            pacman -Sy --noconfirm python >/dev/null 2>&1 || true
-            ;;
-    esac
-}
-
 copy_from_local() {
     mkdir -p "$CLI_DIR" "$WEB_DIR" "$THEMES_DIR"
     install -m 755 "$LOCAL_SRC/cli/nucsub" "$CLI_DIR/nucsub"
@@ -172,7 +133,7 @@ fetch_from_github() {
 }
 
 banner
-echo -e "${BLUE}→ 1/5 Install dir: ${NC}$INSTALL_DIR"
+echo -e "${BLUE}→ 1/3 Install dir: ${NC}$INSTALL_DIR"
 
 mkdir -p "$INSTALL_DIR"
 if is_local; then
@@ -183,8 +144,9 @@ else
     fetch_from_github
 fi
 
-echo -e "${BLUE}→ 2/5 Ensuring prerequisites...${NC}"
-install_python
+# The web panel is OPTIONAL and is never installed here.
+# It is turned on later from the interactive menu (option 6) — nothing is run now.
+echo -e "${BLUE}→ 2/3 Ensuring prerequisites...${NC}"
 if ! command -v sqlite3 >/dev/null 2>&1; then
     case "$DISTRO" in
         ubuntu|debian|armbian) apt-get update -qq >/dev/null 2>&1; apt-get install -y -qq sqlite3 >/dev/null 2>&1 || true ;;
@@ -193,7 +155,7 @@ if ! command -v sqlite3 >/dev/null 2>&1; then
     esac
 fi
 
-echo -e "${BLUE}→ 3/5 Detecting panel...${NC}"
+echo -e "${BLUE}→ 3/3 Detecting panel...${NC}"
 XUI_DB=""
 for p in /etc/x-ui/x-ui.db /etc/3x-ui/db/x-ui.db; do
     if [[ -f "$p" ]]; then XUI_DB="$p"; break; fi
@@ -205,75 +167,29 @@ else
     echo -e "${GREEN}✓ Found panel DB: $XUI_DB${NC}"
 fi
 
-echo -e "${BLUE}→ 4/5 Configuring web panel...${NC}"
-token="$(gen_token)"
-cat > "$INSTALL_DIR/.webpanel-token" <<< "$token"
-chmod 600 "$INSTALL_DIR/.webpanel-token"
-
-# write a small config used by nucsub / server
-cat > "$INSTALL_DIR/config.env" <<EOF
-SUB_TEMPLATES_DIR=$INSTALL_DIR
-SUB_PANEL_PORT=$WEB_PORT
-SUB_PANEL_HOST=0.0.0.0
-SUB_PANEL_TOKEN=$token
-XUI_DB=$XUI_DB
-EOF
-chmod 600 "$INSTALL_DIR/config.env"
-
-echo -e "${BLUE}→ 5/5 Registering web-panel service...${NC}"
-cat > /etc/systemd/system/xui-sub-panel.service <<SERVICE
-[Unit]
-Description=NUC-SUB web panel (by NUCTEREA)
-After=network.target
-[Service]
-Type=simple
-User=root
-WorkingDirectory=$WEB_DIR
-EnvironmentFile=$INSTALL_DIR/config.env
-ExecStart=/usr/bin/env python3 $WEB_DIR/server.py --port "$WEB_PORT" --token "$token" --base $WEB_DIR --cli $CLI_DIR/nucsub --themes $THEMES_DIR --db "$XUI_DB"
-Restart=always
-RestartSec=3
-[Install]
-WantedBy=multi-user.target
-SERVICE
-
-systemctl daemon-reload >/dev/null 2>&1 || true
-systemctl unmask xui-sub-panel >/dev/null 2>&1 || true
-systemctl enable xui-sub-panel >/dev/null 2>&1 || true
-systemctl restart xui-sub-panel >/dev/null 2>&1 || true
-
-IP="$(detect_ip)"
-cat > "$INSTALL_DIR/install-result.txt" <<EOF
-URL   : http://${IP:-YOUR_IP}:$WEB_PORT/
-TOKEN : $token
-CLI   : $CLI_DIR/nucsub
-EOF
-chmod 600 "$INSTALL_DIR/install-result.txt"
-
-echo ""
-echo -e "${GREEN}NUC-SUB installed successfully.${NC}"
-echo ""
-echo -e "${CYAN}Web panel:${NC}"
-echo -e "   URL   : ${BLUE}http://${IP:-YOUR_IP}:$WEB_PORT/${NC}"
-echo -e "   Token : ${YELLOW}$token${NC}"
-echo ""
-echo -e "${CYAN}Quick commands:${NC}"
-echo -e "   nucsub menu           ${DIM}# interactive menu (recommended)${NC}"
-echo -e "   nucsub --help         ${DIM}# show help${NC}"
-echo -e "   nucsub list           ${DIM}# show installed themes${NC}"
-echo -e "   nucsub apply gradient ${DIM}# activate a theme${NC}"
-echo -e "   nucsub status         ${DIM}# full system info${NC}"
-echo ""
-echo -e "${CYAN}Installation details:${NC} $INSTALL_DIR/install-result.txt"
-echo ""
-
 # Symlink for global access
 ln -sf "$CLI_DIR/nucsub" /usr/bin/nucsub 2>/dev/null || \
     cp -f "$CLI_DIR/nucsub" /usr/bin/nucsub && chmod +x /usr/bin/nucsub
 
-# Drop into interactive menu (only if TTY)
+echo ""
+echo -e "${GREEN}NUC-SUB installed successfully.${NC}"
+echo ""
+echo -e "${CYAN}The web panel is NOT installed by default.${NC}"
+echo -e "  You can choose themes from the terminal now, and enable the"
+echo -e "  web panel later from the menu (${BOLD}option ${GREEN}6${NC}${CYAN}) — it will"
+echo -e "  print a URL and an access token for you to log in.${NC}"
+echo ""
+echo -e "${CYAN}Quick commands:${NC}"
+echo -e "   nucsub apply gradient ${DIM}# activate a theme${NC}"
+echo -e "   nucsub list           ${DIM}# show installed themes${NC}"
+echo -e "   nucsub menu           ${DIM}# interactive menu (option 6 = web panel)${NC}"
+echo -e "   nucsub status         ${DIM}# full system info${NC}"
+echo ""
+
+# Drop into the interactive setup/menu so the user can pick a theme
+# and optionally install the web panel (option 6).
 if [[ -t 0 && "${SKIP_MENU:-0}" != "1" ]]; then
-    echo -e "${YELLOW}Press Enter to open the interactive menu, or Ctrl+C to exit...${NC}"
-    read -r _
-    exec /usr/bin/nucsub
+    echo -e "${YELLOW}Opening NUC-SUB setup menu... (Ctrl+C to exit)${NC}"
+    sleep 1
+    exec /usr/bin/nucsub menu
 fi

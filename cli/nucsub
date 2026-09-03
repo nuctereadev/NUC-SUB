@@ -332,7 +332,13 @@ cmd_webpanel() {
                      >"$INSTALL_DIR/webpanel.log" 2>&1 &
                 echo $! > "$INSTALL_DIR/.webpanel.pid"
                 sleep 1
-                if web_panel_status | grep -q "Running"; then ok "Web panel started on port $port"; else warn "Start failed — check $INSTALL_DIR/webpanel.log"; fi
+                if web_panel_status | grep -q "Running"; then
+                    ok "Web panel started on port $port"
+                    echo ""
+                    echo -e "  ${CYAN}Login URL : ${BOLD}http://${SUB_PANEL_HOST:-0.0.0.0}:$port/${NC}"
+                    echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
+                    echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
+                else warn "Start failed — check $INSTALL_DIR/webpanel.log"; fi
             else die "python3 required."; fi
             ;;
         stop)
@@ -359,6 +365,34 @@ cmd_webpanel() {
             echo -e "${YELLOW}Usage: nucsub webpanel {start|stop|restart|status|token}${NC}"
             ;;
     esac
+}
+
+# ------------------------------------------------------------- Web panel menu ---
+web_panel_menu() {
+    while true; do
+        clear
+        print_header
+        title "Web Panel Management"
+        sep
+        web_panel_status
+        sep
+        echo -e "  ${GREEN}1)${NC} Start web panel        ${DIM}— install + run + show URL/token${NC}"
+        echo -e "  ${GREEN}2)${NC} Stop web panel"
+        echo -e "  ${GREEN}3)${NC} Restart web panel"
+        echo -e "  ${GREEN}4)${NC} Show token"
+        echo -e "  ${GREEN}0)${NC} Back to main menu"
+        sep
+        echo -ne "  ${BOLD}Select option [0-4]: ${NC}"
+        read -r choice
+        case "$choice" in
+            1) cmd_webpanel start; pause_enter ;;
+            2) cmd_webpanel stop; pause_enter ;;
+            3) cmd_webpanel restart; pause_enter ;;
+            4) title "Web Panel Token"; sep; cmd_webpanel token; pause_enter ;;
+            0) return ;;
+            *) warn "Invalid option: $choice"; sleep 1 ;;
+        esac
+    done
 }
 
 # ----------------------------------------------------------- Update / Uninstall ---
@@ -425,7 +459,7 @@ cmd_menu() {
             3) clear; cmd_preview; pause_enter ;;
             4) clear; cmd_reset; pause_enter ;;
             5) clear; cmd_remove; pause_enter ;;
-            6) clear; cmd_webpanel status; pause_enter ;;
+            6) clear; web_panel_menu ;;
             7) clear; cmd_update; pause_enter ;;
             8) clear; cmd_uninstall; pause_enter ;;
             9) clear; cmd_status; pause_enter ;;
