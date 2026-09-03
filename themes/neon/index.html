@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سابسکریپشن - نئون</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--neon-cyan:#00f0ff;--neon-pink:#ff00e5;--neon-yellow:#ffe600;--neon-green:#00ff88;--neon-red:#ff003c;--bg:#0a0012;--card:rgba(255,255,255,.03)}
+body{
+  font-family:'IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;background:var(--bg);color:#fff;padding:20px;display:flex;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+.grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;background-image:linear-gradient(rgba(0,240,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.glow-1{position:fixed;width:300px;height:300px;background:radial-gradient(circle,rgba(0,240,255,.08),transparent 70%);top:10%;left:10%;pointer-events:none;animation:drift 15s infinite alternate}
+.glow-2{position:fixed;width:250px;height:250px;background:radial-gradient(circle,rgba(255,0,229,.08),transparent 70%);bottom:10%;right:10%;pointer-events:none;animation:drift 18s infinite alternate-reverse}
+@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(40px,-30px)}}
+.container{width:100%;max-width:480px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:24px;position:relative}
+.logo{width:90px;height:90px;margin:0 auto 16px;position:relative;display:flex;align-items:center;justify-content:center}
+.logo-ring{position:absolute;width:100%;height:100%;border:2px solid var(--neon-cyan);border-radius:50%;animation:spin 8s linear infinite}
+.logo-ring-2{position:absolute;width:85%;height:85%;border:1px solid var(--neon-pink);border-radius:50%;animation:spin 6s linear infinite reverse}
+.logo-core{font-size:26px;z-index:1;color:var(--neon-cyan);text-shadow:0 0 18px rgba(0,240,255,.6)}
+.logo-core i{font-family:'Font Awesome 6 Free';font-weight:900}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.title{font-size:28px;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,var(--neon-cyan),var(--neon-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(0,240,255,.3))}
+.subtitle{font-size:11px;color:var(--neon-cyan);letter-spacing:2px;margin-top:6px;opacity:.6}
+.neon-card{background:var(--card);border:1px solid rgba(0,240,255,.15);border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.neon-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent)}
+.neon-card.pink::before{background:linear-gradient(90deg,transparent,var(--neon-pink),transparent)}
+.neon-card.pink{border-color:rgba(255,0,229,.15)}
+.card-title{font-size:10px;color:var(--neon-cyan);letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stats-row{display:flex;gap:8px;margin-bottom:8px}
+.stat-box{flex:1;background:rgba(0,240,255,.03);border:1px solid rgba(0,240,255,.08);border-radius:12px;padding:14px 10px;text-align:center}
+.stat-box.cyan{border-color:rgba(0,240,255,.15)}
+.stat-box.pink{border-color:rgba(255,0,229,.15);background:rgba(255,0,229,.03)}
+.stat-box.green{border-color:rgba(0,255,136,.15);background:rgba(0,255,136,.03)}
+.stat-box.yellow{border-color:rgba(255,230,0,.15);background:rgba(255,230,0,.03)}
+.stat-num{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-num.cyan{color:var(--neon-cyan);text-shadow:0 0 10px rgba(0,240,255,.3)}
+.stat-num.pink{color:var(--neon-pink);text-shadow:0 0 10px rgba(255,0,229,.3)}
+.stat-num.green{color:var(--neon-green)}
+.stat-num.yellow{color:var(--neon-yellow)}
+.stat-tag{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;letter-spacing:1px}
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:1px solid rgba(255,255,255,.05)}
+.neon-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:1px}
+.neon-badge.on{background:rgba(0,255,136,.1);color:var(--neon-green);border:1px solid rgba(0,255,136,.2);box-shadow:0 0 15px rgba(0,255,136,.1)}
+.neon-badge.off{background:rgba(255,0,60,.1);color:var(--neon-red);border:1px solid rgba(255,0,60,.2)}
+.nb-dot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-box{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:10px 12px}
+.info-label{display:flex;align-items:center;gap:6px;font-size:9px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-bottom:4px}
+.info-label i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:9px}
+.info-val{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.links-area{margin-top:8px}
+.links-title{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--neon-pink);letter-spacing:1px;margin-bottom:12px;font-weight:600}
+.links-title i{font-family:'Font Awesome 6 Free';font-weight:900}
+.neon-link{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .3s;position:relative}
+.neon-link::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent);opacity:0;transition:opacity .3s}
+.neon-link:hover{background:rgba(0,240,255,.04);border-color:rgba(0,240,255,.2)}
+.neon-link:hover::after{opacity:1}
+.link-chip{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900}
+.link-chip.vless{background:rgba(0,240,255,.1);color:var(--neon-cyan);border:1px solid rgba(0,240,255,.2)}
+.link-chip.vmess{background:rgba(0,255,136,.1);color:var(--neon-green);border:1px solid rgba(0,255,136,.2)}
+.link-chip.trojan{background:rgba(255,0,60,.1);color:var(--neon-red);border:1px solid rgba(255,0,60,.2)}
+.link-chip.ss{background:rgba(255,230,0,.1);color:var(--neon-yellow);border:1px solid rgba(255,230,0,.2)}
+.link-chip.hysteria{background:rgba(255,0,229,.1);color:var(--neon-pink);border:1px solid rgba(255,0,229,.2)}
+.link-chip.default{background:rgba(255,255,255,.05);color:#cbd5e1;border:1px solid rgba(255,255,255,.1)}
+.link-name{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-clone{padding:5px 12px;border:1px solid rgba(255,0,229,.3);background:rgba(255,0,229,.05);color:var(--neon-pink);border-radius:8px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:1px;display:flex;align-items:center;gap:6px}
+.link-clone:hover{background:rgba(255,0,229,.15);box-shadow:0 0 12px rgba(255,0,229,.2)}
+.link-clone i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:10px}
+.announce{background:rgba(255,230,0,.05);border:1px solid rgba(255,230,0,.15);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--neon-yellow);line-height:1.7;margin-bottom:14px;display:none}
+.announce.show{display:block}
+.footer{text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:2px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,240,255,.1);border:1px solid var(--neon-cyan);color:var(--neon-cyan);padding:10px 24px;border-radius:12px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:100;letter-spacing:1px;box-shadow:0 0 20px rgba(0,240,255,.2)}
+.toast.show{opacity:1}
+@media(max-width:480px){body{padding:12px}.title{font-size:22px}.stat-num{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-ring"></div>
+      <div class="logo-ring-2"></div>
+      <div class="logo-core"><i class="fa-solid fa-bolt-lightning"></i></div>
+    </div>
+    <div class="title">{{if .subTitle}}{{.subTitle}}{{else}}سابسکریپشن{{end}}</div>
+    <div class="subtitle">Neon Subscription</div>
+  </div>
+
+  <div class="neon-card">
+    <div class="stats-row">
+      <div class="stat-box cyan">
+        <div class="stat-num cyan">{{.upload}}</div>
+        <div class="stat-tag">آپلود</div>
+      </div>
+      <div class="stat-box pink">
+        <div class="stat-num pink">{{.download}}</div>
+        <div class="stat-tag">دانلود</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-box green">
+        <div class="stat-num green">{{.total}}</div>
+        <div class="stat-tag">کل</div>
+      </div>
+      <div class="stat-box yellow">
+        <div class="stat-num yellow">{{.remained}}</div>
+        <div class="stat-tag">باقیمانده</div>
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="neon-badge {{if .enabled}}on{{else}}off{{end}}">
+        <span class="nb-dot"></span> {{if .enabled}}فعال{{else}}غیرفعال{{end}}
+      </span>
+    </div>
+  </div>
+
+  <div class="neon-card pink">
+    <div class="card-title" style="color:var(--neon-pink)">اطلاعات اشتراک</div>
+    <div class="info-grid">
+      <div class="info-box">
+        <div class="info-label"><i class="fa-solid fa-clock"></i> انقضا</div>
+        <div class="info-val" id="expireVal">{{if gt .expire 0}}{{.expire}}{{else}}نامحدود{{end}}</div>
+      </div>
+      <div class="info-box">
+        <div class="info-label"><i class="fa-solid fa-database"></i> مصرف</div>
+        <div class="info-val">{{.used}}</div>
+      </div>
+    </div>
+  </div>
+
+  {{if .announce}}
+  <div class="announce show">{{.announce}}</div>
+  {{end}}
+
+  <div class="links-area">
+    <div class="links-title"><i class="fa-solid fa-globe"></i> کانفیگ‌ها ({{len .links}})</div>
+    <div id="linksContainer">
+    {{range .links}}
+      <div class="neon-link" data-link="{{.}}">
+        <span class="link-chip">?</span>
+        <span class="link-name">{{.}}</span>
+        <button class="link-clone"><i class="fa-solid fa-copy"></i> کپی</button>
+      </div>
+    {{end}}
+    </div>
+  </div>
+
+  <div class="footer">Powered by Neon v1.0</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var PROTO_ICONS={vless:'fa-bolt-lightning',vmess:'fa-server',trojan:'fa-shield-halved',ss:'fa-key',hysteria:'fa-wave-square'};
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(link){ const m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function copy(text){
+  const done=function(){ showToast('کپی شد!'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done); }
+  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }
+}
+var expireTs={{.expire}};
+if(expireTs>0){ var d=new Date(expireTs*1000); var el=document.getElementById('expireVal'); if(el) el.textContent=d.toLocaleDateString('fa-IR'); }
+var links=document.querySelectorAll('.neon-link');
+links.forEach(function(linkEl){
+  var chip=linkEl.querySelector('.link-chip');
+  var nameEl=linkEl.querySelector('.link-name');
+  var btn=linkEl.querySelector('.link-clone');
+  var link=rawLink(linkEl.getAttribute('data-link')||nameEl.textContent.trim());
+  var proto=protocolOf(link);
+  var cls=PROTO_ICONS[proto]||'fa-link';
+  chip.className='link-chip '+(proto && PROTO_ICONS[proto]?proto:'default');
+  chip.innerHTML='<i class="fa-solid '+cls+'"></i>';
+  var frag=link.split('#');
+  var nm=(frag.length>1&&frag[1])?frag[1]:('کانفیگ '+(Array.from(links).indexOf(linkEl)+1));
+  nameEl.textContent=nm;
+  linkEl.addEventListener('click',function(e){ if(btn.contains(e.target)) return; copy(link); });
+  btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
+});
+</script>
+</body>
+</html>

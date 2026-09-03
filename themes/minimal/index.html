@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سابسکریپشن - مینیمال</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b0d12;--bg-soft:#11141b;--card:#161a23;--card-2:#1d222e;
+  --border:#262c3a;--border-2:#323a4d;--text:#eef1f6;--text2:#98a2b3;--text3:#6c7686;
+  --accent:#8ab4ff;--accent-2:#6c8cff;--green:#4ade80;--red:#f87171;--amber:#fbbf24;
+  --blue:#60a5fa;
+}
+body{
+  font-family:'IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:radial-gradient(1200px 600px at 50% -10%,#141c2b 0%,transparent 60%),var(--bg);
+  color:var(--text);min-height:100vh;line-height:1.55;
+  -webkit-font-smoothing:antialiased;font-size:14px;
+}
+.container{width:100%;max-width:480px;margin:0 auto;padding:28px 16px 56px}
+.header{text-align:center;margin-bottom:28px}
+.avatar{
+  width:76px;height:76px;border-radius:22px;margin:0 auto 18px;position:relative;
+  background:linear-gradient(135deg,#2a3b57,#1b2233);
+  border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
+.avatar svg{width:34px;height:34px;fill:var(--accent)}
+.title{font-size:23px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.subtitle{font-size:12px;color:var(--text2);margin-top:6px}
+.card{
+  background:linear-gradient(180deg,var(--card),var(--bg-soft));
+  border:1px solid var(--border);border-radius:18px;padding:8px 20px;margin-bottom:16px;
+  box-shadow:0 10px 26px rgba(0,0,0,.22);
+}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px dashed var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2)}
+.stat-label i{color:var(--text3);width:16px;text-align:center;font-size:13px}
+.stat-value{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
+.status-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;font-size:12px;font-weight:600}
+.status-online{background:rgba(74,222,128,.12);color:var(--green);border:1px solid rgba(74,222,128,.25)}
+.status-offline{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.status-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.status-online .status-dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-offline .status-dot{background:var(--red);box-shadow:0 0 8px var(--red)}
+.progress-wrap{margin-top:16px;padding:14px 0}
+.progress-bar{height:7px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .6s ease}
+.progress-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text3)}
+.links-section{margin-top:20px}
+.links-title{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:13px;font-weight:600}
+.links-title i{color:var(--text3)}
+.link-item{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;
+  margin-bottom:10px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:13px;
+}
+.link-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.link-icon{
+  width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900;
+}
+.link-icon.vless{background:rgba(96,165,250,.15);color:var(--blue)}
+.link-icon.vmess{background:rgba(74,222,128,.15);color:var(--green)}
+.link-icon.trojan{background:rgba(248,113,113,.15);color:var(--red)}
+.link-icon.ss{background:rgba(251,191,36,.15);color:var(--amber)}
+.link-icon.hysteria{background:rgba(192,132,252,.15);color:#c084fc}
+.link-icon.other{background:rgba(148,163,184,.15);color:#94a3b8}
+.link-info{flex:1;min-width:0}
+.link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-protocol{font-size:11px;color:var(--text3);margin-top:3px}
+.link-copy{
+  font-size:11px;color:var(--accent);white-space:nowrap;display:flex;align-items:center;gap:6px;
+  font-weight:600;opacity:.85;
+}
+.link-copy:hover{opacity:1}
+.link-item.copied .link-copy{color:var(--green)}
+.announce{
+  background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.18);border-radius:14px;
+  padding:14px 16px;font-size:12px;color:var(--blue);line-height:1.7;margin-top:4px;display:none;
+}
+.announce.show{display:block}
+.footer{text-align:center;margin-top:28px;font-size:11px;color:var(--text3)}
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:#232a38;color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;
+  opacity:0;transition:all .3s;pointer-events:none;z-index:100;border:1px solid var(--border-2);
+  box-shadow:0 10px 30px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:rgba(74,222,128,.4)}
+@media(max-width:480px){body{font-size:13px}.container{padding:20px 14px 48px}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="avatar"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg></div>
+    <div class="title">{{if .subTitle}}{{.subTitle}}{{else}}سابسکریپشن{{end}}</div>
+    <div class="subtitle">سابسکریپشن شما</div>
+  </div>
+
+  <div class="card">
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-shield-halved"></i> وضعیت</span>
+      <span class="status-badge {{if .enabled}}status-online{{else}}status-offline{{end}}">
+        <span class="status-dot"></span>
+        {{if .enabled}}فعال{{else}}غیرفعال{{end}}
+      </span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-clock"></i> تاریخ انقضا</span>
+      <span class="stat-value" id="expireVal">{{if gt .expire 0}}{{.expire}}{{else}}نامحدود{{end}}</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-arrow-up-from-bracket"></i> آپلود</span>
+      <span class="stat-value" style="color:var(--green)">{{.upload}}</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-download"></i> دانلود</span>
+      <span class="stat-value" style="color:var(--blue)">{{.download}}</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-database"></i> حجم کل</span>
+      <span class="stat-value" id="totalVal">{{.total}}</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label"><i class="fa-solid fa-circle-check"></i> باقیمانده</span>
+      <span class="stat-value" id="remainVal">{{.remained}}</span>
+    </div>
+{{if .total }}
+<div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="usageFill"></div></div>
+      <div class="progress-labels"><span>استفاده</span><span id="usagePct"></span></div>
+    </div>
+{{end}}
+  </div>
+
+  {{if .announce}}
+  <div class="announce show">{{.announce}}</div>
+  {{end}}
+
+  <div class="links-section">
+    <div class="links-title"><i class="fa-solid fa-list"></i> کانفیگ‌ها <span>({{len .links}})</span></div>
+    <div id="linksContainer">
+    {{range .links}}
+      <div class="link-item">
+        <div class="link-icon">?</div>
+        <div class="link-info">
+          <div class="link-name">{{.}}</div>
+          <div class="link-protocol"></div>
+        </div>
+        <div class="link-copy"><i class="fa-solid fa-copy"></i> کپی</div>
+      </div>
+    {{end}}
+    </div>
+  </div>
+
+  <div class="footer">x-ui subscriptions</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(link){ const m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+var PROTO_ICONS={vless:'fa-bolt-lightning',vmess:'fa-server',trojan:'fa-shield-halved',ss:'fa-key',hysteria:'fa-wave-square',other:'fa-link'};
+function showToast(msg,ok){ const t=document.getElementById('toast'); t.textContent=msg; t.className=ok?'toast show ok':'toast show'; setTimeout(()=>t.classList.remove('show'),2000); }
+function copy(text){
+  const done=function(){ showToast('کپی شد!',true); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done); }
+  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }
+}
+var expireTs={{.expire}};
+if(expireTs>0){ var d=new Date(expireTs*1000); var el=document.getElementById('expireVal'); if(el) el.textContent=d.toLocaleDateString('fa-IR'); }
+var items=document.querySelectorAll('.link-item');
+items.forEach(function(item){
+  var icon=item.querySelector('.link-icon');
+  var nameEl=item.querySelector('.link-name');
+  var protoEl=item.querySelector('.link-protocol');
+  var link=rawLink(nameEl.textContent.trim());
+  var actual=item.getAttribute('data-link')?rawLink(item.getAttribute('data-link')):link;
+  var proto=protocolOf(actual);
+  icon.className='link-icon '+(PROTO_ICONS[proto]?proto:'other');
+  var cls='fa-solid '+(PROTO_ICONS[proto]||PROTO_ICONS.other);
+  icon.innerHTML='<i class="'+cls+'"></i>';
+  protoEl.textContent=proto.toUpperCase()+' کانفیگ';
+  var frag=actual.split('#');
+  var nm=(frag.length>1&&frag[1])?frag[1]:('کانفیگ '+(Array.from(items).indexOf(item)+1));
+  nameEl.textContent=nm;
+  item.addEventListener('click',function(){ copy(actual); item.classList.add('copied'); setTimeout(()=>item.classList.remove('copied'),600); });
+});
+(function usageFill(){
+  var fill=document.getElementById('usageFill');
+  if(!fill) return;
+  var total=rawLink(document.getElementById('totalVal')?document.getElementById('totalVal').textContent:'');
+  var remain=document.getElementById('remainVal')?document.getElementById('remainVal').textContent:'';
+  var pct=document.getElementById('usagePct');
+  var parse=function(s){ var n=parseFloat(s)||0; if(/TB/i.test(s))n*=1024; return n; };
+  var tot=parse(total), rem=parse(remain);
+  if(tot>0){ var used=tot-rem<0?0:tot-rem; var per=Math.min(100,used/tot*100); fill.style.width=per+'%'; if(pct)pct.textContent=Math.round(per)+'٪'; }
+})();
+</script>
+</body>
+</html>

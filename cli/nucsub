@@ -1,0 +1,483 @@
+#!/usr/bin/env bash
+# =============================================================================
+#  nucsub — NUC-SUB Subscription theme engine for 3x-ui (Sanaei panel)
+#  Manage custom subscription page themes directly from the command line.
+#  Interactive menu mode: run `nucsub` or `nucsub menu`
+# =============================================================================
+set -euo pipefail
+
+# ------------------------------------------------------------------ config ---
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; MAGENTA='\033[0;35m'; NC='\033[0m'
+BOLD='\033[1m'; DIM='\033[2m'
+
+INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
+THEMES_DIR="$INSTALL_DIR/themes"
+DEPLOY_DIR="/etc/x-ui/sub_templates"
+XUI_DB="$([ -f /etc/x-ui/x-ui.db ] && echo /etc/x-ui/x-ui.db || echo /etc/3x-ui/db/x-ui.db)"
+XUI_SERVICE="x-ui"
+SUB_THEME_KEY="subThemeDir"
+WEB_BASE="$INSTALL_DIR/webpanel"
+WEB_SERVICE="xui-sub-panel"
+WEB_PORT_FILE="$INSTALL_DIR/.webport"
+WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
+
+# ------------------------------------------------------------------ helpers ---
+die() { echo -e "${RED}✗ $*${NC}" >&2; exit 1; }
+ok()  { echo -e "${GREEN}✓ $*${NC}"; }
+info(){ echo -e "${BLUE}ℹ $*${NC}"; }
+warn(){ echo -e "${YELLOW}⚠ $*${NC}"; }
+title(){ echo -e "\n${BOLD}${CYAN}$*${NC}"; }
+sep(){ echo -e "${DIM}──────────────────────────────────────────────${NC}"; }
+
+require_root() { [[ "$EUID" -eq 0 ]] || die "Please run as root (sudo)."; }
+
+# Validate a theme name is a bare safe identifier — no slashes, dots, or shell/SQL metacharacters.
+valid_theme_name() {
+    [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]]
+}
+
+find_sqlite() {
+    if command -v sqlite3 >/dev/null 2>&1; then _SQLITE="sqlite3"; return 0; fi
+    warn "sqlite3 not found — install with: apt install -y sqlite3"
+    _SQLITE=""
+}
+
+db_set_subthemedir() {
+    local val="$1"
+    if [[ -n "${_SQLITE}" ]]; then
+        [[ -e "$XUI_DB" ]] || die "x-ui database not found: $XUI_DB"
+        # escape single quotes to prevent SQL injection through values
+        local vesc
+        vesc="${val//\'/\'\'}"
+        sqlite3 "$XUI_DB" "DELETE FROM settings WHERE key='$SUB_THEME_KEY';"
+        # NOTE: must use an explicit if + trailing return so an empty value
+        # does not make this function exit non-zero under `set -euo pipefail`.
+        if [[ -n "$val" ]]; then
+            sqlite3 "$XUI_DB" "INSERT INTO settings (key,value) VALUES ('$SUB_THEME_KEY','$vesc');"
+        fi
+        return 0
+    else die "sqlite3 required."; fi
+}
+
+db_get_subthemedir() {
+    if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
+        sqlite3 "$XUI_DB" "SELECT value FROM settings WHERE key='$SUB_THEME_KEY' ORDER BY id LIMIT 1;" 2>/dev/null || true
+    else echo ""; fi
+}
+
+db_panel_info() {
+    if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
+        sqlite3 "$XUI_DB" "SELECT key||'='||value FROM settings WHERE key IN ('webPort','webBasePath','panelGuid','secret','webCertFile','webKeyFile') ORDER BY key;" 2>/dev/null || true
+    fi
+}
+
+current_theme_dir() { db_get_subthemedir; }
+
+list_theme_folders() {
+    [[ -d "$THEMES_DIR" ]] || return 0
+    find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
+}
+
+theme_is_runnable() {
+    local name="$1"
+    [[ -f "$THEMES_DIR/$name/index.html" ]] || [[ -f "$THEMES_DIR/$name/sub.html" ]]
+}
+
+db_get_subid() {
+    if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
+        sqlite3 "$XUI_DB" "SELECT sub_id FROM clients WHERE enable=1 LIMIT 1;" 2>/dev/null || true
+    fi
+}
+
+db_panel_setting() {
+    local key="$1"
+    if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
+        sqlite3 "$XUI_DB" "SELECT value FROM settings WHERE key='$key' ORDER BY id LIMIT 1;" 2>/dev/null || true
+    fi
+}
+
+sub_url_for_sid() {
+    local sid="$1"; [[ -z "$sid" ]] && { echo ""; return 0; }
+    local webport webbase
+    webport="$(db_panel_setting webPort)"; webbase="$(db_panel_setting webBasePath)"
+    local host="${SUB_PANEL_HOST:-127.0.0.1}"; local port="${webport:-2096}"
+    # 0.0.0.0 is a bind address, not a valid destination for outbound connections
+    [[ "$host" == "0.0.0.0" ]] && host="127.0.0.1"
+    if [[ -n "$webbase" && "$webbase" != "/" ]]; then echo "http://$host:$port/${webbase#/}/sub/$sid"
+    else echo "http://$host:$port/sub/$sid"; fi
+}
+
+# --------------------------------------------------------------- UI helpers ---
+print_header() {
+    clear
+    echo -e "${BOLD}${CYAN}"
+    echo "  ███████╗███████╗██╗   ██╗██╗   ██╗    ███████╗██████╗ ██████╗ ███████╗"
+    echo "  ██╔════╝██╔════╝██║   ██║██║   ██║    ██╔════╝██╔══██╗██╔══██╗██╔════╝"
+    echo "  █████╗  ███████╗██║   ██║██║   ██║    █████╗  ██████╔╝██████╔╝███████╗"
+    echo "  ██╔══╝  ╚════██║██║   ██║██║   ██║    ██╔══╝  ██╔══██╗██╔══██╗╚════██║"
+    echo "  ██║     ███████║╚██████╔╝╚██████╔╝    ██║     ██║  ██║██║  ██║███████║"
+    echo "  ╚═╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝"
+    echo -e "${NC}"
+    echo -e "  ${DIM}NUC-SUB — 3x-ui / Sanaei panel theme engine by NUCTEREA${NC}\n"
+}
+
+print_status_line() {
+    local current
+    current="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
+    [[ -n "$current" && "$current" == "." ]] && current=""
+    if [[ -n "$current" ]]; then
+        echo -e "  ${GREEN}● Active theme: ${BOLD}$current${NC}"
+    else
+        echo -e "  ${YELLOW}● No custom theme active (panel default)${NC}"
+    fi
+    local n=0
+    while IFS= read -r t; do [[ -n "$t" ]] && n=$((n+1)); done < <(list_theme_folders)
+    echo -e "  ${BLUE}● Installed themes: $n${NC}"
+    echo -e "  ${DIM}● Install dir: $INSTALL_DIR${NC}\n"
+}
+
+draw_menu() {
+    print_header
+    print_status_line
+    sep
+    echo -e "  ${BOLD}Main Menu${NC}\n"
+    echo -e "  ${GREEN}1)${NC} List themes              ${DIM}— show all installed themes${NC}"
+    echo -e "  ${GREEN}2)${NC} Apply theme              ${DIM}— activate a theme for subscription page${NC}"
+    echo -e "  ${GREEN}3)${NC} Preview theme            ${DIM}— view live data for a theme${NC}"
+    echo -e "  ${GREEN}4)${NC} Reset to default         ${DIM}— back to panel built-in page${NC}"
+    echo -e "  ${GREEN}5)${NC} Remove theme             ${DIM}— uninstall a theme completely${NC}"
+    echo -e "  ${GREEN}6)${NC} Web panel                ${DIM}— start/stop web UI (token auth)${NC}"
+    echo -e "  ${GREEN}7)${NC} Update NUC-SUB${DIM}— pull latest from GitHub${NC}"
+    echo -e "  ${GREEN}8)${NC} Uninstall completely     ${DIM}— remove everything${NC}"
+    echo -e "  ${GREEN}9)${NC} Status & info            ${DIM}— panel DB, service, paths${NC}"
+    echo -e "  ${GREEN}0)${NC} Exit\n"
+    sep
+    echo -ne "  ${BOLD}Select option [0-9]: ${NC}"
+}
+
+pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r; }
+
+# --------------------------------------------------------------- commands ----
+cmd_list() {
+    title "Installed Themes"; sep
+    local current
+    current="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
+    [[ -n "$current" && "$current" == "." ]] && current=""
+    local n=0
+    while IFS= read -r t; do
+        [[ -z "$t" ]] && continue
+        n=$((n+1))
+        local tag="   "
+        [[ "$t" == "$current" ]] && tag="${GREEN} ★${NC}"
+        local runnable=""
+        theme_is_runnable "$t" && runnable="${GREEN} runnable${NC}" || runnable="${YELLOW} missing template${NC}"
+        printf "${tag}  %-16s %b\n" "$t" "$runnable"
+    done < <(list_theme_folders)
+    [[ $n -eq 0 ]] && warn "No themes installed in $THEMES_DIR"
+    if [[ -n "$current" ]]; then
+        echo ""; ok "Active: $current"
+    else
+        echo ""; info "No custom theme set — panel uses built-in default."
+    fi
+}
+
+cmd_apply() {
+    require_root
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        local themes=()
+        while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
+        [[ ${#themes[@]} -eq 0 ]] && die "No themes installed."
+        title "Select theme to apply"; sep
+        select t in "${themes[@]}" "Cancel"; do
+            [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            warn "Invalid selection."
+        done
+    fi
+    valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    local src="$THEMES_DIR/$name"
+    [[ -d "$src" ]] || die "Theme '$name' not found."
+    theme_is_runnable "$name" || die "Theme '$name' has no index.html/sub.html."
+
+    mkdir -p "$DEPLOY_DIR/$name"
+    cd "$src"
+    find . -maxdepth 3 -type f \( -name 'index.html' -o -name 'sub.html' -o -name '*.css' -o -name '*.js' -o -name '*.woff2' \) -exec cp -f --parents {} "$DEPLOY_DIR/$name/" \;
+    cd - >/dev/null
+    chmod -R a+rX "$DEPLOY_DIR/$name"
+
+    if [[ -f "$DEPLOY_DIR/$name/index.html" ]]; then
+        db_set_subthemedir "$DEPLOY_DIR/$name"
+        ok "Theme '$name' deployed to $DEPLOY_DIR/$name"
+    else warn "No index.html copied."; return 1; fi
+
+    if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
+        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 && ok "Panel restarted."
+    else command -v "$XUI_SERVICE" >/dev/null 2>&1 && "$XUI_SERVICE" restart || true; fi
+}
+
+cmd_reset() {
+    require_root
+    db_set_subthemedir ""
+    ok "subThemeDir cleared — panel back to built-in default."
+    if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
+        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 && ok "Panel restarted."
+    else command -v "$XUI_SERVICE" >/dev/null 2>&1 && "$XUI_SERVICE" restart || true; fi
+}
+
+cmd_remove() {
+    require_root
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        local themes=()
+        while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
+        [[ ${#themes[@]} -eq 0 ]] && die "No themes installed."
+        title "Select theme to remove"; sep
+        select t in "${themes[@]}" "Cancel"; do
+            [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            warn "Invalid selection."
+        done
+    fi
+    valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    [[ -d "$THEMES_DIR/$name" ]] || die "Theme '$name' not found."
+    local cur
+    cur="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
+    if [[ "$cur" == "$name" ]]; then
+        warn "Theme '$name' is active — panel will return to default."
+        db_set_subthemedir ""
+    fi
+    rm -rf "$THEMES_DIR/$name" "$DEPLOY_DIR/$name"
+    ok "Removed theme '$name'."
+    if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
+        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 || true
+    fi
+}
+
+cmd_preview() {
+    require_root
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        local themes=()
+        while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
+        [[ ${#themes[@]} -eq 0 ]] && die "No themes installed."
+        title "Select theme to preview"; sep
+        select t in "${themes[@]}" "Cancel"; do
+            [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            warn "Invalid selection."
+        done
+    fi
+    valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    local src="$THEMES_DIR/$name"
+    [[ -d "$src" ]] || die "Theme '$name' not found."
+    theme_is_runnable "$name" || die "Theme '$name' not runnable."
+
+    local sid
+    sid="$(db_get_subid)"
+    if [[ -z "$sid" ]]; then warn "No active subscription found in DB."; return 1; fi
+    local url
+    url="$(sub_url_for_sid "$sid")"
+    [[ -z "$url" ]] && { warn "Could not compute sub URL."; return 1; }
+
+    title "Preview: $name"; sep
+    echo -e "  ${CYAN}Sub URL   : $url${NC}"
+    echo -e "  ${CYAN}View-model (?format=info):${NC}"
+    curl -sk "${url}?format=info" || warn "fetch failed"
+}
+
+cmd_status() {
+    title "System Status"; sep
+    echo -e "  Install dir : $INSTALL_DIR"
+    echo -e "  Themes dir  : $THEMES_DIR"
+    echo -e "  Deploy dir  : $DEPLOY_DIR"
+    echo -e "  DB file     : $XUI_DB"
+    echo -e "  Service     : $XUI_SERVICE"
+    echo -e "  Web panel   : $WEB_SERVICE (port $(cat "$WEB_PORT_FILE" 2>/dev/null || echo 8080))"
+    echo ""
+    local n=0
+    while IFS= read -r line; do [[ -z "$line" ]] && continue; echo "  $line"; n=$((n+1)); done < <(db_panel_info)
+    [[ $n -eq 0 ]] && info "No panel settings read."
+    echo ""; cmd_list
+}
+
+# ----------------------------------------------------------- Web panel mgmt ---
+web_panel_status() {
+    if systemctl is-active --quiet "$WEB_SERVICE" 2>/dev/null; then
+        local port=$(cat "$WEB_PORT_FILE" 2>/dev/null || echo 8080)
+        local token=$(cat "$WEB_TOKEN_FILE" 2>/dev/null || echo "unknown")
+        echo -e "  ${GREEN}● Running${NC} on port $port"
+        echo -e "  ${DIM}  Token: $token${NC}"
+        return 0
+    else
+        echo -e "  ${RED}● Stopped${NC}"
+        return 1
+    fi
+}
+
+cmd_webpanel() {
+    local action="${1:-status}"
+    case "$action" in
+        start)
+            require_root
+            if web_panel_status | grep -q "Running"; then warn "Already running."; return; fi
+            local port="${SUB_PANEL_PORT:-8080}"
+            local token=""
+            if [[ -f "$WEB_TOKEN_FILE" ]]; then token="$(<"$WEB_TOKEN_FILE")"
+            else token="$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)"; echo "$token" > "$WEB_TOKEN_FILE"; chmod 600 "$WEB_TOKEN_FILE"; fi
+            echo "$port" > "$WEB_PORT_FILE"
+            if command -v python3 >/dev/null 2>&1; then
+                nohup python3 "$WEB_BASE/server.py" --port "$port" --token "$token" --base "$WEB_BASE" \
+                     --cli "$INSTALL_DIR/cli/nucsub" --themes "$THEMES_DIR" --db "$XUI_DB" \
+                     >"$INSTALL_DIR/webpanel.log" 2>&1 &
+                echo $! > "$INSTALL_DIR/.webpanel.pid"
+                sleep 1
+                if web_panel_status | grep -q "Running"; then ok "Web panel started on port $port"; else warn "Start failed — check $INSTALL_DIR/webpanel.log"; fi
+            else die "python3 required."; fi
+            ;;
+        stop)
+            require_root
+            if [[ -f "$INSTALL_DIR/.webpanel.pid" ]]; then
+                kill "$(cat "$INSTALL_DIR/.webpanel.pid")" 2>/dev/null || true
+                rm -f "$INSTALL_DIR/.webpanel.pid"
+            fi
+            pkill -f "python3.*server.py.*--port" 2>/dev/null || true
+            ok "Web panel stopped."
+            ;;
+        restart)
+            require_root
+            cmd_webpanel stop; sleep 1; cmd_webpanel start
+            ;;
+        status)
+            title "Web Panel Status"; sep
+            web_panel_status
+            ;;
+        token)
+            [[ -f "$WEB_TOKEN_FILE" ]] && cat "$WEB_TOKEN_FILE" || warn "No token file."
+            ;;
+        *)
+            echo -e "${YELLOW}Usage: nucsub webpanel {start|stop|restart|status|token}${NC}"
+            ;;
+    esac
+}
+
+# ----------------------------------------------------------- Update / Uninstall ---
+cmd_update() {
+    require_root
+    title "Update NUC-SUB"; sep
+    local repo_dir="/root/nucsub-src"
+    if [[ ! -d "$repo_dir/.git" ]]; then
+        warn "Source repo not found at $repo_dir. Re-cloning..."
+        git clone https://github.com/nuctereadev/NUC-SUB.git "$repo_dir" 2>/dev/null || die "Clone failed. Set correct repo URL."
+    fi
+    cd "$repo_dir"
+    info "Fetching latest..."
+    git fetch origin
+    local local_rev remote_rev
+    local_rev=$(git rev-parse HEAD)
+    remote_rev=$(git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null)
+    if [[ "$local_rev" == "$remote_rev" ]]; then ok "Already up to date."; return; fi
+    info "Updating..."
+    git pull origin main 2>/dev/null || git pull origin master 2>/dev/null
+    info "Re-installing..."
+    bash "$repo_dir/install.sh" 2>&1 | tail -20
+    ok "Update complete."
+}
+
+cmd_uninstall() {
+    require_root
+    title "Uninstall NUC-SUB"; sep
+    warn "This will remove:"
+    echo -e "  ${DIM}• $INSTALL_DIR (themes, web panel, CLI)${NC}"
+    echo -e "  ${DIM}• /usr/bin/nucsub binary${NC}"
+    echo -e "  ${DIM}• systemd service: $WEB_SERVICE${NC}"
+    echo -e "  ${DIM}• deployed themes in $DEPLOY_DIR${NC}"
+    echo -e "  ${RED}• subThemeDir in panel DB (panel returns to default)${NC}"
+    echo ""
+    read -rp "  Type 'YES' to confirm: " confirm
+    [[ "$confirm" != "YES" ]] && { info "Cancelled."; return; }
+
+    systemctl stop "$WEB_SERVICE" 2>/dev/null || true
+    systemctl disable "$WEB_SERVICE" 2>/dev/null || true
+    rm -f "/etc/systemd/system/$WEB_SERVICE.service"
+    systemctl daemon-reload
+
+    rm -f /usr/bin/nucsub
+    rm -rf "$INSTALL_DIR"
+    rm -rf "$DEPLOY_DIR"
+
+    db_set_subthemedir ""
+    if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
+        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 || true
+    fi
+    ok "Uninstalled completely."
+}
+
+# ----------------------------------------------------------- Interactive Menu ---
+cmd_menu() {
+    find_sqlite
+    while true; do
+        draw_menu
+        read -r choice
+        case "$choice" in
+            1) clear; cmd_list; pause_enter ;;
+            2) clear; cmd_apply; pause_enter ;;
+            3) clear; cmd_preview; pause_enter ;;
+            4) clear; cmd_reset; pause_enter ;;
+            5) clear; cmd_remove; pause_enter ;;
+            6) clear; cmd_webpanel status; pause_enter ;;
+            7) clear; cmd_update; pause_enter ;;
+            8) clear; cmd_uninstall; pause_enter ;;
+            9) clear; cmd_status; pause_enter ;;
+            0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
+            *) warn "Invalid option: $choice"; sleep 1 ;;
+        esac
+    done
+}
+
+# --------------------------------------------------------------------- main ---
+cmd="${1:-menu}"; shift || true
+find_sqlite
+
+case "$cmd" in
+    list|ls)        cmd_list ;;
+    apply)          cmd_apply "$@" ;;
+    reset)          cmd_reset ;;
+    remove|rm)      cmd_remove "$@" ;;
+    preview)        cmd_preview "$@" ;;
+    status)         cmd_status ;;
+    webpanel)       cmd_webpanel "$@" ;;
+    update)         cmd_update ;;
+    uninstall)      cmd_uninstall ;;
+    menu)           cmd_menu ;;
+    version|-v|--version|-V)     echo "nucsub 2.0.0 — NUC-SUB" ;;
+    help|-h|--help|"")
+        cat <<'EOF'
+nucsub — NUC-SUB Subscription theme engine for 3x-ui (Sanaei panel)
+
+Usage:
+  nucsub [command] [args...]
+
+Commands:
+  list                List installed themes + current one
+  apply <theme>       Apply a theme (deploy + set subThemeDir)
+  preview <theme>     Show live view-model data for a theme
+  reset               Back to panel default (clear subThemeDir)
+  remove <theme>      Uninstall a theme completely
+  status              Show panel DB info, paths, and theme list
+  webpanel {start|stop|restart|status|token}
+                      Control the web management panel
+  update              Pull latest from GitHub and reinstall
+  uninstall           Remove everything (themes, CLI, web panel, DB entry)
+  menu                Interactive menu (default when no args given)
+  version             Show version
+  help                Show this help
+
+Interactive mode: run `nucsub` or `nucsub menu`
+Web panel:        nucsub webpanel {start|stop|restart|status|token}
+
+Requires: root, bash >= 4, sqlite3 (for DB access)
+EOF
+        ;;
+    *) echo -e "${RED}Unknown command: $cmd${NC}"; echo "Run: nucsub help"; exit 1 ;;
+esac

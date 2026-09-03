@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سابسکریپشن - شیشه‌ای</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--glass-bg:rgba(255,255,255,.06);--glass-border:rgba(255,255,255,.1);--glass-blur:20px;--text:#fff;--text2:rgba(255,255,255,.5)}
+body{
+  font-family:'IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;background:#0c0c1d;color:var(--text);display:flex;align-items:center;
+  justify-content:center;padding:20px;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+.bg-orbs{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);animation:float 20s infinite ease-in-out}
+.orb-1{width:400px;height:400px;background:rgba(99,102,241,.2);top:-10%;left:-5%;animation-delay:0s}
+.orb-2{width:300px;height:300px;background:rgba(236,72,153,.15);bottom:-5%;right:-5%;animation-delay:-7s}
+.orb-3{width:250px;height:250px;background:rgba(34,211,238,.12);top:50%;left:60%;animation-delay:-14s}
+@keyframes float{0%,100%{transform:translate(0,0)}33%{transform:translate(30px,-30px)}66%{transform:translate(-20px,20px)}}
+.container{width:100%;max-width:480px;position:relative;z-index:1}
+.glass{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--glass-border);border-radius:24px;padding:28px;margin-bottom:16px}
+.header{text-align:center;margin-bottom:24px}
+.avatar{width:82px;height:82px;border-radius:26px;background:linear-gradient(135deg,rgba(99,102,241,.3),rgba(236,72,153,.3));display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;color:#fff;box-shadow:0 8px 32px rgba(99,102,241,.25);border:1px solid rgba(255,255,255,.12)}
+.avatar i{font-family:'Font Awesome 6 Free';font-weight:900}
+.title{font-size:22px;font-weight:700;margin-bottom:4px}
+.subtitle{font-size:12px;color:var(--text2)}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.stat-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:16px;text-align:center;transition:all .3s}
+.stat-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+.stat-card.wide{grid-column:1/-1}
+.stat-icon{margin-bottom:8px;color:var(--text2)}
+.stat-icon i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:18px}
+.stat-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px}
+.status-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600}
+.status-pill.on{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.status-pill.off{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+.dot{width:6px;height:6px;border-radius:50%}
+.status-pill.on .dot{background:#4ade80;box-shadow:0 0 8px #4ade80}
+.status-pill.off .dot{background:#f87171}
+.info-list{padding:0}
+.info-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.info-item:last-child{border-bottom:none}
+.info-label{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.info-label i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:11px;opacity:.7}
+.info-value{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.links-section{margin-top:0}
+.links-header{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600}
+.links-header i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:11px;opacity:.7}
+.link-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .3s}
+.link-card:hover{background:rgba(255,255,255,.08);border-color:rgba(99,102,241,.3);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.link-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900}
+.link-icon.vless{background:rgba(99,102,241,.15);color:#818cf8}
+.link-icon.vmess{background:rgba(34,211,238,.15);color:#22d3ee}
+.link-icon.trojan{background:rgba(236,72,153,.15);color:#f472b6}
+.link-icon.ss{background:rgba(250,204,21,.15);color:#facc15}
+.link-icon.hysteria{background:rgba(168,85,247,.15);color:#c084fc}
+.link-icon.default{background:rgba(255,255,255,.08);color:#cbd5e1}
+.link-details{flex:1;min-width:0}
+.link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-proto{font-size:10px;color:var(--text2);margin-top:3px}
+.link-btn{padding:6px 14px;border-radius:10px;background:rgba(99,102,241,.15);color:#818cf8;font-size:11px;font-weight:600;border:1px solid rgba(99,102,241,.25);cursor:pointer;font-family:inherit;transition:all .2s;display:flex;align-items:center;gap:6px}
+.link-btn:hover{background:rgba(99,102,241,.28)}
+.link-btn i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:10px}
+.announce{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:14px;padding:12px 16px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;margin-top:16px;display:none}
+.announce.show{display:block}
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(99,102,241,.2);backdrop-filter:blur(20px);border:1px solid rgba(99,102,241,.3);color:#fff;padding:10px 24px;border-radius:16px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100}
+.toast.show{opacity:1}
+@media(max-width:480px){body{padding:12px}.glass{padding:20px}.stat-val{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="container">
+  <div class="glass header">
+    <div class="avatar"><i class="fa-solid fa-cube"></i></div>
+    <div class="title">{{if .subTitle}}{{.subTitle}}{{else}}سابسکریپشن{{end}}</div>
+    <div class="subtitle">سابسکریپشن شما</div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+      <div class="stat-val" style="color:#4ade80">{{.upload}}</div>
+      <div class="stat-lbl">آپلود</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fa-solid fa-download"></i></div>
+      <div class="stat-val" style="color:#818cf8">{{.download}}</div>
+      <div class="stat-lbl">دانلود</div>
+    </div>
+    <div class="stat-card wide">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="text-align:left">
+          <div class="stat-lbl">وضعیت</div>
+          <div class="status-pill {{if .enabled}}on{{else}}off{{end}}" style="margin-top:4px">
+            <span class="dot"></span>
+            {{if .enabled}}فعال{{else}}غیرفعال{{end}}
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div class="stat-lbl">حجم کل</div>
+          <div class="stat-val" style="font-size:18px">{{.total}}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="stat-lbl">باقیمانده</div>
+          <div class="stat-val" style="font-size:18px">{{.remained}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass">
+    <div class="info-list">
+      <div class="info-item">
+        <span class="info-label"><i class="fa-solid fa-clock"></i> تاریخ انقضا</span>
+        <span class="info-value" id="expireVal">{{if gt .expire 0}}{{.expire}}{{else}}نامحدود{{end}}</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label"><i class="fa-solid fa-database"></i> مصرف کل</span>
+        <span class="info-value">{{.used}}</span>
+      </div>
+    </div>
+  </div>
+
+  {{if .announce}}
+  <div class="announce show">{{.announce}}</div>
+  {{end}}
+
+  <div class="links-section">
+    <div class="links-header"><i class="fa-solid fa-globe"></i> کانفیگ‌ها ({{len .links}})</div>
+    <div id="linksContainer">
+    {{range .links}}
+      <div class="link-card" data-link="{{.}}">
+        <div class="link-icon">?</div>
+        <div class="link-details">
+          <div class="link-name">{{.}}</div>
+          <div class="link-proto"></div>
+        </div>
+        <button class="link-btn"><i class="fa-solid fa-copy"></i> کپی</button>
+      </div>
+    {{end}}
+    </div>
+  </div>
+
+  <div class="footer">ساخته شده با NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var PROTO_ICONS={vless:'fa-bolt-lightning',vmess:'fa-server',trojan:'fa-shield-halved',ss:'fa-key',hysteria:'fa-wave-square'};
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(link){ const m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function copy(text){
+  const done=function(){ showToast('کپی شد!'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done); }
+  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }
+}
+var expireTs={{.expire}};
+if(expireTs>0){ var d=new Date(expireTs*1000); var el=document.getElementById('expireVal'); if(el) el.textContent=d.toLocaleDateString('fa-IR'); }
+var cards=document.querySelectorAll('.link-card');
+cards.forEach(function(card){
+  var icon=card.querySelector('.link-icon');
+  var nameEl=card.querySelector('.link-name');
+  var protoEl=card.querySelector('.link-proto');
+  var btn=card.querySelector('.link-btn');
+  var link=rawLink(card.getAttribute('data-link')||nameEl.textContent.trim());
+  var proto=protocolOf(link);
+  var cls=PROTO_ICONS[proto]||'fa-link';
+  icon.className='link-icon '+(proto && PROTO_ICONS[proto]?proto:'default');
+  icon.innerHTML='<i class="fa-solid '+cls+'"></i>';
+  var frag=link.split('#');
+  var nm=(frag.length>1&&frag[1])?frag[1]:('کانفیگ '+(Array.from(cards).indexOf(card)+1));
+  nameEl.textContent=nm;
+  protoEl.textContent=proto.toUpperCase()+' کانفیگ';
+  card.addEventListener('click',function(e){ if(btn.contains(e.target)) return; copy(link); });
+  btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
+});
+</script>
+</body>
+</html>

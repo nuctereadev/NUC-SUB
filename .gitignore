@@ -1,0 +1,62 @@
+# =============================================================================
+# NUC-SUB .gitignore
+# Secrets / runtime / generated / non-product files are NEVER committed.
+# The repo should contain only the NUC-SUB product: install.sh, cli/, webpanel/,
+# themes/, README, LICENSE, .env.example.
+# =============================================================================
+
+# --- Secrets: local environment config (NEVER commit) ---
+.env
+*.env
+
+# --- Local runtime state (generated on install / at runtime) ---
+.webpanel-token
+install-result.txt
+config.env
+*.bak
+
+# --- Legacy Node.js local-dev harness (not part of the Python/bash product) ---
+server.js
+package.json
+package-lock.json
+
+# --- Legacy / old EJS template system (superseded by themes/*/index.html) ---
+templates/
+*.ejs
+
+# --- Research / Go-source study copies of the x-ui backend (reference only) ---
+research/
+
+# --- Scratch theme experiments (single throwaway HTML files) ---
+go-theme-gradient/
+go-theme-test/
+
+# --- Live-server probe & test scripts (contain real server IPs / sub IDs; not product) ---
+probe_*.sh
+test_*.sh
+apply_*.sh
+clean_*.sh
+
+# --- Empty scaffolding dirs (nothing to track; recreated on install) ---
+public/
+docs/
+
+# --- Design / build artifacts ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.zip
+*.rar
+*.tar.gz
+
+# --- Database / IDE / OS ---
+*.db
+*.sqlite
+*.sqlite3
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

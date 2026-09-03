@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سابسکریپشن - ماتریکس</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green:#00ff41;--green2:#00cc33;--green-dim:rgba(0,255,65,.1);--green-glow:rgba(0,255,65,.15);--bg:#0a0a0a;--card:#0d0d0d;--border:#1a1a1a}
+body{
+  font-family:'IranSansX','Courier New',monospace,system-ui,sans-serif;
+  background:var(--bg);color:var(--green);min-height:100vh;padding:20px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;
+  -webkit-font-smoothing:antialiased;
+}
+canvas#matrix{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:.15}
+.container{width:100%;max-width:480px;position:relative;z-index:1}
+.scanline{position:fixed;top:0;left:0;width:100%;height:100%;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,255,65,.01) 2px,rgba(0,255,65,.01) 4px);pointer-events:none;z-index:100}
+.header{text-align:center;margin-bottom:28px;padding:24px 20px;border:1px solid var(--border);background:var(--card);position:relative}
+.header::before{content:'> SYSTEM ACCESS GRANTED_';position:absolute;top:8px;left:10px;font-size:9px;color:var(--green2);opacity:.4;font-family:'Courier New',monospace}
+.avatar{width:64px;height:64px;margin:0 auto 14px;border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--green);box-shadow:0 0 18px var(--green-dim)}
+.avatar i{font-family:'Font Awesome 6 Free';font-weight:900}
+.title{font-size:24px;font-weight:700;color:var(--green);text-shadow:0 0 10px var(--green-glow);letter-spacing:1px}
+.subtitle{font-size:11px;color:var(--green2);margin-top:6px;opacity:.6;direction:rtl}
+.card{background:var(--card);border:1px solid var(--border);padding:18px 22px;margin-bottom:12px;position:relative}
+.card-title{font-size:10px;color:var(--green2);opacity:.5;letter-spacing:2px;margin-bottom:12px;font-family:'Courier New',monospace}
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.row:last-child{border-bottom:none}
+.label{display:flex;align-items:center;gap:8px;color:var(--green2);opacity:.65}
+.label i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:11px;opacity:.6}
+.value{color:var(--green);font-variant-numeric:tabular-nums;font-weight:600}
+.value.ok{color:#00ff41}
+.value.err{color:#ff0040}
+.status-pill{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border:1px solid;font-size:11px;letter-spacing:1px;font-family:'Courier New',monospace}
+.status-pill.on{color:#00ff41;border-color:#00ff41;text-shadow:0 0 8px var(--green-glow)}
+.status-pill.off{color:#ff0040;border-color:#ff0040}
+.status-pill .pulse{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor;animation:blink 1s infinite}
+.blink{animation:blink 1s infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+.progress-container{margin:12px 0 0}
+.progress-bar{height:4px;background:var(--border);position:relative;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));box-shadow:0 0 10px var(--green-dim)}
+.progress-text{display:flex;justify-content:space-between;font-size:10px;color:var(--green2);margin-top:6px}
+.links-section{margin-top:12px}
+.links-header{font-size:10px;color:var(--green2);opacity:.5;letter-spacing:2px;margin-bottom:10px;font-family:'Courier New',monospace}
+.link-entry{background:var(--card);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.link-entry:hover{border-color:var(--green2);background:#0f0f0f;box-shadow:0 0 15px var(--green-dim)}
+.link-icon{width:34px;height:34px;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900}
+.link-icon.vless{color:var(--green);border-color:var(--green)}
+.link-icon.vmess{color:#00ffff;border-color:#00ffff}
+.link-icon.trojan{color:#ff0040;border-color:#ff0040}
+.link-icon.ss{color:#ffff00;border-color:#ffff00}
+.link-icon.hysteria{color:#c084fc;border-color:#c084fc}
+.link-icon.default{color:var(--green2);border-color:var(--green2)}
+.link-name{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-action{font-size:10px;color:var(--green2);border:1px solid var(--green2);padding:4px 11px;cursor:pointer;font-family:'Courier New',monospace;background:transparent;display:flex;align-items:center;gap:6px}
+.link-action:hover{background:var(--green-dim)}
+.link-action i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:10px}
+.announce{border:1px solid var(--green2);padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:12px;position:relative;display:none;background:var(--card)}
+.announce::before{content:'[!] ';color:#ffff00}
+.announce.show{display:block}
+.footer{text-align:center;margin-top:16px;font-size:10px;color:var(--green2);opacity:.3;direction:rtl}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--green);color:var(--green);padding:8px 24px;font-size:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100;font-family:'IranSansX','Courier New',monospace}
+.toast.show{opacity:1}
+@media(max-width:480px){body{padding:10px}}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<div class="scanline"></div>
+<div class="container">
+  <div class="header">
+    <div class="avatar"><i class="fa-solid fa-terminal"></i></div>
+    <div class="title">{{if .subTitle}}{{.subTitle}}{{else}}سابسکریپشن{{end}}</div>
+    <div class="subtitle">[ ACCESS TERMINAL v2.0 ]</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">// SYSTEM STATUS</div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-shield-halved"></i> وضعیت</span>
+      <span class="status-pill {{if .enabled}}on{{else}}off{{end}}"><span class="pulse"></span>{{if .enabled}}ONLINE{{else}}OFFLINE{{end}}</span>
+    </div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-clock"></i> انقضا</span>
+      <span class="value" id="expireVal">{{if gt .expire 0}}{{.expire}}{{else}}UNLIMITED{{end}}</span>
+    </div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-arrow-up-from-bracket"></i> آپلود</span>
+      <span class="value ok">{{.upload}}</span>
+    </div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-download"></i> دانلود</span>
+      <span class="value">{{.download}}</span>
+    </div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-database"></i> حجم کل</span>
+      <span class="value" id="totalVal">{{.total}}</span>
+    </div>
+    <div class="row">
+      <span class="label"><i class="fa-solid fa-circle-check"></i> باقیمانده</span>
+      <span class="value" id="remainVal">{{.remained}}</span>
+    </div>
+{{if .total}}
+    <div class="progress-container">
+      <div class="progress-bar"><div class="progress-fill" id="usageFill" style="width:0%"></div></div>
+      <div class="progress-text"><span>USAGE</span><span id="usagePct"></span></div>
+    </div>
+{{end}}
+  </div>
+
+  {{if .announce}}
+  <div class="announce show">{{.announce}}</div>
+  {{end}}
+
+  <div class="links-section">
+    <div class="links-header">&gt; CONFIGURATIONS [{{len .links}}]</div>
+    <div id="linksContainer">
+    {{range .links}}
+      <div class="link-entry">
+        <div class="link-icon">?</div>
+        <span class="link-name">{{.}}</span>
+        <button class="link-action" data-link="{{.}}"><i class="fa-solid fa-copy"></i> COPY</button>
+      </div>
+    {{end}}
+    </div>
+  </div>
+
+  <div class="footer"># NUC-SUB — matrix · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var PROTO_ICONS={vless:'fa-bolt-lightning',vmess:'fa-server',trojan:'fa-shield-halved',ss:'fa-key',hysteria:'fa-wave-square'};
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(link){ const m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+function copy(text){
+  const done=function(){ showToast('[ COPIED ]'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done); }
+  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }
+}
+var expireTs={{.expire}};
+if(expireTs>0){ var d=new Date(expireTs*1000); var el=document.getElementById('expireVal'); if(el) el.textContent=d.toLocaleDateString('fa-IR'); }
+var entries=document.querySelectorAll('.link-entry');
+entries.forEach(function(entry){
+  var icon=entry.querySelector('.link-icon');
+  var nameEl=entry.querySelector('.link-name');
+  var btn=entry.querySelector('.link-action');
+  var link=rawLink(btn.getAttribute('data-link')||nameEl.textContent.trim());
+  var proto=protocolOf(link);
+  var cls=PROTO_ICONS[proto]||'fa-link';
+  icon.className='link-icon '+(proto && PROTO_ICONS[proto]?proto:'default');
+  icon.innerHTML='<i class="fa-solid '+cls+'"></i>';
+  var frag=link.split('#');
+  var nm=(frag.length>1&&frag[1])?frag[1]:('CONFIG '+(Array.from(entries).indexOf(entry)+1));
+  nameEl.textContent=nm;
+  entry.addEventListener('click',function(){ copy(link); });
+  btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
+});
+(function usage(){
+  var fill=document.getElementById('usageFill'); if(!fill) return;
+  var pct=document.getElementById('usagePct');
+  var parse=function(s){ var n=parseFloat(String(s).replace(/[^\d.]/g,''))||0; if(/TB/i.test(s))n*=1024; return n; };
+  var tot=parse(document.getElementById('totalVal')?document.getElementById('totalVal').textContent:'');
+  var rem=parse(document.getElementById('remainVal')?document.getElementById('remainVal').textContent:'');
+  if(tot>0){ var used=tot-rem<0?0:tot-rem; var per=Math.min(100,used/tot*100); fill.style.width=per+'%'; if(pct)pct.textContent=Math.round(per)+'%'; }
+})();
+(function matrixRain(){
+  var c=document.getElementById('matrix'); if(!c||!c.getContext) return;
+  var ctx=c.getContext('2d'); var chars='01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  var fs=14; var cols=Math.floor(c.width/fs); var drops=[]; for(var i=0;i<cols;i++)drops[i]=1;
+  function draw(){
+    ctx.fillStyle='rgba(10,10,10,0.07)'; ctx.fillRect(0,0,c.width,c.height);
+    ctx.fillStyle='#00ff41'; ctx.font=fs+'px monospace';
+    for(var i=0;i<cols;i++){
+      var ch=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch,i*fs,drops[i]*fs);
+      if(drops[i]*fs>c.height&&Math.random()>0.975)drops[i]=0;
+      drops[i]++;
+    }
+  }
+  setInterval(draw,50);
+})();
+</script>
+</body>
+</html>

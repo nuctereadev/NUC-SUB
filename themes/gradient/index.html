@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سابسکریپشن - گرادیان</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--text:#fff;--text2:rgba(255,255,255,.6)}
+body{
+  font-family:'IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
+  color:var(--text);padding:20px;display:flex;align-items:center;justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
+.container{width:100%;max-width:480px}
+.glow-bg{position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 40%,rgba(139,92,246,.15),transparent 50%),radial-gradient(circle at 70% 60%,rgba(236,72,153,.1),transparent 50%);pointer-events:none;z-index:-1}
+.header{text-align:center;margin-bottom:28px;position:relative}
+.avatar{width:82px;height:82px;border-radius:26px;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#fff;font-size:26px;box-shadow:0 12px 36px rgba(139,92,246,.35)}
+.avatar i{font-family:'Font Awesome 6 Free';font-weight:900}
+.title{font-size:26px;font-weight:700;background:linear-gradient(135deg,#c084fc,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:13px;color:var(--text2);margin-top:4px}
+.card{background:rgba(255,255,255,.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-item{background:rgba(255,255,255,.03);border-radius:14px;padding:16px;text-align:center}
+.grid-label{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:var(--text2);margin-bottom:8px}
+.grid-label i{opacity:.7;font-size:11px}
+.grid-value{font-size:18px;font-weight:700}
+.grid-value.green{color:#4ade80}
+.grid-value.pink{color:#f472b6}
+.grid-value.purple{color:#c084fc}
+.grid-value.blue{color:#60a5fa}
+.status-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.on{background:rgba(74,222,128,.15);color:#4ade80}
+.off{background:rgba(248,113,113,.15);color:#f87171}
+.pulse{width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite}
+.on .pulse{background:#4ade80}
+.off .pulse{background:#f87171}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.expire-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.expire-row:last-child{border-bottom:none}
+.expire-label{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:13px}
+.expire-label i{opacity:.7;font-size:12px}
+.expire-val{font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.links-section{margin-top:8px}
+.links-title{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:600}
+.links-title i{opacity:.8}
+.link-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s}
+.link-card:hover{background:rgba(255,255,255,.06);border-color:rgba(139,92,246,.3);transform:translateY(-1px)}
+.link-badge{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900}
+.link-badge.vless{background:linear-gradient(135deg,rgba(96,165,250,.2),rgba(96,165,250,.05));color:#60a5fa}
+.link-badge.vmess{background:linear-gradient(135deg,rgba(74,222,128,.2),rgba(74,222,128,.05));color:#4ade80}
+.link-badge.trojan{background:linear-gradient(135deg,rgba(248,113,113,.2),rgba(248,113,113,.05));color:#f87171}
+.link-badge.ss{background:linear-gradient(135deg,rgba(250,204,21,.2),rgba(250,204,21,.05));color:#facc15}
+.link-badge.hysteria{background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(168,85,247,.05));color:#a855f7}
+.link-badge.default{background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.05));color:#e5e7eb}
+.link-text{flex:1;min-width:0}
+.link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.link-type{font-size:11px;color:var(--text2);direction:ltr;text-align:right}
+.link-copy-btn{padding:7px 14px;border-radius:9px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.link-copy-btn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(139,92,246,.3)}
+.link-copy-btn i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:11px}
+.announce{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(236,72,153,.1));border:1px solid rgba(139,92,246,.2);border-radius:14px;padding:14px 16px;font-size:12px;line-height:1.7;margin-bottom:14px;color:rgba(255,255,255,.8)}
+.footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100;box-shadow:0 8px 24px rgba(139,92,246,.3)}
+.toast.show{opacity:1}
+@media(max-width:480px){body{padding:12px}.grid-value{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="glow-bg"></div>
+<div class="container">
+  <div class="header">
+    <div class="avatar"><i class="fa-solid fa-bolt-lightning"></i></div>
+    <div class="title">{{if .subTitle}}{{.subTitle}}{{else}}سابسکریپشن{{end}}</div>
+    <div class="subtitle">سابسکریپشن اختصاصی</div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="grid-item">
+        <div class="grid-label">وضعیت</div>
+        <div class="status-chip {{if .enabled}}on{{else}}off{{end}}">
+          <span class="pulse"></span>
+          {{if .enabled}}فعال{{else}}غیرفعال{{end}}
+        </div>
+      </div>
+      <div class="grid-item">
+        <div class="grid-label"><i class="fa-solid fa-database"></i> حجم کل</div>
+        <div class="grid-value purple">{{.total}}</div>
+      </div>
+      <div class="grid-item">
+        <div class="grid-label"><i class="fa-solid fa-arrow-up-from-bracket"></i> آپلود</div>
+        <div class="grid-value green">{{.upload}}</div>
+      </div>
+      <div class="grid-item">
+        <div class="grid-label"><i class="fa-solid fa-download"></i> دانلود</div>
+        <div class="grid-value pink">{{.download}}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="expire-row">
+      <span class="expire-label"><i class="fa-solid fa-clock"></i> تاریخ انقضا</span>
+      <span class="expire-val" id="expireVal">{{if gt .expire 0}}{{.expire}}{{else}}نامحدود{{end}}</span>
+    </div>
+    <div class="expire-row">
+      <span class="expire-label"><i class="fa-solid fa-database"></i> حجم مصرفی</span>
+      <span class="expire-val">{{.used}}</span>
+    </div>
+    <div class="expire-row">
+      <span class="expire-label"><i class="fa-solid fa-circle-check"></i> باقیمانده</span>
+      <span class="expire-val">{{.remained}}</span>
+    </div>
+  </div>
+
+  {{if .announce}}
+  <div class="announce">{{.announce}}</div>
+  {{end}}
+
+  <div class="links-section">
+    <div class="links-title"><i class="fa-solid fa-globe"></i> کانفیگ‌ها ({{len .links}})</div>
+    <div id="linksContainer">
+    {{range .links}}
+      <div class="link-card">
+        <div class="link-badge">?</div>
+        <div class="link-text">
+          <div class="link-name">{{.}}</div>
+          <div class="link-type"></div>
+        </div>
+        <button class="link-copy-btn" data-link="{{.}}"><i class="fa-solid fa-copy"></i> کپی</button>
+      </div>
+    {{end}}
+    </div>
+  </div>
+
+  <div class="footer">ساخته شده با NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var PROTO_ICONS={vless:'fa-bolt-lightning',vmess:'fa-server',trojan:'fa-shield-halved',ss:'fa-key',hysteria:'fa-wave-square'};
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(link){ const m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function nameOf(link,i){ const frag=link.split('#'); if(frag.length>1&&frag[1]){ try{return decodeURIComponent(frag[1]);}catch(e){return frag[1];} } return 'کانفیگ '+(i+1); }
+function copy(text){
+  const done=function(){ showToast('لینک کپی شد!'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done); }
+  else { var ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done(); }
+}
+var expireTs={{.expire}};
+if(expireTs>0){ var d=new Date(expireTs*1000); var el=document.getElementById('expireVal'); if(el) el.textContent=d.toLocaleDateString('fa-IR'); }
+var cards=document.querySelectorAll('.link-card');
+cards.forEach(function(card){
+  var btn=card.querySelector('.link-copy-btn');
+  var badge=card.querySelector('.link-badge');
+  var nameEl=card.querySelector('.link-name');
+  var typeEl=card.querySelector('.link-type');
+  var link=rawLink(btn.getAttribute('data-link'));
+  var proto=protocolOf(link);
+  var cls=PROTO_ICONS[proto]||'fa-link';
+  badge.className='link-badge '+(proto && PROTO_ICONS[proto]?proto:'default');
+  badge.innerHTML='<i class="fa-solid '+cls+'"></i>';
+  nameEl.textContent=nameOf(link,Array.from(cards).indexOf(card));
+  typeEl.textContent=proto.toUpperCase();
+  card.addEventListener('click',function(e){ if(e.target===btn||btn.contains(e.target)) return; copy(link); });
+  btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
+});
+</script>
+</body>
+</html>

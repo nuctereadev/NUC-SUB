@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>NUC-SUB — مدیریت قالب سابسکریپشن | Subscription Theme Engine</title>
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0e17">
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/icons.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e17;
+  --bg-elevated:#111722;
+  --card:#151c2a;
+  --card-hover:#1a2334;
+  --border:#243042;
+  --border-light:#2e3d52;
+  --text:#e4e8ef;
+  --text-dim:#9aa4b2;
+  --text-muted:#6b7688;
+  --accent:#3b82f6;
+  --accent-hover:#2563eb;
+  --accent-soft:rgba(59,130,246,.12);
+  --green:#10b981;
+  --green-soft:rgba(16,185,129,.12);
+  --red:#ef4444;
+  --red-soft:rgba(239,68,68,.12);
+  --radius:10px;
+  --radius-sm:7px;
+  --shadow:0 2px 8px rgba(0,0,0,.25);
+  --shadow-lg:0 8px 24px rgba(0,0,0,.35);
+}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'IranSansX',system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  line-height:1.6;
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:720px;margin:0 auto;padding:32px 20px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:9px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+.brand h1{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.brand p{font-size:12px;color:var(--text-muted)}
+.header-actions{display:flex;align-items:center;gap:10px}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:9px 16px;font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;
+  transition:background .12s,box-shadow .12s;
+}
+.btn:hover{background:var(--accent-hover)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border-light)}
+.btn.ghost:hover{background:var(--bg-elevated);border-color:var(--accent);color:var(--accent)}
+.btn.danger{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
+.btn.danger:hover{background:rgba(239,68,68,.18)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:7px 12px;font-size:12px}
+.login{max-width:360px;margin:10vh auto 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px;box-shadow:var(--shadow-lg)}
+.login-logo{width:48px;height:48px;margin:0 auto 16px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
+.login h2{margin-bottom:4px;font-size:17px;text-align:center;font-weight:600}
+.login .sub{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:22px}
+.field{margin-bottom:4px}
+.field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:500}
+.login input,.field input{
+  width:100%;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:var(--radius-sm);
+  padding:11px 13px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .12s,box-shadow .12s;
+}
+.login input:focus,.field input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.login .btn{margin-top:6px;width:100%;padding:12px}
+.login .hint{font-size:11px;color:var(--text-muted);margin-top:16px;text-align:center;line-height:1.7}
+.login .hint code{background:var(--bg-elevated);padding:1px 6px;border-radius:4px;font-size:10.5px;color:var(--accent);direction:ltr;display:inline-block;font-family:'JetBrains Mono',monospace}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.toolbar h2{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-dim)}
+.toolbar h2 i{font-size:13px;color:var(--text-muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.theme{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;transition:border-color .12s,box-shadow .12s,background .12s}
+.theme:hover{border-color:var(--border-light);background:var(--card-hover)}
+.theme.active{border-color:var(--accent);background:var(--accent-soft)}
+.th-preview{width:84px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);border-left:1px solid var(--border);font-size:20px;color:var(--accent)}
+.theme.active .th-preview{background:var(--accent-soft);border-left-color:var(--accent)}
+.th-body{padding:14px 16px 12px;flex:1;min-width:0}
+.th-head{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+.th-name{font-size:14px;font-weight:600;text-transform:capitalize}
+.th-badge{font-size:10px;padding:1px 7px;border-radius:12px;background:var(--green-soft);color:var(--green);font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.th-badge.current{background:var(--accent-soft);color:#93c5fd}
+.th-desc{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px}
+.th-btns{display:flex;gap:6px;flex-wrap:wrap}
+.statusbar{margin-top:24px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text-dim);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.statusbar b{color:var(--text);font-weight:500}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--bg-elevated);color:var(--text);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:9px 16px;font-size:12px;opacity:0;transition:all .2s;z-index:100;box-shadow:var(--shadow-lg);pointer-events:none;max-width:calc(100% - 40px);text-align:center;display:inline-flex;align-items:center;gap:7px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red-soft);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:90;padding:16px}
+.modal-ov.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:600px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--shadow-lg)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border)}
+.modal-head b{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+.modal-body{flex:1;overflow:auto;padding:12px}
+.modal-body iframe{width:100%;height:55vh;border:none;border-radius:7px;background:#fff;display:block}
+.soon{background:var(--card);border:1px dashed var(--border-light);border-radius:var(--radius);padding:18px;margin-top:28px}
+.soon h3{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-weight:500}
+.soon h3 i{color:var(--accent)}
+.soon p{font-size:11.5px;color:var(--text-muted);line-height:1.8}
+.soon code{background:var(--bg-elevated);padding:1px 6px;border-radius:4px;font-size:10.5px;color:var(--accent);direction:ltr;display:inline-block;font-family:'JetBrains Mono',monospace}
+footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
+/* mobile */
+@media (max-width:480px){
+  .wrap{padding:24px 16px 40px}
+  .logo{width:36px;height:36px;font-size:14px}
+  .brand h1{font-size:14.5px}
+  .login{margin:6vh auto 0;padding:26px 20px}
+  .toolbar{flex-direction:column;align-items:stretch}
+  .toolbar .actions{width:100%}
+  .toolbar .actions .btn{flex:1}
+  .theme{flex-direction:column}
+  .th-preview{width:100%;height:72px;border-left:none;border-bottom:1px solid var(--border)}
+  .th-btns .btn{flex:1;min-width:82px}
+  .actions .btn.ghost{font-size:12px;padding:9px 10px}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div id="view-login" style="display:none">
+    <div class="login">
+      <div class="login-logo"><i class="fa-solid fa-lock"></i></div>
+      <h2>NUC-SUB</h2>
+      <p class="sub">Subscription Theme Engine — ورود به پنل</p>
+      <p class="sub" style="margin-top:-12px">توکن مدیریت را برای ادامه وارد کنید</p>
+      <div class="field">
+        <label>توکن مدیریت</label>
+        <input id="token-input" type="password" placeholder="توکن را اینجا کپی کنید" autocomplete="off">
+      </div>
+      <button class="btn" onclick="doLogin()"><i class="fa-solid fa-sign-in-alt"></i> ورود</button>
+      <p class="hint">توکن در فایل <code>/opt/nuc-sub/install-result.txt</code> موجود است</p>
+    </div>
+  </div>
+
+  <div id="view-main" style="display:none">
+    <header>
+      <div class="brand">
+        <div class="logo"><i class="fa-solid fa-layer-group"></i></div>
+        <div>
+          <h1>NUC-SUB</h1>
+          <p>Subscription Theme Engine</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn ghost" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> خروج</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <h2><i class="fa-solid fa-list"></i> قالب‌های نصب‌شده</h2>
+      <div class="actions">
+        <button class="btn ghost" onclick="loadThemes()"><i class="fa-solid fa-rotate-right"></i> تازه‌سازی</button>
+        <button class="btn ghost" onclick="resetTheme()"><i class="fa-solid fa-undo"></i> پیش‌فرض</button>
+      </div>
+    </div>
+
+    <div class="grid" id="themes-grid">
+      <div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>
+    </div>
+
+    <div class="statusbar" id="statusbar"><span class="dot"></span> <span>در حال دریافت وضعیت...</span></div>
+
+    <div class="soon">
+      <h3><i class="fa-solid fa-wrench"></i> قابلیت‌های اضافی در راه است</h3>
+      <p>
+        آپلود قالب سفارشی، پیش‌نمایش زنده، و مدیریت پیشرفته از طریق CLI <code>nucsub</code>
+      </p>
+    </div>
+
+    <footer>NUC-SUB · Created by <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a> · MIT License</footer>
+  </div>
+</div>
+
+<div class="modal-ov" id="preview-ov">
+  <div class="modal">
+    <div class="modal-head">
+      <b id="preview-title"><i class="fa-solid fa-eye"></i> پیش‌نمایش</b>
+      <button class="btn ghost sm" onclick="closePreview()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body"><iframe id="preview-frame"></iframe></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN_KEY = 'xui_sub_token';
+let token = localStorage.getItem(TOKEN_KEY) || '';
+
+function $(id){ return document.getElementById(id); }
+function showToast(msg, err){ const t=$('toast'); t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.classList.remove('show'),2200); }
+
+async function api(path){
+  const r = await fetch('/api/'+path, { headers:{'Authorization':'Bearer '+token} });
+  const data = await r.json().catch(()=>({}));
+  if (r.status===401){ showLogin(); throw new Error('unauthorized'); }
+  return data;
+}
+
+function showLogin(){ $('view-login').style.display='block'; $('view-main').style.display='none'; }
+function showMain(){ $('view-login').style.display='none'; $('view-main').style.display='block'; }
+
+function doLogin(){
+  token = $('token-input').value.trim();
+  if(!token){ showToast('توکن را وارد کنید',true); return; }
+  localStorage.setItem(TOKEN_KEY, token);
+  api('list').then(res=>{ if(res.ok){ showMain(); loadThemes(); } else { showToast('توکن نامعتبر — از install-result.txt کپی کنید',true); } }).catch(()=>{ showToast('توکن نامعتبر — از install-result.txt کپی کنید',true); });
+}
+function logout(){ token=''; localStorage.removeItem(TOKEN_KEY); showLogin(); }
+$('token-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+const THEME_ICONS = {
+  minimal:  'fa-solid fa-border-all',
+  gradient: 'fa-solid fa-wand-magic-sparkles',
+  matrix:   'fa-solid fa-terminal',
+  glass:    'fa-solid fa-cube',
+  neon:     'fa-solid fa-bolt-lightning',
+  default:  'fa-solid fa-palette'
+};
+
+function getIcon(name){ return THEME_ICONS[name] || THEME_ICONS.default; }
+
+// escape a value for safe insertion into innerHTML / attribute context (XSS guard)
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function cardFor(name, active){
+  const en = esc(name);
+  const ej = String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `
+  <div class="theme ${active?'active':''}">
+    <div class="th-preview"><i class="${getIcon(name)}"></i></div>
+    <div class="th-body">
+      <div class="th-head">
+        <span class="th-name">${en}</span>
+        ${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}
+      </div>
+      <div class="th-desc">قالب ${en} برای صفحه اشتراک</div>
+      <div class="th-btns">
+        <button class="btn sm" onclick="applyTheme('${ej}')" ${active?'disabled':''}><i class="fa-solid fa-circle-check"></i> فعال‌سازی</button>
+        <button class="btn ghost sm" onclick="previewTheme('${ej}')"><i class="fa-solid fa-eye"></i> پیش‌نمایش</button>
+        <button class="btn danger sm" onclick="removeTheme('${ej}')"><i class="fa-solid fa-trash"></i> حذف</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function loadThemes(){
+  const grid = $('themes-grid');
+  grid.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>';
+  try{
+    const res = await api('list');
+    const out = res.stdout || '';
+    const gridHtml = [];
+    const active = extractActive(out);
+    for(const name of parseThemeList(out)){
+      gridHtml.push(cardFor(name, active===name));
+    }
+    grid.innerHTML = gridHtml.join('') || '<div style="padding:24px;text-align:center;color:var(--text-muted)">قالبی یافت نشد. از CLI قالب اضافه کنید.</div>';
+    $('statusbar').innerHTML = `<span class="dot"></span> <span>قالب فعال: <b>${active||'پیش‌فرض پنل'}</b></span>`;
+  }catch(e){ grid.innerHTML = '<div style="padding:24px;text-align:center;color:var(--red)"><i class="fa-solid fa-warning"></i> خطا در دریافت لیست</div>'; }
+}
+
+function stripAnsi(s){ return String(s||'').replace(/\x1b\[[0-9;]*m/g,''); }
+
+function parseThemeList(out){
+  const set = new Set();
+  const clean = stripAnsi(out);
+  // theme rows look like: "     glass            runnable"  or  " ★  minimal          runnable"
+  const rx = /([A-Za-z0-9][A-Za-z0-9\-_.]*)\s*(?:runnable|missing\s+template)/gi;
+  let m;
+  while((m=rx.exec(clean))) set.add(m[1]);
+  return [...set];
+}
+function extractActive(out){
+  const clean = stripAnsi(out);
+  // active theme is marked with a star in `nucsub list`: " ★  minimal ..."
+  const star = clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);
+  if (star) return star[1];
+  // fallback: "Active: name" or "Active theme: name" summary line
+  const sum = clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);
+  return sum ? sum[1] : '';
+}
+
+async function applyTheme(name){
+  const res = await api('apply?name='+encodeURIComponent(name));
+  if(res.ok){ showToast('قالب «'+name+'» فعال شد'); loadThemes(); }
+  else showToast((res.stderr||res.stdout||'خطا') , true);
+}
+async function removeTheme(name){
+  if(!confirm('قالب «'+name+'» حذف شود؟')) return;
+  const res = await api('remove?name='+encodeURIComponent(name));
+  if(res.ok){ showToast('قالب حذف شد'); loadThemes(); }
+  else showToast('خطا', true);
+}
+async function resetTheme(){
+  if(!confirm('برگشت به صفحه پیش‌فرض پنل؟')) return;
+  const res = await api('reset');
+  if(res.ok){ showToast('به پیش‌فرض برگشت'); loadThemes(); }
+  else showToast('خطا', true);
+}
+async function previewTheme(name){
+  $('preview-title').innerHTML = '<i class="fa-solid fa-eye"></i> پیش‌نمایش — ' + esc(name);
+  $('preview-ov').classList.add('show');
+  try{
+    const res = await api('preview?name='+encodeURIComponent(name));
+    if(res.ok && res.url){ $('preview-frame').src = res.url; }
+  }catch(e){}
+}
+function closePreview(){ $('preview-ov').classList.remove('show'); }
+
+if(token){ api('list').then(res=>{ if(res.ok){ showMain(); loadThemes(); } else showLogin(); }).catch(showLogin); }
+else showLogin();
+</script>
+</body>
+</html>

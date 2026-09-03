@@ -1,0 +1,18 @@
+/* =============================================================================
+   fonts.css — self-hosted IRANSansX (IranSansX / IranSans) for NUC-SUB
+   Loaded locally from /fonts/. No external font CDN calls.
+   ============================================================================= */
+@font-face {
+  font-family: "IranSansX";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/IRANSansX-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IranSansX";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("../fonts/IRANSansX-Bold.woff2") format("woff2");
+}

@@ -1,0 +1,76 @@
+/* =============================================================================
+   icons.css ??? self-hosted Font Awesome 6 (solid) for NUC-SUB
+   Only the glyphs actually used by the web panel and subscription themes are
+   declared. Fonts are loaded from the local ./fa directory ??? no external CDNs.
+   ============================================================================= */
+@font-face {
+  font-family: "Font Awesome 6 Free";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("../fa/fa-solid-900.woff2") format("woff2");
+}
+
+.fa,
+.fa-solid,
+.fas {
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  font-style: normal;
+  font-variant: normal;
+  line-height: 1;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  display: inline-block;
+}
+
+/* --- web panel ------------------------------------------------------------ */
+.fa-lock:before                { content: "\f023"; }
+.fa-sign-in-alt:before         { content: "\f2f6"; }
+.fa-sign-out-alt:before        { content: "\f2f5"; }
+.fa-list:before                { content: "\f03a"; }
+.fa-rotate-right:before        { content: "\f2f9"; }
+.fa-undo:before                { content: "\f0e2"; }
+.fa-spinner:before             { content: "\f110"; }
+.fa-check:before               { content: "\f00c"; }
+.fa-circle-check:before        { content: "\f058"; }
+.fa-eye:before                 { content: "\f06e"; }
+.fa-trash:before               { content: "\f1f8"; }
+.fa-wrench:before              { content: "\f0ad"; }
+.fa-xmark:before               { content: "\f00d"; }
+.fa-warning:before             { content: "\f071"; }
+.fa-info-circle:before         { content: "\f05a"; }
+.fa-palette:before             { content: "\f53f"; }
+.fa-layer-group:before         { content: "\f5fd"; }
+.fa-border-all:before          { content: "\f84c"; }
+.fa-wand-magic-sparkles:before { content: "\e2ca"; }
+.fa-terminal:before            { content: "\f120"; }
+.fa-cube:before                { content: "\f1b2"; }
+.fa-bolt-lightning:before      { content: "\e0b7"; }
+.fa-swatchbook:before          { content: "\f5c3"; }
+
+/* --- subscription themes ------------------------------------------------ */
+.fa-server:before        { content: "\f233"; }
+.fa-shield-halved:before { content: "\f3ed"; }
+.fa-key:before           { content: "\f084"; }
+.fa-wave-square:before   { content: "\f83e"; }
+.fa-link:before          { content: "\f0c1"; }
+.fa-copy:before          { content: "\f0c5"; }
+.fa-clipboard:before     { content: "\f328"; }
+.fa-globe:before         { content: "\f0ac"; }
+.fa-wifi:before          { content: "\f1eb"; }
+.fa-download:before      { content: "\f019"; }
+.fa-user:before          { content: "\f007"; }
+.fa-clock:before         { content: "\f017"; }
+.fa-database:before      { content: "\f1c0"; }
+.fa-arrow-up-from-bracket:before { content: "\e09a"; }
+
+.fa-spin {
+  -webkit-animation: fa-spin 2s linear infinite;
+  animation: fa-spin 2s linear infinite;
+}
+@keyframes fa-spin {
+  0%   { -webkit-transform: rotate(0deg); transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+}
