@@ -780,6 +780,16 @@ cmd_webpanel() {
         start)
             require_root
             if web_panel_status | grep -q "Running"; then warn "Already running."; return; fi
+            # Auto-install missing web panel assets so start always works.
+            if [[ ! -f "$WEB_BASE/server.py" ]]; then
+                info "Web panel files missing — installing from GitHub..."
+                mkdir -p "$WEB_BASE"
+                local _wf
+                for _wf in "webpanel/server.py" "webpanel/index.html" "webpanel/css/icons.css" "webpanel/css/fonts.css" "webpanel/fonts/IRANSansX-Bold.woff2" "webpanel/fonts/IRANSansX-Regular.woff2" "webpanel/fa/fa-solid-900.woff2"; do
+                    mkdir -p "$INSTALL_DIR/$(dirname "$_wf")"
+                    curl -fsSL -m 40 "$REPO_URL/$_wf" -o "$INSTALL_DIR/$_wf" || warn "Failed to fetch $_wf"
+                done
+            fi
             local port="${SUB_PANEL_PORT:-8080}"
             # smart port selection: if the requested/free port is occupied, pick the next free one
             if ! ss -tlnp 2>/dev/null | grep -q ":${port} "; then
@@ -806,7 +816,10 @@ cmd_webpanel() {
                     echo -e "  ${CYAN}Login URL : ${BOLD}http://${SUB_PANEL_HOST:-0.0.0.0}:$port/${NC}"
                     echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
                     echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
-                else warn "Start failed — check $INSTALL_DIR/webpanel.log"; fi
+                else
+                    warn "Start failed — check $INSTALL_DIR/webpanel.log"
+                    tail -n 5 "$INSTALL_DIR/webpanel.log" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r line; do warn "$line"; done
+                fi
             else die "python3 required (install it first: apt install -y python3)."; fi
             ;;
         stop)
