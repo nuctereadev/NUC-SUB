@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  nucsub — NUC-SUB Subscription theme engine for 3x-ui (Sanaei panel)
+#  nucsub — NUC-SUB Subscription theme engine for 3x-ui and Pasarguard
 #  Manage custom subscription page themes directly from the command line.
 #  Interactive menu mode: run `nucsub` or `nucsub menu`
 # =============================================================================
@@ -21,6 +21,38 @@ WEB_SERVICE="xui-sub-panel"
 WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
+PANEL_CONF="$INSTALL_DIR/panel.conf"
+
+# ------------------------------------------------------- panel detection -------
+# nucsub supports two panels: 3x-ui (sqlite subThemeDir) and Pasarguard
+# (Jinja2 subscription/ templates driven by the panel .env). The panel is
+# remembered by the installer in $PANEL_CONF, else auto-detected on disk.
+PANEL=""
+detect_panel() {
+    local conf=""
+    [[ -f "$PANEL_CONF" ]] && conf="$(tr -d '[:space:]' < "$PANEL_CONF")"
+    case "$conf" in
+        3xui|pasarguard) PANEL="$conf"; return 0 ;;
+    esac
+    local p
+    for p in /etc/x-ui/x-ui.db /etc/3x-ui/db/x-ui.db; do
+        [[ -f "$p" ]] && { PANEL="3xui"; return 0; }
+    done
+    if [[ -d /var/lib/pasarguard ]] || [[ -d /opt/pasarguard ]]; then
+        PANEL="pasarguard"; return 0
+    fi
+    PANEL="3xui"
+}
+detect_panel
+
+# Pasarguard paths (only used when PANEL == "pasarguard")
+PG_TEMPLATES_DIR="/var/lib/pasarguard/templates/subscription"
+PG_THEMES_DIR="$INSTALL_DIR/pasarguard-themes/subscription"
+PG_ENV_FILE=""
+for _pgd in /opt/pasarguard /var/lib/pasarguard /root/pasarguard /etc/pasarguard; do
+    [[ -f "$_pgd/.env" ]] && { PG_ENV_FILE="$_pgd/.env"; break; }
+done
+unset _pgd
 
 # ------------------------------------------------------------------ helpers ---
 die() { echo -e "${RED}✗ $*${NC}" >&2; exit 1; }
@@ -111,16 +143,27 @@ db_panel_info() {
     fi
 }
 
-current_theme_dir() { db_get_subthemedir; }
+current_theme_dir() {
+    if [[ "$PANEL" == "pasarguard" ]]; then pg_current_theme; else db_get_subthemedir; fi
+}
 
 list_theme_folders() {
-    [[ -d "$THEMES_DIR" ]] || return 0
-    find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        [[ -d "$PG_THEMES_DIR" ]] || return 0
+        find "$PG_THEMES_DIR" -maxdepth 1 -type f -name '*.html' -exec basename {} .html \; 2>/dev/null | sort
+    else
+        [[ -d "$THEMES_DIR" ]] || return 0
+        find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort
+    fi
 }
 
 theme_is_runnable() {
     local name="$1"
-    [[ -f "$THEMES_DIR/$name/index.html" ]] || [[ -f "$THEMES_DIR/$name/sub.html" ]]
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        [[ -f "$PG_THEMES_DIR/$name.html" ]]
+    else
+        [[ -f "$THEMES_DIR/$name/index.html" ]] || [[ -f "$THEMES_DIR/$name/sub.html" ]]
+    fi
 }
 
 db_get_subid() {
@@ -147,6 +190,64 @@ sub_url_for_sid() {
     else echo "http://$host:$port/sub/$sid"; fi
 }
 
+# ----------------------------------------------------------- Pasarguard panel ---
+# Commands in this section only apply when PANEL == "pasarguard".
+# The active template is stored as SUBSCRIPTION_PAGE_TEMPLATE in the panel .env
+# (e.g. `subscription/gradient.html`); themes are self-contained Jinja2 files in
+# /var/lib/pasarguard/templates/subscription/.
+
+pg_current_theme() {
+    [[ -n "$PG_ENV_FILE" && -f "$PG_ENV_FILE" ]] || { echo ""; return 0; }
+    local v
+    v="$(sed -n 's/^SUBSCRIPTION_PAGE_TEMPLATE=[^#]*subscription\/\([^"]*\)".*/\1/p' "$PG_ENV_FILE" | tail -n 1)"
+    [[ -n "$v" ]] && echo "${v%.html}" || echo ""
+}
+
+pg_restart_panel() {
+    local dir="" c="" d
+    for d in /opt/pasarguard /var/lib/pasarguard /root/pasarguard; do
+        [[ -f "$d/docker-compose.yml" ]] && { dir="$d"; break; }
+    done
+    if [[ -n "$dir" ]] && command -v docker >/dev/null 2>&1; then
+        ( cd "$dir" && docker compose up -d ) >/dev/null 2>&1 || true
+        return 0
+    fi
+    if command -v docker >/dev/null 2>&1; then
+        c="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -i pasarguard | grep -ivE 'pgadmin|pgbouncer|timescaledb|postgres|redis|node|traefik|caddy|nginx' | head -n 1)"
+        if [[ -n "$c" ]]; then docker restart "$c" >/dev/null 2>&1 || true; return 0; fi
+    fi
+    systemctl restart pasarguard 2>/dev/null || true
+}
+
+pg_env_apply() {  # pg_env_apply <theme-name|"" → reset to panel default>
+    local name="${1:-}"
+    [[ -n "$PG_ENV_FILE" && -f "$PG_ENV_FILE" ]] || return 1
+    local tmpl
+    if [[ -n "$name" ]]; then tmpl="SUBSCRIPTION_PAGE_TEMPLATE=\"subscription/$name.html\""
+    else tmpl="SUBSCRIPTION_PAGE_TEMPLATE=\"\""; fi
+    python3 - "$PG_ENV_FILE" "$tmpl" <<'PY'
+import sys
+p, val = sys.argv[1], sys.argv[2]
+lines = open(p, encoding='utf-8').read().splitlines()
+out = []
+done_tpl = done_dir = False
+for l in lines:
+    s = l.strip()
+    if (s.startswith('SUBSCRIPTION_PAGE_TEMPLATE')
+            or (l.lstrip().startswith('#') and l.lstrip('#').strip().startswith('SUBSCRIPTION_PAGE_TEMPLATE'))):
+        out.append(val); done_tpl = True; continue
+    if (s.startswith('CUSTOM_TEMPLATES_DIRECTORY')
+            or (l.lstrip().startswith('#') and l.lstrip('#').strip().startswith('CUSTOM_TEMPLATES_DIRECTORY'))):
+        out.append('CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"'); done_dir = True; continue
+    out.append(l)
+if not done_tpl:
+    out.append(val)
+if not done_dir:
+    out.append('CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"')
+open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+PY
+}
+
 # --------------------------------------------------------------- UI helpers ---
 print_header() {
     clear
@@ -158,7 +259,8 @@ print_header() {
     echo "  ██║     ███████║╚██████╔╝╚██████╔╝    ██║     ██║  ██║██║  ██║███████║"
     echo "  ╚═╝     ╚══════╝ ╚═════╝  ╚═════╝     ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝"
     echo -e "${NC}"
-    echo -e "  ${DIM}NUC-SUB — 3x-ui / Sanaei panel theme engine by NUCTEREA${NC}\n"
+    echo -e "  ${DIM}NUC-SUB — panel subscription theme engine by NUCTEREA${NC}\n"
+    echo -e "  ${DIM}Active panel: $PANEL${NC}\n"
 }
 
 print_status_line() {
@@ -213,7 +315,9 @@ cmd_list() {
         theme_is_runnable "$t" && runnable="${GREEN} runnable${NC}" || runnable="${YELLOW} missing template${NC}"
         printf "${tag}  %-16s %b\n" "$t" "$runnable"
     done < <(list_theme_folders)
-    [[ $n -eq 0 ]] && warn "No themes installed in $THEMES_DIR"
+    local showdir="$THEMES_DIR"
+    [[ "$PANEL" == "pasarguard" ]] && showdir="$PG_THEMES_DIR"
+    [[ $n -eq 0 ]] && warn "No themes installed in $showdir"
     if [[ -n "$current" ]]; then
         echo ""; ok "Active: $current"
     else
@@ -236,6 +340,20 @@ cmd_apply() {
         done
     fi
     valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        [[ -f "$PG_THEMES_DIR/$name.html" ]] || die "Theme '$name' not found."
+        mkdir -p "$PG_TEMPLATES_DIR"
+        cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"
+        chmod -R a+rX "$PG_TEMPLATES_DIR/$name.html"
+        if pg_env_apply "$name"; then
+            pg_restart_panel
+            ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
+        else
+            warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
+            warn "Set SUBSCRIPTION_PAGE_TEMPLATE=subscription/$name.html in the panel .env and restart the panel to activate it."
+        fi
+        return
+    fi
     local src="$THEMES_DIR/$name"
     [[ -d "$src" ]] || die "Theme '$name' not found."
     theme_is_runnable "$name" || die "Theme '$name' has no index.html/sub.html."
@@ -271,6 +389,15 @@ PY
 
 cmd_reset() {
     require_root
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        if pg_env_apply ""; then
+            pg_restart_panel
+            ok "Pasarguard back to the built-in default subscription page."
+        else
+            warn "Panel .env not found — open the panel .env and clear SUBSCRIPTION_PAGE_TEMPLATE manually."
+        fi
+        return
+    fi
     db_set_subthemedir ""
     ok "subThemeDir cleared — panel back to built-in default."
     if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
@@ -293,6 +420,16 @@ cmd_remove() {
         done
     fi
     valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        [[ -f "$PG_THEMES_DIR/$name.html" ]] || die "Theme '$name' not found."
+        rm -f "$PG_TEMPLATES_DIR/$name.html" "$PG_THEMES_DIR/$name.html"
+        if [[ "$(current_theme_dir)" == "$name" ]]; then
+            warn "Theme '$name' was active — panel returns to default."
+            pg_env_apply "" && pg_restart_panel
+        fi
+        ok "Removed theme '$name'."
+        return
+    fi
     [[ -d "$THEMES_DIR/$name" ]] || die "Theme '$name' not found."
     local cur
     cur="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
@@ -309,6 +446,7 @@ cmd_remove() {
 
 cmd_preview() {
     require_root
+    [[ "$PANEL" == "pasarguard" ]] && die "Preview is only supported for 3x-ui panels."
     local name="${1:-}"
     if [[ -z "$name" ]]; then
         local themes=()
@@ -341,7 +479,16 @@ cmd_preview() {
 
 cmd_status() {
     title "System Status"; sep
+    echo -e "  Panel       : $PANEL"
     echo -e "  Install dir : $INSTALL_DIR"
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        echo -e "  Templates   : $PG_TEMPLATES_DIR"
+        echo -e "  Theme source: $PG_THEMES_DIR"
+        echo -e "  Panel .env  : ${PG_ENV_FILE:-not found}"
+        echo ""
+        cmd_list
+        return
+    fi
     echo -e "  Themes dir  : $THEMES_DIR"
     echo -e "  Deploy dir  : $DEPLOY_DIR"
     echo -e "  DB file     : $XUI_DB"
@@ -370,6 +517,7 @@ web_panel_status() {
 
 cmd_webpanel() {
     local action="${1:-status}"
+    [[ "$PANEL" == "pasarguard" ]] && die "Web panel is only available for 3x-ui panels."
     case "$action" in
         start)
             require_root
@@ -544,7 +692,7 @@ cmd_uninstall() {
 
 # ----------------------------------------------------------- Interactive Menu ---
 cmd_menu() {
-    find_sqlite
+    [[ "$PANEL" == "3xui" ]] && find_sqlite
     while true; do
         draw_menu
         read -r choice
@@ -566,7 +714,7 @@ cmd_menu() {
 
 # --------------------------------------------------------------------- main ---
 cmd="${1:-menu}"; shift || true
-find_sqlite
+[[ "$PANEL" == "3xui" ]] && find_sqlite
 
 case "$cmd" in
     list|ls)        cmd_list ;;
@@ -583,10 +731,13 @@ case "$cmd" in
     version|-v|--version|-V)     echo "nucsub 2.0.0 — NUC-SUB" ;;
     help|-h|--help|"")
         cat <<'EOF'
-nucsub — NUC-SUB Subscription theme engine for 3x-ui (Sanaei panel)
+nucsub — NUC-SUB Subscription theme engine for 3x-ui and Pasarguard panels
 
 Usage:
   nucsub [command] [args...]
+
+Panel:
+  Detected automatically (3x-ui via subThemeDir, Pasarguard via SUBSCRIPTION_PAGE_TEMPLATE).
 
 Commands:
   list                List installed themes + current one

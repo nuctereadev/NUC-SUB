@@ -2,41 +2,57 @@
 
 # 🎨 NUC-SUB
 
-**NUC-SUB یک موتور قالب مدرن برای صفحه سابسکریپشن پنل‌های 3x-ui است که توسط NUCTEREA توسعه داده شده است.**
+**NUC-SUB یک موتور قالب مدرن برای صفحه سابسکریپشن پنل‌های VPN است که توسط NUCTEREA توسعه داده شده است.**
 
-قالب‌های زیبا و قابل‌تغییر برای صفحه سابسکریپشن پنل **3x-ui (سنایی)**، همراه با یک
-**پنل وب سبک** و یک **مدیر خط فرمان (CLI)** برای انتخاب، اعمال، پیش‌نمایش و جابه‌جایی بین قالب‌ها.
+پشتیبانی از دو پنل: **3x-ui (سنایی)** و **Pasarguard**. قالب‌های زیبا و قابل‌تغییر
+برای صفحه سابسکریپشن، همراه با یک **پنل وب سبک** (فقط 3x-ui) و یک
+**مدیر خط فرمان (CLI)** برای انتخاب، اعمال، پیش‌نمایش و جابه‌جایی بین قالب‌ها.
 
-> 🔥 کارها را بدون تغییر پورت، بدون ریورس‌پروکسی و بدون زبان وابستهٔ اضافه انجام می‌دهد —
-> با استفاده از قابلیت بومی `subThemeDir` خود پنل 3x-ui.
+> 🔥 نصب‌کننده ابتدا کادر انتخاب پنل را نشان می‌دهد و **فقط فایل‌های همان پنل** را دانلود می‌کند.
 
 ## ✨ امکانات
 
-- 🗂 **۵ قالب آماده**: `minimal`، `gradient`، `matrix`، `glass`، `neon`
-- 🖥 **پنل وب فوق‌سبک** (HTML/JS/CSS خالص + Python3) — بدون Node.js، بدون فریم‌ورک
-- ⌨️ **مدیر خط فرمان `nucsub`** — کار بدون وب‌پنل هم ممکن است
-- 🚀 **نصب یک‌خطی** روی هر سرور دارای 3x-ui
+- 🗂 **۸ قالب آماده** برای هر پنل: `gradient`، `minimal`، `glass`، `matrix`، `neon`، `sunset`، `arctic`، `cyberpunk`
+- 🧩 دو موتور رندر: Go `html/template` برای **3x-ui** (با `subThemeDir`) و **Jinja2** برای **Pasarguard**
+- 🖥 **پنل وب فوق‌سبک** (۳x-ui؛ HTML خالص + Python3) — بدون Node.js
+- ⌨️ **مدیر خط فرمان `nucsub`** — تشخیص خودکار پنل و کار روی هر دو
+- 🚀 **نصب یک‌خطی** که پنل را می‌پرسد
 - 🔄 **سوییچ زنده** بین قالب‌ها (تنها با restart پنل)
 - 🔒 **توکن مدیریت** برای ورود به پنل وب
-- 🧪 **پیش‌نمایش** قالب با دادهٔ واقعی سابسکریپشن (از `?format=info`)
-- 🌐 **فونت و آیکون محلی** — بدون هیچ CDN خارجی
+- 🌐 **فونت و آیکون محلی (۳x-ui)** — بدون هیچ CDN خارجی
 
 ## 🚀 نصب سریع (یک‌خطی)
 
-روی سرور (با دسترسی root و پنل 3x-ui نصب‌شده):
+روی سرور (با دسترسی root):
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
 ```
 
-پس از نصب، **ستاپ (منوی تعاملی) به‌صورت خودکار در ترمینال باز می‌شود** تا بتوانید همان‌جا قالب را انتخاب کنید.
+ابتدا **کادر انتخاب پنل** نمایش داده می‌شود:
 
-وب‌پنل **به‌صورت پیش‌فرض نصب/اجرا نمی‌شود**. اگر بخواهید، از منو گزینهٔ `6) Web panel` را بزنید — بعد از اجرا یک **URL و یک توکن** برای ورود نمایش داده می‌شود.
+```
+Select your VPN panel:
+  1) 3x-ui (Sanaei)   — Go html/template themes (subThemeDir)
+  2) Pasarguard       — self-contained Jinja2 templates
+```
+
+بسته به انتخاب، **فقط فایل‌های همان پنل** دانلود و نصب می‌شود (بدون فایل اضافه).
+سپس ستاپ (منوی تعاملی) به‌صورت خودکار باز می‌شود تا قالب را انتخاب کنید.
 
 > نصب بدون پرسش (برای cloud-init / خودکار):
 > ```bash
-> XUI_SUB_NONINTERACTIVE=1 bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
+> NUC_SUB_PANEL=pasarguard XUI_SUB_NONINTERACTIVE=1 bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
 > ```
+> مقدار مجاز `NUC_SUB_PANEL`: `3xui` یا `pasarguard` (پیش‌فرض: تشخیص خودکار از روی پنل نصب‌شده).
+
+### نصب بر روی Pasarguard
+
+- تم‌ها به `/var/lib/pasarguard/templates/subscription/<name>.html` کپی می‌شوند.
+- `nucsub apply gradient` به‌صورت خودکار خطوط `CUSTOM_TEMPLATES_DIRECTORY` و
+  `SUBSCRIPTION_PAGE_TEMPLATE` را در `.env` پنل تنظیم و افکت می‌کند (و پنل را restart می‌کند).
+- اگر پنل هنوز نصب نباشد، تم‌ها در `/opt/nuc-sub/pasarguard-themes/subscription/` می‌مانند
+  و بعد از نصب پنل با `nucsub apply gradient` فعال می‌شوند.
 
 ## ⌨️ استفاده از خط فرمان (nucsub)
 
@@ -106,22 +122,21 @@ NUC-SUB/
 │   ├── css/              # فونت و آیکون (محلی)
 │   ├── fonts/            # فونت ایران‌سنس (IRANSansX)
 │   └── fa/               # آیکون‌های FontAwesome
-├── themes/
-│   ├── minimal/          # قالب مینیمال
-│   ├── gradient/         # قالب گرادیانت
-│   ├── matrix/           # قالب ماتریکس
-│   ├── glass/            # قالب شیشه‌ای
-│   └── neon/             # قالب نئون
+├── themes/                  # قالب‌های 3x-ui (Go html/template)، ۸ قالب
+│   ├── gradient/
+│   ├── minimal/
+│   ├── ...
+├── pasarguard-themes/
+│   └── subscription/        # قالب‌های Pasarguard (Jinja2 خودمتن)، ۸ فایل
 ├── LICENSE               # MIT
 └── README.md
 ```
 
 ## 🧠 چگونه کار می‌کند؟
 
-1. `nucsub apply <name>` قالب را در `themes/<name>` کپی می‌کند به `/etc/x-ui/sub_templates/<name>/`.
-2. آدرس این پوشه را در جدول `settings` دیتابیس 3x-ui به‌عنوان کلید `subThemeDir` می‌نویسد.
-3. پنل را `restart` می‌کند — از این پس مرورگر با بازکردن لینک ساب، صفحهٔ سفارشی را می‌بیند،
-   در حالی که کلاینت‌های VPN همچنان کانفیگ `base64` دریافت می‌کنند.
+**۳x-ui:** `nucsub apply <name>` قالب را از `themes/<name>` به `/etc/x-ui/sub_templates/<name>/` کپی می‌کند، آدرس آن را با کلید `subThemeDir` در دیتابیس می‌نویسد و پنل را restart می‌کند.
+
+**Pasarguard:** `nucsub apply <name>` قالب Jinja2 را به `/var/lib/pasarguard/templates/subscription/<name>.html` کپی می‌کند، `SUBSCRIPTION_PAGE_TEMPLATE=subscription/<name>.html` را در `.env` پنل تنظیم می‌کند و پنل را restart می‌کند. درکدام‌حالت، کلاینت‌های VPN همچنان کانفیگ `base64` دریافت می‌کنند و فقط مرورگر صفحهٔ سفارشی را می‌بیند.
 
 ## 🔒 امنیت
 
