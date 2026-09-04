@@ -46,12 +46,14 @@ detect_panel() {
 detect_panel
 
 # Pasarguard paths (only used when PANEL == "pasarguard")
-PG_TEMPLATES_DIR="/var/lib/pasarguard/templates/subscription"
+PG_TEMPLATES_DIR="${PASARGUARD_TEMPLATES_DIR:-/var/lib/pasarguard/templates/subscription}"
 PG_THEMES_DIR="$INSTALL_DIR/pasarguard-themes/subscription"
-PG_ENV_FILE=""
-for _pgd in /opt/pasarguard /var/lib/pasarguard /root/pasarguard /etc/pasarguard; do
-    [[ -f "$_pgd/.env" ]] && { PG_ENV_FILE="$_pgd/.env"; break; }
-done
+PG_ENV_FILE="${PASARGUARD_ENV:-}"
+if [[ -z "$PG_ENV_FILE" ]]; then
+    for _pgd in /opt/pasarguard /var/lib/pasarguard /root/pasarguard /etc/pasarguard /data/pasarguard; do
+        [[ -f "$_pgd/.env" ]] && { PG_ENV_FILE="$_pgd/.env"; break; }
+    done
+fi
 unset _pgd
 
 # ------------------------------------------------------------------ helpers ---
@@ -203,20 +205,44 @@ pg_current_theme() {
     [[ -n "$v" ]] && echo "${v%.html}" || echo ""
 }
 
+pg_app_container() {
+    local names line c
+    names="$(docker ps --format '{{.Names}}\t{{.Image}}' 2>/dev/null)"
+    [[ -z "$names" ]] && { echo ""; return 0; }
+    # prefer a pasarguard container that is NOT a supporting service
+    c="$(printf '%s\n' "$names" | grep -i 'pasarguard' \
+        | grep -ivE 'pgadmin|pgbouncer|timescaledb|postgres|redis|node|traefik|caddy|nginx|worker' \
+        | head -n 1 | cut -f1)"
+    [[ -n "$c" ]] && { echo "$c"; return 0; }
+    # fallback: any container tagged/related to pasarguard
+    c="$(printf '%s\n' "$names" | grep -iE 'pasarguard' | head -n 1 | cut -f1)"
+    echo "$c"
+}
+
 pg_restart_panel() {
-    local dir="" c="" d
-    for d in /opt/pasarguard /var/lib/pasarguard /root/pasarguard; do
-        [[ -f "$d/docker-compose.yml" ]] && { dir="$d"; break; }
+    # Applies .env changes reliably: try compose first (recreates the app
+    # container with the new env), then force a container restart so every
+    # deployment style picks the change up. Returns 0 only when something ran.
+    local dir="" c="" restarted=""
+    for _pgd in /opt/pasarguard /var/lib/pasarguard /root/pasarguard; do
+        [[ -f "$_pgd/docker-compose.yml" || -f "$_pgd/docker-compose.yaml" ]] && { dir="$_pgd"; break; }
     done
     if [[ -n "$dir" ]] && command -v docker >/dev/null 2>&1; then
-        ( cd "$dir" && docker compose up -d ) >/dev/null 2>&1 || true
-        return 0
+        ( cd "$dir" && docker compose up -d ) >/dev/null 2>&1 \
+            || ( cd "$dir" && docker-compose up -d ) >/dev/null 2>&1 \
+            || true
     fi
     if command -v docker >/dev/null 2>&1; then
-        c="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -i pasarguard | grep -ivE 'pgadmin|pgbouncer|timescaledb|postgres|redis|node|traefik|caddy|nginx' | head -n 1)"
-        if [[ -n "$c" ]]; then docker restart "$c" >/dev/null 2>&1 || true; return 0; fi
+        c="$(pg_app_container)"
+        if [[ -n "$c" ]]; then
+            docker restart "$c" >/dev/null 2>&1 && restarted=1 || true
+        fi
     fi
-    systemctl restart pasarguard 2>/dev/null || true
+    if [[ -z "$restarted" ]]; then
+        systemctl restart pasarguard >/dev/null 2>&1 && restarted=1 || true
+    fi
+    unset _pgd
+    [[ -n "$restarted" ]]
 }
 
 pg_env_apply() {  # pg_env_apply <theme-name|"" → reset to panel default>
@@ -346,8 +372,12 @@ cmd_apply() {
         cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"
         chmod -R a+rX "$PG_TEMPLATES_DIR/$name.html"
         if pg_env_apply "$name"; then
-            pg_restart_panel
-            ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
+            if pg_restart_panel; then
+                ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
+            else
+                warn "Theme deployed to $PG_TEMPLATES_DIR/$name.html and set in .env,"
+                warn "but the panel could not be restarted — restart Pasarguard manually to apply it."
+            fi
         else
             warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
             warn "Set SUBSCRIPTION_PAGE_TEMPLATE=subscription/$name.html in the panel .env and restart the panel to activate it."
@@ -391,7 +421,7 @@ cmd_reset() {
     require_root
     if [[ "$PANEL" == "pasarguard" ]]; then
         if pg_env_apply ""; then
-            pg_restart_panel
+            pg_restart_panel || true
             ok "Pasarguard back to the built-in default subscription page."
         else
             warn "Panel .env not found — open the panel .env and clear SUBSCRIPTION_PAGE_TEMPLATE manually."
@@ -425,7 +455,8 @@ cmd_remove() {
         rm -f "$PG_TEMPLATES_DIR/$name.html" "$PG_THEMES_DIR/$name.html"
         if [[ "$(current_theme_dir)" == "$name" ]]; then
             warn "Theme '$name' was active — panel returns to default."
-            pg_env_apply "" && pg_restart_panel
+            pg_env_apply "" || true
+            pg_restart_panel || true
         fi
         ok "Removed theme '$name'."
         return
@@ -503,9 +534,17 @@ cmd_status() {
 
 # ----------------------------------------------------------- Web panel mgmt ---
 web_panel_status() {
-    if systemctl is-active --quiet "$WEB_SERVICE" 2>/dev/null; then
-        local port=$(cat "$WEB_PORT_FILE" 2>/dev/null || echo 8080)
-        local token=$(cat "$WEB_TOKEN_FILE" 2>/dev/null || echo "unknown")
+    local up="" port="" token=""
+    if [[ -f "$INSTALL_DIR/.webpanel.pid" ]] && kill -0 "$(cat "$INSTALL_DIR/.webpanel.pid")" 2>/dev/null; then
+        up=1
+    elif systemctl is-active --quiet "$WEB_SERVICE" 2>/dev/null; then
+        up=1
+    elif pgrep -f "server\.py" >/dev/null 2>&1; then
+        up=1
+    fi
+    if [[ -n "$up" ]]; then
+        port="$(cat "$WEB_PORT_FILE" 2>/dev/null || echo 8080)"
+        token="$(cat "$WEB_TOKEN_FILE" 2>/dev/null || echo "unknown")"
         echo -e "  ${GREEN}● Running${NC} on port $port"
         echo -e "  ${DIM}  Token: $token${NC}"
         return 0
@@ -517,7 +556,6 @@ web_panel_status() {
 
 cmd_webpanel() {
     local action="${1:-status}"
-    [[ "$PANEL" == "pasarguard" ]] && die "Web panel is only available for 3x-ui panels."
     case "$action" in
         start)
             require_root
@@ -535,8 +573,10 @@ cmd_webpanel() {
             else token="$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)"; echo "$token" > "$WEB_TOKEN_FILE"; chmod 600 "$WEB_TOKEN_FILE"; fi
             echo "$port" > "$WEB_PORT_FILE"
             if command -v python3 >/dev/null 2>&1; then
+                local dbpath=""
+                [[ "$PANEL" == "3xui" ]] && dbpath="$XUI_DB"
                 nohup python3 "$WEB_BASE/server.py" --port "$port" --token "$token" --base "$WEB_BASE" \
-                     --cli "$INSTALL_DIR/cli/nucsub" --themes "$THEMES_DIR" --db "$XUI_DB" \
+                     --cli "$INSTALL_DIR/cli/nucsub" --themes "$THEMES_DIR" --db "$dbpath" \
                      >"$INSTALL_DIR/webpanel.log" 2>&1 &
                 echo $! > "$INSTALL_DIR/.webpanel.pid"
                 sleep 1
@@ -547,7 +587,7 @@ cmd_webpanel() {
                     echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
                     echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
                 else warn "Start failed — check $INSTALL_DIR/webpanel.log"; fi
-            else die "python3 required."; fi
+            else die "python3 required (install it first: apt install -y python3)."; fi
             ;;
         stop)
             require_root

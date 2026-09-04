@@ -193,11 +193,13 @@ if [[ "$PANEL" == "3xui" ]]; then
         done
     fi
 else  # pasarguard
-    echo -e "${BLUE}→ 2/4 Downloading Pasarguard Jinja2 templates...${NC}"
-    mkdir -p "$PG_SRC_DIR"
+    echo -e "${BLUE}→ 2/4 Downloading Pasarguard Jinja2 templates + web panel assets...${NC}"
+    mkdir -p "$PG_SRC_DIR" "$WEB_DIR"
     if is_local; then
         cp -f "$LOCAL_SRC"/pasarguard-themes/subscription/*.html "$PG_SRC_DIR/"
+        copy_from_local "$LOCAL_SRC" "$INSTALL_DIR" "${SRC_WEB[@]}"
     else
+        for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
         for name in "${PG_THEMES[@]}"; do
             curl -fsSL "$REPO_URL/pasarguard-themes/subscription/$name.html" -o "$PG_SRC_DIR/$name.html" \
                 || { echo -e "${RED}✗ Failed to fetch theme $name${NC}"; }
@@ -256,12 +258,9 @@ fi
 echo ""
 echo -e "${GREEN}NUC-SUB installed successfully.${NC}"
 echo ""
-if [[ "$PANEL" == "3xui" ]]; then
-    echo -e "${CYAN}The web panel is NOT installed by default.${NC}"
-    echo -e "  You can choose themes from the terminal now, and enable the"
-    echo -e "  web panel later from the menu (${BOLD}option ${GREEN}6${NC}${CYAN}) — it will"
-    echo -e "  print a URL and an access token for you to log in.${NC}"
-fi
+echo -e "${CYAN}The web panel is NOT installed by default (available on both panels).${NC}"
+echo -e "  Choose themes from the terminal now, or enable the web panel later from"
+echo -e "  the menu (${BOLD}option ${GREEN}6${NC}${CYAN}) — it will print a URL and an access token.${NC}"
 echo ""
 echo -e "${CYAN}Quick commands:${NC}"
 echo -e "   nucsub apply gradient ${DIM}# activate a theme${NC}"
