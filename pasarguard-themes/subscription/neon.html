@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ user.username }} - سابسکریپشن</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--neon-cyan:#00f0ff;--neon-pink:#ff00e5;--neon-yellow:#ffe600;--neon-green:#00ff88;--neon-red:#ff003c;--bg:#0a0012;--card:rgba(255,255,255,.03);--text2:rgba(255,255,255,.55)}
+body{
+  font-family:'Vazirmatn','IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;background:var(--bg);color:#fff;padding:20px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.grid-bg{position:fixed;top:0;left:0;width:100%;height:100%;background-image:linear-gradient(rgba(0,240,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,240,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.glow{position:fixed;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(0,240,255,.08),transparent 70%);top:8%;left:8%;pointer-events:none;z-index:0;animation:drift 15s infinite alternate}
+.glow-2{width:260px;height:260px;background:radial-gradient(circle,rgba(255,0,229,.08),transparent 70%);bottom:8%;right:8%;top:auto;left:auto;animation:drift 18s infinite alternate-reverse}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(40px,-30px)}}
+.container{width:100%;max-width:460px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:22px}
+.logo-core{font-size:28px;z-index:1;color:var(--neon-cyan);text-shadow:0 0 18px rgba(0,240,255,.6)}
+.title{font-size:27px;font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,var(--neon-cyan),var(--neon-pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(0,240,255,.3));word-break:break-word}
+.subtitle{font-size:11px;color:var(--neon-cyan);letter-spacing:2px;margin-top:6px;opacity:.6}
+.neon-card{background:var(--card);border:1px solid rgba(0,240,255,.15);border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.neon-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent)}
+.neon-card.pink::before{background:linear-gradient(90deg,transparent,var(--neon-pink),transparent)}
+.neon-card.pink{border-color:rgba(255,0,229,.15)}
+.card-title{font-size:10px;color:var(--neon-cyan);letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center}
+.stat-label{font-size:11px;color:var(--text2);margin:8px 0 6px}
+.stat-value{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat-value.green{color:var(--neon-green);text-shadow:0 0 14px rgba(0,255,136,.4)}
+.stat-value.cyan{color:var(--neon-cyan);text-shadow:0 0 14px rgba(0,240,255,.4)}
+.stat-value.pink{color:var(--neon-pink);text-shadow:0 0 14px rgba(255,0,229,.4)}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-size:11px;font-weight:700;border-radius:5px;letter-spacing:1px;border:1px solid var(--neon-green);color:var(--neon-green);text-shadow:0 0 10px rgba(0,255,136,.5);box-shadow:0 0 12px rgba(0,255,136,.15)}
+.status-pill.off{border-color:var(--neon-red);color:var(--neon-red);text-shadow:0 0 10px rgba(255,0,60,.5)}
+.status-pill.warn{border-color:var(--neon-yellow);color:var(--neon-yellow);text-shadow:0 0 10px rgba(255,230,0,.5)}
+.status-pill.hold{border-color:var(--neon-pink);color:var(--neon-pink);text-shadow:0 0 10px rgba(255,0,229,.5)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(0,240,255,.07)}
+.row:last-child{border-bottom:none}
+.row-label{font-size:12px;color:var(--text2)}
+.row-value{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;text-align:left;word-break:break-word;color:#fff;text-shadow:0 0 8px rgba(0,240,255,.25)}
+.row-value.rtl{text-align:right}
+.progress-wrap{margin-top:12px;padding-top:12px;border-top:1px solid rgba(0,240,255,.07)}
+.progress-bar{height:8px;background:rgba(255,255,255,.05);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--neon-cyan),var(--neon-pink));box-shadow:0 0 14px rgba(0,240,255,.5);width:0%}
+.progress-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--text2);letter-spacing:1px}
+.links-title{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--neon-cyan);letter-spacing:2px;margin-bottom:12px}
+.link-card{background:rgba(255,255,255,.02);border:1px solid rgba(0,240,255,.12);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s;direction:ltr;text-align:right;position:relative}
+.link-card:hover{border-color:var(--neon-cyan);box-shadow:0 0 16px rgba(0,240,255,.12);transform:translateY(-1px)}
+.link-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-cyan),transparent);opacity:0;transition:opacity .3s}
+.link-card:hover::before{opacity:.5}
+.link-badge{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.03);border:1px solid rgba(0,240,255,.15)}
+.link-badge svg{width:16px;height:16px;fill:var(--neon-cyan)}
+.link-badge.vless svg{fill:var(--neon-cyan)}.link-badge.vmess svg{fill:var(--neon-green)}.link-badge.trojan svg{fill:var(--neon-red)}.link-badge.ss svg{fill:var(--neon-yellow)}.link-badge.hysteria svg{fill:var(--neon-pink)}.link-badge.wireguard svg{fill:#2dd4bf}
+.link-text{flex:1;min-width:0}
+.link-name{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+.link-type{font-size:10px;color:var(--neon-cyan);direction:ltr;text-align:right;letter-spacing:1px}
+.link-copy-btn{padding:7px 14px;border-radius:8px;background:transparent;border:1px solid var(--neon-cyan);color:var(--neon-cyan);font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:6px;flex-shrink:0;text-shadow:0 0 8px rgba(0,240,255,.4)}
+.link-copy-btn:hover{background:var(--neon-cyan);color:#000;box-shadow:0 0 16px rgba(0,240,255,.5);text-shadow:none}
+.link-copy-btn svg{width:12px;height:12px;fill:currentColor}
+.announce{border:1px solid rgba(255,0,229,.18);background:rgba(255,0,229,.04);border-radius:14px;padding:14px 16px;font-size:12px;line-height:1.7;margin-bottom:14px;color:var(--text2)}
+.note{border-inline-start:3px solid var(--neon-pink);border:1px solid rgba(255,0,229,.15);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.7;margin-bottom:14px;color:var(--text2)}
+.footer{text-align:center;margin-top:18px;font-size:10px;color:var(--text2);letter-spacing:1px}
+.footer a{color:var(--neon-cyan);text-decoration:none;text-shadow:0 0 8px rgba(0,240,255,.4)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--neon-cyan),var(--neon-pink));color:#000;padding:10px 24px;border-radius:24px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100;box-shadow:0 0 20px rgba(0,240,255,.4)}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="glow"></div><div class="glow glow-2"></div>
+<div class="container">
+  <div class="header">
+    <div class="logo-core" style="margin-bottom:6px">⚡</div>
+    <div class="title">{{ user.username }}</div>
+    <div class="subtitle">SUBSCRIPTION ACCESS</div>
+  </div>
+
+  <div class="neon-card">
+    <div class="card-title">SYSTEM STATUS</div>
+    <div class="stats">
+      <div class="stat"><div class="status-pill {% if user.status.value == 'active' %}on{% elif user.status.value == 'limited' %}off{% elif user.status.value == 'expired' %}warn{% elif user.status.value == 'on_hold' %}hold{% else %}off{% endif %}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</div><div class="stat-label">وضعیت</div></div>
+      <div class="stat"><div class="stat-value pink">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div><div class="stat-label">حجم کل</div></div>
+      <div class="stat"><div class="stat-value cyan">{{ user.used_traffic | bytesformat }}</div><div class="stat-label">مصرف‌شده</div></div>
+      <div class="stat"><div class="stat-value green">{% if user.data_limit %}{% set r = user.data_limit - user.used_traffic %}{% if r < 0 %}0 B{% else %}{{ r | bytesformat }}{% endif %}{% else %}∞{% endif %}</div><div class="stat-label">باقیمانده</div></div>
+    </div>
+  </div>
+
+  <div class="neon-card pink">
+    <div class="card-title">ACCOUNT</div>
+    <div class="row"><span class="row-label">تاریخ انقضا</span><span class="row-value rtl">{% if user.expire %}{{ user.expire | datetime }}{% else %}∞ نامحدود{% endif %}</span></div>
+    {% if user.expire %}<div class="row"><span class="row-label">انقضا تا</span><span class="row-value" id="daysLeft">-</span></div>{% endif %}
+    <div class="row"><span class="row-label">نام کاربری</span><span class="row-value" style="direction:ltr">{{ user.username }}</span></div>
+    {% if user.hwid_limit is not none %}<div class="row"><span class="row-label">محدودیت دستگاه (HWID)</span><span class="row-value">{% if user.hwid_limit == 0 or not user.hwid_limit %}نامحدود{% else %}{{ user.hwid_limit }}{% endif %}</span></div>{% endif %}
+  </div>
+
+  {% if user.data_limit %}
+  <div class="neon-card">
+    <div class="card-title">TRAFFIC LOAD</div>
+    <div class="progress-bar"><div class="progress-fill" id="usageFill"></div></div>
+    <div class="progress-labels"><span>مصرف از سهمیه</span><span id="usagePct">0٪</span></div>
+  </div>
+  {% endif %}
+
+  {% if announce %}<div class="announce">{{ announce | replace('\n', '<br>') }}</div>{% endif %}
+  {% if user.note %}<div class="note"><strong>یادداشت:</strong> {{ user.note }}</div>{% endif %}
+
+  <div class="neon-card">
+    <div class="links-title">CONFIGS ({{ links | length }})</div>
+    {% if links %}
+    {% for link in links %}
+    <div class="link-card">
+      <div class="link-badge other"><svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 0-10z"/></svg></div>
+      <div class="link-text"><div class="link-name">{{ link }}</div><div class="link-type"></div></div>
+      <button class="link-copy-btn" data-link="{{ link }}"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> کپی</button>
+    </div>
+    {% endfor %}
+    {% else %}<div class="link-card" style="cursor:default"><div class="link-text"><div class="link-name" style="color:var(--text2)">کانفیگی ثبت نشده است</div></div></div>{% endif %}
+  </div>
+
+  <div class="footer">NUCTEREA · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">github.com/nuctereadev</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(l){ const m=l.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function nameOf(l,i){ const f=l.split('#'); if(f.length>1&&f[1]){ try{return decodeURIComponent(f[1]);}catch(e){return f[1];} } return 'کانفیگ '+(i+1); }
+function copy(t){ const d=()=>showToast('لینک کپی شد!'); if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(d);} else { var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); d(); } }
+(function init(){
+  var expireMs = {% if user.expire %}{{ user.expire | datetime | tojson }};{% else %}null;{% endif %}
+  var dl=document.getElementById('daysLeft');
+  if(expireMs && dl){ var d=new Date(expireMs.replace(' ','T')); var days=Math.ceil((d.getTime()-Date.now())/86400000); if(!isNaN(days)){ dl.textContent=(days>=0?days:0)+' روز'; } }
+  var total=0, used=0;
+  {% if user.data_limit %}total={{ user.data_limit }};{% endif %}
+  {% if user.used_traffic %}used={{ user.used_traffic }};{% endif %}
+  var fill=document.getElementById('usageFill'); var pct=document.getElementById('usagePct');
+  if(total>0 && fill && pct){ var per=Math.min(100,used/total*100); fill.style.width=per.toFixed(2)+'%'; pct.textContent=per.toFixed(1)+'٪'; }
+  var cards=document.querySelectorAll('.link-card');
+  cards.forEach(function(card){ var btn=card.querySelector('.link-copy-btn'); if(!btn) return; var badge=card.querySelector('.link-badge'); var nameEl=card.querySelector('.link-name'); var typeEl=card.querySelector('.link-type'); var link=rawLink(btn.getAttribute('data-link')); var proto=protocolOf(link); var cls=proto && ['vless','vmess','trojan','ss','hysteria','wireguard'].indexOf(proto)>=0 ? proto : 'other'; if(badge) badge.className='link-badge '+cls; if(nameEl) nameEl.textContent=nameOf(link,Array.from(cards).indexOf(card)); if(typeEl) typeEl.textContent=proto.toUpperCase(); card.addEventListener('click',function(e){ if(e.target===btn||btn.contains(e.target)) return; copy(link); }); btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); }); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ user.username }} - سابسکریپشن</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#05010c;--bg-soft:#0d0620;--card:#140a2b;--card-2:#1d0f3a;--neon-pink:#ff2e9a;--neon-cyan:#00e5ff;--neon-green:#00ff88;--text:#f5f0ff;--text2:#b9a8d9;--neon-yellow:#ffe600;--neon-red:#ff003c}
+body{
+  font-family:'Vazirmatn','IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  background:radial-gradient(900px 500px at 85% -10%,rgba(255,46,154,.18),transparent 55%),radial-gradient(900px 500px at 10% 110%,rgba(0,229,255,.12),transparent 55%),var(--bg);
+  color:var(--text);min-height:100vh;padding:26px 16px 40px;line-height:1.55;position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.cityline{position:fixed;bottom:0;left:0;right:0;height:140px;pointer-events:none;z-index:0;background:linear-gradient(180deg,transparent,rgba(255,46,154,.08));clip-path:polygon(0 100%,0 70%,10% 70%,10% 40%,20% 40%,20% 65%,30% 65%,30% 30%,40% 30%,40% 60%,50% 60%,50% 20%,60% 20%,60% 55%,70% 55%,70% 35%,80% 35%,80% 60%,90% 60%,90% 25%,100% 25%,100% 100%)}
+.container{width:100%;max-width:460px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:22px;position:relative}
+.scan{position:absolute;top:-34px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:4px;color:var(--neon-cyan);opacity:.5;font-family:'Courier New',monospace;white-space:nowrap}
+.avatar{width:84px;height:84px;border-radius:22px;background:linear-gradient(135deg,#ff2e9a,#6d28d9);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 10px 36px rgba(255,46,154,.35);border:1px solid rgba(0,229,255,.2)}
+.avatar svg{width:32px;height:32px;fill:#fff}
+.title{font-size:23px;font-weight:700;color:var(--text);text-shadow:0 0 14px rgba(255,46,154,.4);letter-spacing:.5px;word-break:break-word}
+.subtitle{font-size:11px;color:var(--neon-cyan);margin-top:6px;letter-spacing:2px;opacity:.7}
+.card{background:linear-gradient(180deg,var(--card),var(--bg-soft));border:1px solid rgba(255,46,154,.18);border-radius:16px;padding:18px 20px;margin-bottom:12px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:12px;right:12px;height:1px;background:linear-gradient(90deg,transparent,var(--neon-pink),transparent)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{text-align:center}
+.stat-label{font-size:11px;color:var(--text2);margin:8px 0 6px}
+.stat-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-value.green{color:var(--neon-green);text-shadow:0 0 10px rgba(0,255,136,.4)}
+.stat-value.cyan{color:var(--neon-cyan);text-shadow:0 0 10px rgba(0,229,255,.4)}
+.stat-value.pink{color:var(--neon-pink);text-shadow:0 0 10px rgba(255,46,154,.4)}
+.status-pill{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;font-size:11px;font-weight:700;border-radius:5px;border:1px solid var(--neon-green);color:var(--neon-green);text-shadow:0 0 8px rgba(0,255,136,.4);background:rgba(0,255,136,.05)}
+.status-pill.off{border-color:var(--neon-red);color:var(--neon-red);text-shadow:0 0 8px rgba(255,0,60,.4)}
+.status-pill.warn{border-color:var(--neon-yellow);color:var(--neon-yellow);text-shadow:0 0 8px rgba(255,230,0,.4)}
+.status-pill.hold{border-color:var(--neon-pink);color:var(--neon-pink);text-shadow:0 0 8px rgba(255,46,154,.4)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,46,154,.1)}
+.row:last-child{border-bottom:none}
+.row-label{font-size:12px;color:var(--text2)}
+.row-value{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;text-align:left;word-break:break-word;color:var(--text);text-shadow:0 0 8px rgba(0,229,255,.2)}
+.row-value.rtl{text-align:right}
+.progress-wrap{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,46,154,.1)}
+.progress-bar{height:7px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#ff2e9a,#00e5ff);box-shadow:0 0 12px rgba(255,46,154,.4);width:0%}
+.progress-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:10px;color:var(--text2)}
+.links-title{font-size:10px;color:var(--neon-cyan);letter-spacing:2px;margin-bottom:12px}
+.link-card{background:var(--card-2);border:1px solid rgba(255,46,154,.15);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s;direction:ltr;text-align:right;position:relative}
+.link-card:hover{border-color:var(--neon-pink);box-shadow:0 0 16px rgba(255,46,154,.12);transform:translateY(-1px)}
+.link-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon-pink),transparent);opacity:.3}
+.link-badge{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.12)}
+.link-badge svg{width:16px;height:16px;fill:var(--neon-cyan)}
+.link-badge.vless svg{fill:var(--neon-cyan)}.link-badge.vmess svg{fill:var(--neon-green)}.link-badge.trojan svg{fill:var(--neon-red)}.link-badge.ss svg{fill:var(--neon-yellow)}.link-badge.hysteria svg{fill:var(--neon-pink)}.link-badge.wireguard svg{fill:#2dd4bf}
+.link-text{flex:1;min-width:0}
+.link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+.link-type{font-size:10px;color:var(--neon-cyan);direction:ltr;text-align:right;letter-spacing:1px}
+.link-copy-btn{padding:7px 12px;border-radius:7px;background:linear-gradient(135deg,#ff2e9a,#6d28d9);color:#fff;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.link-copy-btn:hover{filter:brightness(1.15);box-shadow:0 4px 16px rgba(255,46,154,.35)}
+.link-copy-btn svg{width:12px;height:12px;fill:#fff}
+.announce{border:1px solid rgba(0,229,255,.15);background:rgba(0,229,255,.04);border-radius:12px;padding:14px 16px;font-size:12px;line-height:1.7;margin-bottom:12px;color:var(--text2)}
+.note{border-inline-start:3px solid var(--neon-pink);background:var(--card);border:1px solid rgba(255,46,154,.15);border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.7;margin-bottom:12px;color:var(--text2)}
+.footer{text-align:center;margin-top:18px;font-size:10px;color:var(--text2);letter-spacing:1px}
+.footer a{color:var(--neon-cyan);text-decoration:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff2e9a,#6d28d9);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100;box-shadow:0 8px 24px rgba(255,46,154,.35)}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="cityline"></div>
+<div class="container">
+  <div class="header">
+    <div class="scan">// NEON DISTRICT //</div>
+    <div class="avatar"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+    <div class="title">{{ user.username }}</div>
+    <div class="subtitle">SUBSCRIPTION ACCESS</div>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><div class="status-pill {% if user.status.value == 'active' %}on{% elif user.status.value == 'limited' %}off{% elif user.status.value == 'expired' %}warn{% elif user.status.value == 'on_hold' %}hold{% else %}off{% endif %}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</div><div class="stat-label" style="margin-top:8px">وضعیت</div></div>
+      <div class="stat"><div class="stat-value pink">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div><div class="stat-label">حجم کل</div></div>
+      <div class="stat"><div class="stat-value cyan">{{ user.used_traffic | bytesformat }}</div><div class="stat-label">مصرف‌شده</div></div>
+      <div class="stat"><div class="stat-value green">{% if user.data_limit %}{% set r = user.data_limit - user.used_traffic %}{% if r < 0 %}0 B{% else %}{{ r | bytesformat }}{% endif %}{% else %}∞{% endif %}</div><div class="stat-label">باقیمانده</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row"><span class="row-label">تاریخ انقضا</span><span class="row-value rtl">{% if user.expire %}{{ user.expire | datetime }}{% else %}∞ نامحدود{% endif %}</span></div>
+    {% if user.expire %}<div class="row"><span class="row-label">انقضا تا</span><span class="row-value" id="daysLeft">-</span></div>{% endif %}
+    <div class="row"><span class="row-label">نام کاربری</span><span class="row-value" style="direction:ltr">{{ user.username }}</span></div>
+    {% if user.hwid_limit is not none %}<div class="row"><span class="row-label">محدودیت دستگاه (HWID)</span><span class="row-value">{% if user.hwid_limit == 0 or not user.hwid_limit %}نامحدود{% else %}{{ user.hwid_limit }}{% endif %}</span></div>{% endif %}
+  </div>
+
+  {% if user.data_limit %}
+  <div class="card">
+    <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" id="usageFill"></div></div><div class="progress-labels"><span>مصرف از سهمیه</span><span id="usagePct">0٪</span></div></div>
+  </div>
+  {% endif %}
+
+  {% if announce %}<div class="announce">{{ announce | replace('\n', '<br>') }}</div>{% endif %}
+  {% if user.note %}<div class="note"><strong>یادداشت:</strong> {{ user.note }}</div>{% endif %}
+
+  <div class="card">
+    <div class="links-title">CONFIGS ({{ links | length }})</div>
+    {% if links %}
+    {% for link in links %}
+    <div class="link-card">
+      <div class="link-badge other"><svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 0-10z"/></svg></div>
+      <div class="link-text"><div class="link-name">{{ link }}</div><div class="link-type"></div></div>
+      <button class="link-copy-btn" data-link="{{ link }}"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> کپی</button>
+    </div>
+    {% endfor %}
+    {% else %}<div class="link-card" style="cursor:default"><div class="link-text"><div class="link-name" style="color:var(--text2)">کانفیگی ثبت نشده است</div></div></div>{% endif %}
+  </div>
+
+  <div class="footer">NUCTEREA · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">github.com/nuctereadev</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(l){ const m=l.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function nameOf(l,i){ const f=l.split('#'); if(f.length>1&&f[1]){ try{return decodeURIComponent(f[1]);}catch(e){return f[1];} } return 'کانفیگ '+(i+1); }
+function copy(t){ const d=()=>showToast('لینک کپی شد!'); if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(d);} else { var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); d(); } }
+(function init(){
+  var expireMs = {% if user.expire %}{{ user.expire | datetime | tojson }};{% else %}null;{% endif %}
+  var dl=document.getElementById('daysLeft');
+  if(expireMs && dl){ var d=new Date(expireMs.replace(' ','T')); var days=Math.ceil((d.getTime()-Date.now())/86400000); if(!isNaN(days)){ dl.textContent=(days>=0?days:0)+' روز'; } }
+  var total=0, used=0;
+  {% if user.data_limit %}total={{ user.data_limit }};{% endif %}
+  {% if user.used_traffic %}used={{ user.used_traffic }};{% endif %}
+  var fill=document.getElementById('usageFill'); var pct=document.getElementById('usagePct');
+  if(total>0 && fill && pct){ var per=Math.min(100,used/total*100); fill.style.width=per.toFixed(2)+'%'; pct.textContent=per.toFixed(1)+'٪'; }
+  var cards=document.querySelectorAll('.link-card');
+  cards.forEach(function(card){ var btn=card.querySelector('.link-copy-btn'); if(!btn) return; var badge=card.querySelector('.link-badge'); var nameEl=card.querySelector('.link-name'); var typeEl=card.querySelector('.link-type'); var link=rawLink(btn.getAttribute('data-link')); var proto=protocolOf(link); var cls=proto && ['vless','vmess','trojan','ss','hysteria','wireguard'].indexOf(proto)>=0 ? proto : 'other'; if(badge) badge.className='link-badge '+cls; if(nameEl) nameEl.textContent=nameOf(link,Array.from(cards).indexOf(card)); if(typeEl) typeEl.textContent=proto.toUpperCase(); card.addEventListener('click',function(e){ if(e.target===btn||btn.contains(e.target)) return; copy(link); }); btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); }); });
+})();
+</script>
+</body>
+</html>

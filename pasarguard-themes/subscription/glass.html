@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ user.username }} - سابسکریپشن</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--glass-bg:rgba(255,255,255,.06);--glass-border:rgba(255,255,255,.1);--glass-blur:20px;--text:#fff;--text2:rgba(255,255,255,.55);--accent:#818cf8}
+body{
+  font-family:'Vazirmatn','IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
+  min-height:100vh;background:#0c0c1d;color:var(--text);padding:20px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.orb{position:fixed;border-radius:50%;filter:blur(60px);pointer-events:none;z-index:0;animation:drift 20s infinite alternate}
+.orb-1{width:400px;height:400px;background:rgba(99,102,241,.25);top:-10%;left:-5%}
+.orb-2{width:300px;height:300px;background:rgba(236,72,153,.18);bottom:-5%;right:-5%;animation-delay:-7s}
+.orb-3{width:250px;height:250px;background:rgba(34,211,238,.14);top:50%;left:60%;animation-delay:-14s}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(30px,-30px)}}
+.container{width:100%;max-width:460px;position:relative;z-index:1}
+.header{text-align:center;margin-bottom:22px}
+.avatar{width:80px;height:80px;border-radius:26px;background:linear-gradient(135deg,rgba(99,102,241,.35),rgba(236,72,153,.35));display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:#fff;border:1px solid rgba(255,255,255,.12)}
+.avatar svg{width:30px;height:30px;fill:#fff}
+.title{font-size:24px;font-weight:700;word-break:break-word}
+.subtitle{font-size:12px;color:var(--text2);margin-top:5px}
+.glass{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border:1px solid var(--glass-border);border-radius:24px;padding:20px;margin-bottom:14px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px 8px;text-align:center}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px}
+.stat-lbl svg{width:11px;height:11px;fill:var(--text2);flex-shrink:0}
+.stat-val{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-val.green{color:#4ade80}.stat-val.blue{color:#60a5fa}.stat-val.purple{color:#a78bfa}
+.status-pill{display:inline-flex;align-items:center;gap:7px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.status-pill.on{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.2)}
+.status-pill.off{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+.status-pill.warn{background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+.status-pill.hold{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.row:last-child{border-bottom:none}
+.row-label{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2)}
+.row-label svg{width:13px;height:13px;fill:var(--text2);opacity:.7;flex-shrink:0}
+.row-value{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:left;word-break:break-word}
+.row-value.rtl{text-align:right}
+.progress-wrap{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)}
+.progress-bar{height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#818cf8,#ec4899);width:0%}
+.progress-labels{display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--text2)}
+.links-title{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:12px;font-weight:600}
+.link-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .25s;direction:ltr;text-align:right}
+.link-card:hover{background:rgba(255,255,255,.07);border-color:rgba(129,140,248,.35);transform:translateY(-1px)}
+.link-badge{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,.05)}
+.link-badge svg{width:16px;height:16px}
+.link-badge.vless svg{fill:#60a5fa}.link-badge.vmess svg{fill:#4ade80}.link-badge.trojan svg{fill:#f87171}.link-badge.ss svg{fill:#facc15}.link-badge.hysteria svg{fill:#a855f7}.link-badge.wireguard svg{fill:#2dd4bf}.link-badge.other svg{fill:var(--text2)}
+.link-text{flex:1;min-width:0}
+.link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+.link-type{font-size:11px;color:var(--text2);direction:ltr;text-align:right}
+.link-copy-btn{padding:7px 14px;border-radius:9px;background:linear-gradient(135deg,#818cf8,#ec4899);color:#fff;font-size:11px;font-weight:600;border:none;cursor:pointer;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.link-copy-btn:hover{transform:scale(1.05)}
+.link-copy-btn svg{width:12px;height:12px;fill:#fff}
+.announce{background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.2);border-radius:14px;padding:14px 16px;font-size:12px;line-height:1.7;margin-bottom:14px;color:var(--text2)}
+.note{background:rgba(255,255,255,.04);border-inline-start:3px solid #818cf8;border-radius:10px;padding:11px 13px;font-size:12px;line-height:1.7;margin-bottom:14px;color:var(--text2)}
+.footer{text-align:center;margin-top:18px;font-size:11px;color:var(--text2)}
+.footer a{color:var(--accent);text-decoration:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#818cf8,#ec4899);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:100}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div>
+<div class="container">
+  <div class="header">
+    <div class="avatar"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+    <div class="title">{{ user.username }}</div>
+    <div class="subtitle">سابسکریپشن اختصاصی</div>
+  </div>
+
+  <div class="glass">
+    <div class="stats">
+      <div class="stat">
+        <div class="status-pill {% if user.status.value == 'active' %}on{% elif user.status.value == 'limited' %}off{% elif user.status.value == 'expired' %}warn{% elif user.status.value == 'on_hold' %}hold{% else %}off{% endif %}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</div>
+        <div class="stat-lbl">وضعیت</div>
+      </div>
+      <div class="stat"><div class="stat-val purple">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div><div class="stat-lbl">حجم کل</div></div>
+      <div class="stat"><div class="stat-val blue">{{ user.used_traffic | bytesformat }}</div><div class="stat-lbl">مصرف‌شده</div></div>
+      <div class="stat"><div class="stat-val green">{% if user.data_limit %}{% set r = user.data_limit - user.used_traffic %}{% if r < 0 %}0 B{% else %}{{ r | bytesformat }}{% endif %}{% else %}∞{% endif %}</div><div class="stat-lbl">باقیمانده</div></div>
+    </div>
+  </div>
+
+  <div class="glass">
+    <div class="row">
+      <span class="row-label"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 1 1-8 8 8 8 0 0 1 8-8zm-.5 4h1.5v5.5l4 2.4-.8 1.3-4.7-2.8V8z"/></svg> تاریخ انقضا</span>
+      <span class="row-value rtl">{% if user.expire %}{{ user.expire | datetime }}{% else %}∞ نامحدود{% endif %}</span>
+    </div>
+    {% if user.expire %}
+    <div class="row">
+      <span class="row-label"><svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg> انقضا تا</span>
+      <span class="row-value" id="daysLeft">-</span>
+    </div>
+    {% endif %}
+    <div class="row">
+      <span class="row-label"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4a4 4 0 1 1-4 4 4 4 0 0 1 4-4zm0 14a8 8 0 0 1-6.29-3h12.58A8 8 0 0 1 12 20z"/></svg> نام کاربری</span>
+      <span class="row-value" style="direction:ltr">{{ user.username }}</span>
+    </div>
+    {% if user.hwid_limit is not none %}
+    <div class="row">
+      <span class="row-label"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg> محدودیت دستگاه (HWID)</span>
+      <span class="row-value">{% if user.hwid_limit == 0 or not user.hwid_limit %}نامحدود{% else %}{{ user.hwid_limit }}{% endif %}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if user.data_limit %}
+  <div class="glass">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="usageFill"></div></div>
+      <div class="progress-labels"><span>مصرف از سهمیه</span><span id="usagePct">0٪</span></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if announce %}
+  <div class="announce">{{ announce | replace('\n', '<br>') }}</div>
+  {% endif %}
+
+  {% if user.note %}
+  <div class="note"><strong>یادداشت:</strong> {{ user.note }}</div>
+  {% endif %}
+
+  <div class="glass">
+    <div class="links-title">کانفیگ‌ها ({{ links | length }})</div>
+    {% if links %}
+    {% for link in links %}
+    <div class="link-card">
+      <div class="link-badge other"><svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 0-10z"/></svg></div>
+      <div class="link-text">
+        <div class="link-name">{{ link }}</div>
+        <div class="link-type"></div>
+      </div>
+      <button class="link-copy-btn" data-link="{{ link }}"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> کپی</button>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="link-card" style="cursor:default"><div class="link-text"><div class="link-name" style="color:var(--text2)">کانفیگی ثبت نشده است</div></div></div>
+    {% endif %}
+  </div>
+
+  <div class="footer">ساخته شده با NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+function rawLink(s){ return s.replace(/&amp;/g,'&'); }
+function protocolOf(l){ const m=l.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function nameOf(l,i){ const f=l.split('#'); if(f.length>1&&f[1]){ try{return decodeURIComponent(f[1]);}catch(e){return f[1];} } return 'کانفیگ '+(i+1); }
+function copy(t){ const d=()=>showToast('لینک کپی شد!'); if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(d);} else { var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); d(); } }
+(function init(){
+  var expireMs = {% if user.expire %}{{ user.expire | datetime | tojson }};{% else %}null;{% endif %}
+  var dl=document.getElementById('daysLeft');
+  if(expireMs && dl){ var d=new Date(expireMs.replace(' ','T')); var days=Math.ceil((d.getTime()-Date.now())/86400000); if(!isNaN(days)){ dl.textContent=(days>=0?days:0)+' روز'; } }
+  var total=0, used=0;
+  {% if user.data_limit %}total={{ user.data_limit }};{% endif %}
+  {% if user.used_traffic %}used={{ user.used_traffic }};{% endif %}
+  var fill=document.getElementById('usageFill'); var pct=document.getElementById('usagePct');
+  if(total>0 && fill && pct){ var per=Math.min(100,used/total*100); fill.style.width=per.toFixed(2)+'%'; pct.textContent=per.toFixed(1)+'٪'; }
+  var cards=document.querySelectorAll('.link-card');
+  cards.forEach(function(card){ var btn=card.querySelector('.link-copy-btn'); if(!btn) return; var badge=card.querySelector('.link-badge'); var nameEl=card.querySelector('.link-name'); var typeEl=card.querySelector('.link-type'); var link=rawLink(btn.getAttribute('data-link')); var proto=protocolOf(link); var cls=proto && ['vless','vmess','trojan','ss','hysteria','wireguard'].indexOf(proto)>=0 ? proto : 'other'; if(badge) badge.className='link-badge '+cls; if(nameEl) nameEl.textContent=nameOf(link,Array.from(cards).indexOf(card)); if(typeEl) typeEl.textContent=proto.toUpperCase(); card.addEventListener('click',function(e){ if(e.target===btn||btn.contains(e.target)) return; copy(link); }); btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); }); });
+})();
+</script>
+</body>
+</html>
