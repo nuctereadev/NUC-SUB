@@ -323,40 +323,63 @@ open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
 PY
 }
 
-# --- Pasarguard panel API (per-admin sub_template sync) ----------------------
-# The panel shows the admin's own sub_template when set, and only falls back to
-# the .env SUBSCRIPTION_PAGE_TEMPLATE when it is empty. So apply/reset must also
-# write every admin's sub_template through the panel API, otherwise switching
-# themes has no visible effect for users of that admin.
+# --- Pasarguard panel template sync (no interactive credentials needed) -------
+# The panel shows the admin's own sub_template when set. apply/reset/uninstall
+# must sync every admin's sub_template so switching actually takes effect.
+# Prefer the direct DB (self-contained, no prompts); fall back to the HTTP API
+# only when credentials are already stored in config.json.
 
 PG_CREDS_USER=""; PG_CREDS_PASS=""
 
-pg_creds_store() {  # pg_creds_store <user> <pass>
-    config_set pg_admin_user "$1"
-    config_set pg_admin_pass "$2"
+pg_inject_tg() {  # pg_inject_tg <deployed-file> — fill the @@TG_CHANNEL@@ slot
+    local f="$1" tg
+    tg="$(config_get telegram_channel)"
+    [[ -f "$f" ]] || return 1
+    python3 - "$f" "$tg" <<'PY'
+import sys
+p, chan = sys.argv[1], sys.argv[2]
+s = open(p, encoding='utf-8').read()
+if '@@TG_CHANNEL@@' in s:
+    open(p, 'w', encoding='utf-8').write(s.replace('@@TG_CHANNEL@@', chan))
+PY
 }
 
-pg_ensure_creds() {
+pg_env_value() {  # pg_env_value <KEY> — read a value from the panel .env
+    [[ -n "$PG_ENV_FILE" && -f "$PG_ENV_FILE" ]] || return 1
+    grep -E "^${1}=" "$PG_ENV_FILE" | head -n 1 | cut -d= -f2- | tr -d '"' | tr -d "'"
+}
+
+pg_db_conn() {
+    local dbc dbname dbuser dbpass
+    dbc="$(docker ps --format '{{.Names}}' 2>/dev/null | grep -i timescale | head -n 1)"
+    [[ -n "$dbc" ]] || return 1
+    dbname="$(pg_env_value DB_NAME)"; dbuser="$(pg_env_value DB_USER)"; dbpass="$(pg_env_value DB_PASSWORD)"
+    [[ -n "$dbname" && -n "$dbuser" && -n "$dbpass" ]] || return 1
+    PG_DB_CONTAINER="$dbc"; PG_DB_NAME="$dbname"; PG_DB_USER="$dbuser"; PG_DB_PASS="$dbpass"
+    return 0
+}
+
+pg_db_set_subtemplate() {  # pg_db_set_subtemplate <value, e.g. subscription/glass.html or "">
+    local val="${1:-}" out
+    pg_db_conn || return 1
+    # value is validated/sanitized by callers (theme names are [A-Za-z0-9_-].html)
+    out="$(docker exec -e "PGPASSWORD=$PG_DB_PASS" "$PG_DB_CONTAINER" \
+        psql -U "$PG_DB_USER" -d "$PG_DB_NAME" -v ON_ERROR_STOP=1 -tAc \
+        "UPDATE admins SET sub_template='$(printf %s "$val" | tr -cd 'A-Za-z0-9./_-' )' RETURNING id;" 2>&1)"
+    [[ -n "${out:-}" ]]
+}
+
+pg_creds_present() {  # stored/ env creds available (no prompting — ever)
     PG_CREDS_USER="${PG_ADMIN_USER:-}"
     PG_CREDS_PASS="${PG_ADMIN_PASS:-}"
     [[ -z "$PG_CREDS_USER" ]] && PG_CREDS_USER="$(config_get pg_admin_user)"
     [[ -z "$PG_CREDS_PASS" ]] && PG_CREDS_PASS="$(config_get pg_admin_pass)"
-    if [[ -z "$PG_CREDS_USER" ]]; then
-        if [[ -t 0 ]]; then
-            echo -ne "  Pasarguard admin username [admin]: "
-            read -r PG_CREDS_USER
-            [[ -z "$PG_CREDS_USER" ]] && PG_CREDS_USER="admin"
-            echo -ne "  Pasarguard admin password: "
-            read -rs PG_CREDS_PASS; echo
-        else
-            warn "Pasarguard admin credentials required — set PG_ADMIN_USER / PG_ADMIN_PASS"
-            warn "or store them once with: nucsub pglogin"
-            return 1
-        fi
-        [[ -n "$PG_CREDS_PASS" ]] || { warn "Password empty."; return 1; }
-        pg_creds_store "$PG_CREDS_USER" "$PG_CREDS_PASS"
-    fi
     [[ -n "$PG_CREDS_USER" && -n "$PG_CREDS_PASS" ]]
+}
+
+pg_creds_store() {  # pg_creds_store <user> <pass> — optional (used by `pglogin`)
+    config_set pg_admin_user "$1"
+    config_set pg_admin_pass "$2"
 }
 
 pg_api_base() {
@@ -413,28 +436,30 @@ except Exception:
     return 1
 }
 
-pg_sync() {  # pg_sync <theme-name|""> — push sub_template to every admin
-    local name="${1:-}" tries=0
-    if ! pg_ensure_creds; then
-        warn "Per-admin template override left unchanged (no credentials)."
+pg_sync() {  # pg_sync <theme-name | __builtin__ | ""> — sync every admin's sub_template
+    # Self-contained (DB) or stored-API credentials; NEVER prompts the user.
+    local name="${1:-}" val=""
+    if [[ -n "$name" && "$name" != "__builtin__" ]]; then
+        val="subscription/$name.html"
+    fi
+    # 1) direct DB
+    if pg_db_set_subtemplate "$val"; then
+        info "Template set on every admin (DB): '${val:-<built-in>}'"
+        return 0
+    fi
+    # 2) stored/ env API credentials (only when already available)
+    if pg_creds_present; then
+        local tries=0
+        while [[ $tries -lt 3 ]]; do
+            [[ -n "$(pg_api_token)" ]] && { pg_admin_set_all "\"$val\""; return $?; }
+            tries=$((tries+1)); sleep 2
+        done
+        warn "Panel API unreachable."
         return 1
     fi
-    # The panel can take ~30s to become reachable after a restart; wait for it
-    # before touching the API so a fast apply never races its own restart.
-    while [[ $tries -lt 12 ]]; do
-        [[ -n "$(pg_api_token)" ]] && break
-        tries=$((tries+1))
-        sleep 5
-    done
-    if [[ $tries -ge 12 ]]; then
-        warn "Panel API did not become reachable in time."
-        return 1
-    fi
-    if [[ -n "$name" ]]; then
-        pg_admin_set_all "\"subscription/$name.html\""
-    else
-        pg_admin_set_all "\"\""
-    fi
+    # 3) give up quietly — caller falls back to .env + restart
+    warn "Could not update every admin via DB/API — falling back to the .env default."
+    return 1
 }
 
 # --------------------------------------------------------------- UI helpers ---
@@ -534,8 +559,9 @@ cmd_apply() {
         mkdir -p "$PG_TEMPLATES_DIR"
         cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"
         chmod -R a+rX "$PG_TEMPLATES_DIR/$name.html"
+        pg_inject_tg "$PG_TEMPLATES_DIR/$name.html"
         # The panel shows the admin's own sub_template live (no restart needed
-        # when the API is reachable). Restart only as a fallback so the .env
+        # when the DB/API is reachable). Restart only as a fallback so the .env
         # default is picked up.
         local env_ok=0 sync_ok=0
         pg_env_apply "$name" && env_ok=1 || true
@@ -550,7 +576,7 @@ cmd_apply() {
             fi
         else
             warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
-            warn "Activation needs the panel .env (PASARGUARD_ENV) or admin credentials (nucsub pglogin)."
+            warn "Activation needs the panel .env (PASARGUARD_ENV) or working DB access."
         fi
         return
     fi
@@ -894,22 +920,28 @@ cmd_pglogin() {
 cmd_update() {
     require_root
     title "Update NUC-SUB"; sep
-    local repo_dir="/root/nucsub-src"
-    if [[ ! -d "$repo_dir/.git" ]]; then
-        warn "Source repo not found at $repo_dir. Re-cloning..."
-        git clone https://github.com/nuctereadev/NUC-SUB.git "$repo_dir" 2>/dev/null || die "Clone failed. Set correct repo URL."
+    local tmp
+    tmp="$(mktemp)"
+    info "Fetching latest nucsub from GitHub..."
+    if ! curl -fsSL -m 40 "$REPO_URL/cli/nucsub" -o "$tmp"; then
+        warn "Could not fetch latest nucsub."
+        rm -f "$tmp"; return 1
     fi
-    cd "$repo_dir"
-    info "Fetching latest..."
-    git fetch origin
-    local local_rev remote_rev
-    local_rev=$(git rev-parse HEAD)
-    remote_rev=$(git rev-parse origin/main 2>/dev/null || git rev-parse origin/master 2>/dev/null)
-    if [[ "$local_rev" == "$remote_rev" ]]; then ok "Already up to date."; return; fi
-    info "Updating..."
-    git pull origin main 2>/dev/null || git pull origin master 2>/dev/null
-    info "Re-installing..."
-    bash "$repo_dir/install.sh" 2>&1 | tail -20
+    if cmp -s "$tmp" "$INSTALL_DIR/cli/nucsub"; then
+        ok "Already up to date."
+        rm -f "$tmp"; return 0
+    fi
+    info "New version available — updating..."
+    install -m 755 "$tmp" "$INSTALL_DIR/cli/nucsub"
+    chmod +x "$INSTALL_DIR/cli/nucsub"
+    ln -sf "$INSTALL_DIR/cli/nucsub" /usr/bin/nucsub
+    local ish="$INSTALL_DIR/install.sh"
+    curl -fsSL -m 40 "$REPO_URL/install.sh" -o "$ish" || true
+    if [[ -f "$ish" ]]; then
+        info "Refreshing web panel assets + default theme..."
+        XUI_SUB_NONINTERACTIVE=1 NUC_SUB_PANEL="$PANEL" SKIP_MENU=1 bash "$ish" </dev/null 2>&1 | tail -n 8 || true
+    fi
+    rm -f "$tmp"
     ok "Update complete."
 }
 
@@ -934,13 +966,9 @@ cmd_uninstall() {
     # files, otherwise the last applied theme keeps rendering after uninstall.
     if [[ "$PANEL" == "pasarguard" ]]; then
         info "Restoring Pasarguard default subscription page..."
-        if pg_ensure_creds && pg_admin_set_all "\"\""; then
-            pg_env_apply "__builtin__" || true
-            pg_restart_panel || true
-        else
-            warn "Panel API credentials unavailable — the last theme may still show."
-            warn "Clear the admin subscription template in the dashboard, or set creds with 'nucsub pglogin' first."
-        fi
+        pg_sync "__builtin__" || true
+        pg_env_apply "__builtin__" || true
+        pg_restart_panel || true
         rm -rf "$PG_TEMPLATES_DIR"
         warn "Removed Pasarguard custom templates ($PG_TEMPLATES_DIR)."
     fi
@@ -954,6 +982,7 @@ cmd_uninstall() {
     rm -f /usr/bin/nucsub
     rm -rf "$INSTALL_DIR"
     rm -rf "$DEPLOY_DIR"
+    rm -rf /root/nucsub-src
 
     if [[ "$PANEL" == "3xui" ]]; then
         db_set_subthemedir ""
