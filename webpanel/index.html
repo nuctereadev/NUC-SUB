@@ -11,36 +11,18 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0a0e17;
-  --bg-elevated:#111722;
-  --card:#151c2a;
-  --card-hover:#1a2334;
-  --border:#243042;
-  --border-light:#2e3d52;
-  --text:#e4e8ef;
-  --text-dim:#9aa4b2;
-  --text-muted:#6b7688;
-  --accent:#3b82f6;
-  --accent-hover:#2563eb;
-  --accent-soft:rgba(59,130,246,.12);
-  --green:#10b981;
-  --green-soft:rgba(16,185,129,.12);
-  --red:#ef4444;
-  --red-soft:rgba(239,68,68,.12);
-  --radius:10px;
-  --radius-sm:7px;
-  --shadow:0 2px 8px rgba(0,0,0,.25);
-  --shadow-lg:0 8px 24px rgba(0,0,0,.35);
+  --bg:#0a0e17;--bg-elevated:#111722;--card:#151c2a;--card-hover:#1a2334;
+  --border:#243042;--border-light:#2e3d52;--text:#e4e8ef;--text-dim:#9aa4b2;
+  --text-muted:#6b7688;--accent:#3b82f6;--accent-hover:#2563eb;
+  --accent-soft:rgba(59,130,246,.12);--green:#10b981;--green-soft:rgba(16,185,129,.12);
+  --red:#ef4444;--red-soft:rgba(239,68,68,.12);--radius:10px;--radius-sm:7px;
+  --shadow:0 2px 8px rgba(0,0,0,.25);--shadow-lg:0 8px 24px rgba(0,0,0,.35);
 }
 html{-webkit-text-size-adjust:100%}
 body{
   font-family:'IranSansX',system-ui,-apple-system,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  line-height:1.6;
-  font-size:14px;
-  -webkit-font-smoothing:antialiased;
+  background:var(--bg);color:var(--text);min-height:100vh;
+  line-height:1.6;font-size:14px;-webkit-font-smoothing:antialiased;
 }
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
@@ -100,7 +82,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 .statusbar b{color:var(--text);font-weight:500}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--bg-elevated);color:var(--text);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:9px 16px;font-size:12px;opacity:0;transition:all .2s;z-index:100;box-shadow:var(--shadow-lg);pointer-events:none;max-width:calc(100% - 40px);text-align:center;display:inline-flex;align-items:center;gap:7px}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--bg-elevated);color:var(--text);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:9px 16px;font-size:12px;opacity:0;transition:all .2s;z-index:100;box-shadow:var(--shadow-lg);pointer-events:none;max-width:calc(100% - 40px);text-align:center;display:inline-flex;align-items:center;gap:7px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:var(--red-soft);border-color:rgba(239,68,68,.3);color:#fca5a5}
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:90;padding:16px}
@@ -110,14 +92,24 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 .modal-head b{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
 .modal-body{flex:1;overflow:auto;padding:12px}
 .modal-body iframe{width:100%;height:55vh;border:none;border-radius:7px;background:#fff;display:block}
-.soon{background:var(--card);border:1px dashed var(--border-light);border-radius:var(--radius);padding:18px;margin-top:28px}
-.soon h3{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text-dim);margin-bottom:6px;font-weight:500}
-.soon h3 i{color:var(--accent)}
-.soon p{font-size:11.5px;color:var(--text-muted);line-height:1.8}
-.soon code{background:var(--bg-elevated);padding:1px 6px;border-radius:4px;font-size:10.5px;color:var(--accent);direction:ltr;display:inline-block;font-family:'JetBrains Mono',monospace}
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:24px}
+.settings-section h3{font-size:13px;font-weight:600;color:var(--text-dim);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.settings-section h3 i{color:var(--accent);font-size:13px}
+.settings-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.settings-row .field{flex:1;min-width:200px;margin-bottom:0}
 footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
-/* mobile */
-@media (max-width:480px){
+/* Donate floating button */
+.donate-btn{
+  position:fixed;bottom:24px;right:24px;z-index:80;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:20px;box-shadow:0 4px 14px rgba(249,115,22,.45);
+  transition:transform .2s,box-shadow .2s;text-decoration:none;
+}
+.donate-btn:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(249,115,22,.55);text-decoration:none;color:#fff}
+.donate-btn:active{transform:scale(.96)}
+@media(max-width:480px){
   .wrap{padding:24px 16px 40px}
   .logo{width:36px;height:36px;font-size:14px}
   .brand h1{font-size:14.5px}
@@ -129,6 +121,9 @@ footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
   .th-preview{width:100%;height:72px;border-left:none;border-bottom:1px solid var(--border)}
   .th-btns .btn{flex:1;min-width:82px}
   .actions .btn.ghost{font-size:12px;padding:9px 10px}
+  .settings-row{flex-direction:column}
+  .settings-row .field{min-width:100%}
+  .donate-btn{bottom:16px;right:16px;width:46px;height:46px;font-size:18px}
 }
 </style>
 </head>
@@ -177,16 +172,24 @@ footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
 
     <div class="statusbar" id="statusbar"><span class="dot"></span> <span>در حال دریافت وضعیت...</span></div>
 
-    <div class="soon">
-      <h3><i class="fa-solid fa-wrench"></i> قابلیت‌های اضافی در راه است</h3>
-      <p>
-        آپلود قالب سفارشی، پیش‌نمایش زنده، و مدیریت پیشرفته از طریق CLI <code>nucsub</code>
-      </p>
+    <div class="settings-section">
+      <h3><i class="fa-solid fa-gear"></i> تنظیمات کانال تلگرام</h3>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">لینک کانال تلگرام خود را وارد کنید تا در قالب‌های سابسکریپشن نمایش داده شود</p>
+      <div class="settings-row">
+        <div class="field">
+          <label>لینک کانال تلگرام</label>
+          <input id="tg-input" type="text" placeholder="https://t.me/your_channel" autocomplete="off" dir="ltr">
+        </div>
+        <button class="btn" onclick="saveTelegram()" style="align-self:flex-end;margin-top:14px;padding:11px 20px"><i class="fa-solid fa-check"></i> ذخیره</button>
+      </div>
+      <p id="tg-status" style="font-size:11px;color:var(--text-muted);margin-top:8px"></p>
     </div>
 
     <footer>NUC-SUB · Created by <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a> · MIT License</footer>
   </div>
 </div>
+
+<a href="https://nuctereadev.github.io/support/" target="_blank" rel="noopener" class="donate-btn" title="حمایت مالی"><i class="fa-solid fa-heart"></i></a>
 
 <div class="modal-ov" id="preview-ov">
   <div class="modal">
@@ -201,135 +204,81 @@ footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
 <div class="toast" id="toast"></div>
 
 <script>
-const TOKEN_KEY = 'xui_sub_token';
-let token = localStorage.getItem(TOKEN_KEY) || '';
+const TOKEN_KEY='xui_sub_token';
+let token=localStorage.getItem(TOKEN_KEY)||'';
 
-function $(id){ return document.getElementById(id); }
-function showToast(msg, err){ const t=$('toast'); t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.classList.remove('show'),2200); }
+function $(id){return document.getElementById(id)}
+function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200)}
 
-async function api(path){
-  const r = await fetch('/api/'+path, { headers:{'Authorization':'Bearer '+token} });
-  const data = await r.json().catch(()=>({}));
-  if (r.status===401){ showLogin(); throw new Error('unauthorized'); }
+async function api(path,opts){
+  const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{}));
+  const data=await r.json().catch(()=>({}));
+  if(r.status===401){showLogin();throw new Error('unauthorized')}
   return data;
 }
 
-function showLogin(){ $('view-login').style.display='block'; $('view-main').style.display='none'; }
-function showMain(){ $('view-login').style.display='none'; $('view-main').style.display='block'; }
+function showLogin(){$('view-login').style.display='block';$('view-main').style.display='none'}
+function showMain(){$('view-login').style.display='none';$('view-main').style.display='block';loadSettings()}
 
 function doLogin(){
-  token = $('token-input').value.trim();
-  if(!token){ showToast('توکن را وارد کنید',true); return; }
-  localStorage.setItem(TOKEN_KEY, token);
-  api('list').then(res=>{ if(res.ok){ showMain(); loadThemes(); } else { showToast('توکن نامعتبر — از install-result.txt کپی کنید',true); } }).catch(()=>{ showToast('توکن نامعتبر — از install-result.txt کپی کنید',true); });
+  token=$('token-input').value.trim();
+  if(!token){showToast('توکن را وارد کنید',true);return}
+  localStorage.setItem(TOKEN_KEY,token);
+  api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showToast('توکن نامعتبر',true)}).catch(()=>showToast('توکن نامعتبر',true));
 }
-function logout(){ token=''; localStorage.removeItem(TOKEN_KEY); showLogin(); }
-$('token-input').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+function logout(){token='';localStorage.removeItem(TOKEN_KEY);showLogin()}
+$('token-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
 
-const THEME_ICONS = {
-  minimal:  'fa-solid fa-border-all',
-  gradient: 'fa-solid fa-wand-magic-sparkles',
-  matrix:   'fa-solid fa-terminal',
-  glass:    'fa-solid fa-cube',
-  neon:     'fa-solid fa-bolt-lightning',
-  default:  'fa-solid fa-palette'
-};
+const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'};
+function getIcon(name){return THEME_ICONS[name]||THEME_ICONS.default}
 
-function getIcon(name){ return THEME_ICONS[name] || THEME_ICONS.default; }
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
-// escape a value for safe insertion into innerHTML / attribute context (XSS guard)
-function esc(s){
-  return String(s==null?'':s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function cardFor(name, active){
-  const en = esc(name);
-  const ej = String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  return `
-  <div class="theme ${active?'active':''}">
-    <div class="th-preview"><i class="${getIcon(name)}"></i></div>
-    <div class="th-body">
-      <div class="th-head">
-        <span class="th-name">${en}</span>
-        ${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}
-      </div>
-      <div class="th-desc">قالب ${en} برای صفحه اشتراک</div>
-      <div class="th-btns">
-        <button class="btn sm" onclick="applyTheme('${ej}')" ${active?'disabled':''}><i class="fa-solid fa-circle-check"></i> فعال‌سازی</button>
-        <button class="btn ghost sm" onclick="previewTheme('${ej}')"><i class="fa-solid fa-eye"></i> پیش‌نمایش</button>
-        <button class="btn danger sm" onclick="removeTheme('${ej}')"><i class="fa-solid fa-trash"></i> حذف</button>
-      </div>
-    </div>
-  </div>`;
+function cardFor(name,active){
+  const en=esc(name);const ej=String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `<div class="theme ${active?'active':''}"><div class="th-preview"><i class="${getIcon(name)}"></i></div><div class="th-body"><div class="th-head"><span class="th-name">${en}</span>${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}</div><div class="th-desc">قالب ${en} برای صفحه اشتراک</div><div class="th-btns"><button class="btn sm" onclick="applyTheme('${ej}')" ${active?'disabled':''}><i class="fa-solid fa-circle-check"></i> فعال‌سازی</button><button class="btn ghost sm" onclick="previewTheme('${ej}')"><i class="fa-solid fa-eye"></i> پیش‌نمایش</button><button class="btn danger sm" onclick="removeTheme('${ej}')"><i class="fa-solid fa-trash"></i> حذف</button></div></div></div>`;
 }
 
 async function loadThemes(){
-  const grid = $('themes-grid');
-  grid.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>';
+  const grid=$('themes-grid');
+  grid.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>';
   try{
-    const res = await api('list');
-    const out = res.stdout || '';
-    const gridHtml = [];
-    const active = extractActive(out);
-    for(const name of parseThemeList(out)){
-      gridHtml.push(cardFor(name, active===name));
+    const res=await api('list');const out=res.stdout||'';const gridHtml=[];const active=extractActive(out);
+    for(const name of parseThemeList(out))gridHtml.push(cardFor(name,active===name));
+    grid.innerHTML=gridHtml.join('')||'<div style="padding:24px;text-align:center;color:var(--text-muted)">قالبی یافت نشد</div>';
+    $('statusbar').innerHTML=`<span class="dot"></span> <span>قالب فعال: <b>${active||'پیش‌فرض پنل'}</b></span>`;
+  }catch(e){grid.innerHTML='<div style="padding:24px;text-align:center;color:var(--red)"><i class="fa-solid fa-warning"></i> خطا در دریافت لیست</div>'}
+}
+
+function stripAnsi(s){return String(s||'').replace(/\x1b\[[0-9;]*m/g,'')}
+function parseThemeList(out){const set=new Set();const rx=/([A-Za-z0-9][A-Za-z0-9\-_.]*)\s*(?:runnable|missing\s+template)/gi;let m;while((m=rx.exec(stripAnsi(out))))set.add(m[1]);return[...set]}
+function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);if(star)return star[1];const sum=clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);return sum?sum[1]:''}
+
+async function applyTheme(name){const res=await api('apply?name='+encodeURIComponent(name));if(res.ok){showToast('قالب «'+name+'» فعال شد');loadThemes()}else showToast((res.stderr||res.stdout||'خطا'),true)}
+async function removeTheme(name){if(!confirm('قالب «'+name+'» حذف شود؟'))return;const res=await api('remove?name='+encodeURIComponent(name));if(res.ok){showToast('قالب حذف شد');loadThemes()}else showToast('خطا',true)}
+async function resetTheme(){if(!confirm('برگشت به صفحه پیش‌فرض پنل؟'))return;const res=await api('reset');if(res.ok){showToast('به پیش‌فرض برگشت');loadThemes()}else showToast('خطا',true)}
+async function previewTheme(name){$('preview-title').innerHTML='<i class="fa-solid fa-eye"></i> پیش‌نمایش — '+esc(name);$('preview-ov').classList.add('show');try{const res=await api('preview?name='+encodeURIComponent(name));if(res.ok&&res.url){$('preview-frame').src=res.url}}catch(e){}}
+function closePreview(){$('preview-ov').classList.remove('show')}
+
+async function loadSettings(){
+  try{
+    const res=await api('settings');
+    if(res.ok&&res.settings){
+      $('tg-input').value=res.settings.telegram_channel||'';
     }
-    grid.innerHTML = gridHtml.join('') || '<div style="padding:24px;text-align:center;color:var(--text-muted)">قالبی یافت نشد. از CLI قالب اضافه کنید.</div>';
-    $('statusbar').innerHTML = `<span class="dot"></span> <span>قالب فعال: <b>${active||'پیش‌فرض پنل'}</b></span>`;
-  }catch(e){ grid.innerHTML = '<div style="padding:24px;text-align:center;color:var(--red)"><i class="fa-solid fa-warning"></i> خطا در دریافت لیست</div>'; }
-}
-
-function stripAnsi(s){ return String(s||'').replace(/\x1b\[[0-9;]*m/g,''); }
-
-function parseThemeList(out){
-  const set = new Set();
-  const clean = stripAnsi(out);
-  // theme rows look like: "     glass            runnable"  or  " ★  minimal          runnable"
-  const rx = /([A-Za-z0-9][A-Za-z0-9\-_.]*)\s*(?:runnable|missing\s+template)/gi;
-  let m;
-  while((m=rx.exec(clean))) set.add(m[1]);
-  return [...set];
-}
-function extractActive(out){
-  const clean = stripAnsi(out);
-  // active theme is marked with a star in `nucsub list`: " ★  minimal ..."
-  const star = clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);
-  if (star) return star[1];
-  // fallback: "Active: name" or "Active theme: name" summary line
-  const sum = clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);
-  return sum ? sum[1] : '';
-}
-
-async function applyTheme(name){
-  const res = await api('apply?name='+encodeURIComponent(name));
-  if(res.ok){ showToast('قالب «'+name+'» فعال شد'); loadThemes(); }
-  else showToast((res.stderr||res.stdout||'خطا') , true);
-}
-async function removeTheme(name){
-  if(!confirm('قالب «'+name+'» حذف شود؟')) return;
-  const res = await api('remove?name='+encodeURIComponent(name));
-  if(res.ok){ showToast('قالب حذف شد'); loadThemes(); }
-  else showToast('خطا', true);
-}
-async function resetTheme(){
-  if(!confirm('برگشت به صفحه پیش‌فرض پنل؟')) return;
-  const res = await api('reset');
-  if(res.ok){ showToast('به پیش‌فرض برگشت'); loadThemes(); }
-  else showToast('خطا', true);
-}
-async function previewTheme(name){
-  $('preview-title').innerHTML = '<i class="fa-solid fa-eye"></i> پیش‌نمایش — ' + esc(name);
-  $('preview-ov').classList.add('show');
-  try{
-    const res = await api('preview?name='+encodeURIComponent(name));
-    if(res.ok && res.url){ $('preview-frame').src = res.url; }
   }catch(e){}
 }
-function closePreview(){ $('preview-ov').classList.remove('show'); }
+async function saveTelegram(){
+  const url=$('tg-input').value.trim();
+  const st=$('tg-status');
+  try{
+    const res=await api('settings',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({telegram_channel:url})});
+    if(res.ok){st.style.color='var(--green)';st.textContent='ذخیره شد';setTimeout(()=>{st.textContent=''},2000)}
+    else{st.style.color='var(--red)';st.textContent=res.error||'خطا'}
+  }catch(e){st.style.color='var(--red)';st.textContent='خطا در ذخیره'}
+}
 
-if(token){ api('list').then(res=>{ if(res.ok){ showMain(); loadThemes(); } else showLogin(); }).catch(showLogin); }
+if(token){api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showLogin()}).catch(showLogin)}
 else showLogin();
 </script>
 </body>

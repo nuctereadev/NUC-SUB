@@ -20,6 +20,7 @@ WEB_BASE="$INSTALL_DIR/webpanel"
 WEB_SERVICE="xui-sub-panel"
 WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
+CONFIG_FILE="$INSTALL_DIR/config.json"
 
 # ------------------------------------------------------------------ helpers ---
 die() { echo -e "${RED}✗ $*${NC}" >&2; exit 1; }
@@ -40,6 +41,45 @@ find_sqlite() {
     if command -v sqlite3 >/dev/null 2>&1; then _SQLITE="sqlite3"; return 0; fi
     warn "sqlite3 not found — install with: apt install -y sqlite3"
     _SQLITE=""
+}
+
+# ---------------------------------------------------------------- config.json ---
+config_get() {
+    local key="${1:-}"
+    [[ -z "$key" || ! -f "$CONFIG_FILE" ]] && { echo ""; return 0; }
+    python3 -c "
+import json,sys
+d=json.load(open('$CONFIG_FILE'))
+print(d.get('$key',''))
+" 2>/dev/null || echo ""
+}
+
+config_set() {
+    local key="${1:-}" val="${2:-}"
+    [[ -z "$key" ]] && die "config_set: missing key"
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    if [[ -f "$CONFIG_FILE" ]]; then
+        python3 -c "
+import json
+d=json.load(open('$CONFIG_FILE'))
+d['$key']='$val'
+json.dump(d,open('$CONFIG_FILE','w'),indent=2,ensure_ascii=False)
+" 2>/dev/null || echo "{\"$key\":\"$val\"}" > "$CONFIG_FILE"
+    else
+        echo "{\"$key\":\"$val\"}" > "$CONFIG_FILE"
+    fi
+    chmod 600 "$CONFIG_FILE"
+}
+
+find_free_port() {
+    local start="${1:-8080}" end="${2:-9999}"
+    for ((p=start; p<end; p++)); do
+        if ! ss -tlnp 2>/dev/null | grep -q ":${p} " && \
+           ! python3 -c "import socket; s=socket.socket(); s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1); s.bind(('0.0.0.0',$p)); s.close()" 2>/dev/null; then
+            echo "$p"; return 0
+        fi
+    done
+    echo "$start"
 }
 
 db_set_subthemedir() {
@@ -206,6 +246,19 @@ cmd_apply() {
     cd - >/dev/null
     chmod -R a+rX "$DEPLOY_DIR/$name"
 
+    # inject Telegram channel placeholder from config into deployed theme
+    local tg
+    tg="$(config_get telegram_channel)"
+    if [[ -f "$DEPLOY_DIR/$name/index.html" && -n "$tg" ]]; then
+        python3 - "$DEPLOY_DIR/$name/index.html" "$tg" <<'PY'
+import sys
+p,chan=sys.argv[1],sys.argv[2]
+s=open(p,encoding='utf-8').read()
+s=s.replace('@@TG_CHANNEL@@',chan)
+open(p,'w',encoding='utf-8').write(s)
+PY
+    fi
+
     if [[ -f "$DEPLOY_DIR/$name/index.html" ]]; then
         db_set_subthemedir "$DEPLOY_DIR/$name"
         ok "Theme '$name' deployed to $DEPLOY_DIR/$name"
@@ -322,6 +375,13 @@ cmd_webpanel() {
             require_root
             if web_panel_status | grep -q "Running"; then warn "Already running."; return; fi
             local port="${SUB_PANEL_PORT:-8080}"
+            # smart port selection: if the requested/free port is occupied, pick the next free one
+            if ! ss -tlnp 2>/dev/null | grep -q ":${port} "; then
+                : # port free
+            else
+                port="$(find_free_port "$((port+1))" 100)"
+                warn "Port ${SUB_PANEL_PORT:-8080} occupied — using $port"
+            fi
             local token=""
             if [[ -f "$WEB_TOKEN_FILE" ]]; then token="$(<"$WEB_TOKEN_FILE")"
             else token="$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)"; echo "$token" > "$WEB_TOKEN_FILE"; chmod 600 "$WEB_TOKEN_FILE"; fi
@@ -393,6 +453,41 @@ web_panel_menu() {
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
     done
+}
+
+# --------------------------------------------------------------- Telegram cmd ---
+cmd_telegram() {
+    local action="${1:-get}"
+    local val
+    case "$action" in
+        get|show)
+            val="$(config_get telegram_channel)"
+            if [[ -n "$val" ]]; then echo "$val"
+            else warn "No Telegram channel set."; fi
+            ;;
+        set)
+            require_root
+            val="${2:-}"
+            if [[ -z "$val" ]]; then
+                echo -ne "  Telegram channel URL (https://t.me/...): "
+                read -r val
+            fi
+            [[ -z "$val" ]] && die "No URL provided."
+            if [[ ! "$val" =~ ^https://t\.me/[A-Za-z0-9_]{5,}$ ]]; then
+                die "Invalid Telegram URL — expected: https://t.me/username"
+            fi
+            config_set telegram_channel "$val"
+            ok "Telegram channel set: $val"
+            ;;
+        clear|unset)
+            require_root
+            config_set telegram_channel ""
+            ok "Telegram channel cleared."
+            ;;
+        *)
+            echo -e "${YELLOW}Usage: nucsub telegram {get|set <url>|clear}${NC}"
+            ;;
+    esac
 }
 
 # ----------------------------------------------------------- Update / Uninstall ---
@@ -481,6 +576,7 @@ case "$cmd" in
     preview)        cmd_preview "$@" ;;
     status)         cmd_status ;;
     webpanel)       cmd_webpanel "$@" ;;
+    telegram)       cmd_telegram "$@" ;;
     update)         cmd_update ;;
     uninstall)      cmd_uninstall ;;
     menu)           cmd_menu ;;
@@ -501,6 +597,8 @@ Commands:
   status              Show panel DB info, paths, and theme list
   webpanel {start|stop|restart|status|token}
                       Control the web management panel
+  telegram {get|set <url>|clear}
+                      View or configure the Telegram channel shown in themes
   update              Pull latest from GitHub and reinstall
   uninstall           Remove everything (themes, CLI, web panel, DB entry)
   menu                Interactive menu (default when no args given)

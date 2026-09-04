@@ -49,6 +49,11 @@
 .fa-cube:before                { content: "\f1b2"; }
 .fa-bolt-lightning:before      { content: "\e0b7"; }
 .fa-swatchbook:before          { content: "\f5c3"; }
+.fa-gear:before                { content: "\f013"; }
+.fa-heart:before               { content: "\f004"; }
+.fa-snowflake:before           { content: "\f2dc"; }
+.fa-sun:before                 { content: "\f185"; }
+.fa-microchip:before           { content: "\f2db"; }
 
 /* --- subscription themes ------------------------------------------------ */
 .fa-server:before        { content: "\f233"; }

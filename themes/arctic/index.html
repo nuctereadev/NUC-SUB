@@ -3,30 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>سابسکریپشن - مینیمال</title>
+<title>سابسکریپشن - آرکتیک</title>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/icons.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0b0d12;--bg-soft:#11141b;--card:#161a23;--card-2:#1d222e;
-  --border:#262c3a;--border-2:#323a4d;--text:#eef1f6;--text2:#98a2b3;--text3:#6c7686;
-  --accent:#8ab4ff;--accent-2:#6c8cff;--green:#4ade80;--red:#f87171;--amber:#fbbf24;
+  --bg:#0a0f1e;--bg-soft:#0e1629;--card:#132038;--card-2:#1a2b47;
+  --border:#20365a;--border-2:#2b4a7d;--text:#e8f0fb;--text2:#a7bcd8;--text3:#6f86a6;
+  --accent:#7dd3fc;--accent-2:#38bdf8;--green:#4ade80;--red:#f87171;--amber:#fbbf24;
   --blue:#60a5fa;
 }
 body{
   font-family:'IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
-  background:radial-gradient(1200px 600px at 50% -10%,#141c2b 0%,transparent 60%),var(--bg);
+  background:radial-gradient(1200px 700px at 50% -10%,#1c3a5e 0%,transparent 60%),var(--bg);
   color:var(--text);min-height:100vh;line-height:1.55;
   -webkit-font-smoothing:antialiased;font-size:14px;
 }
-.container{width:100%;max-width:480px;margin:0 auto;padding:28px 16px 96px}
+.container{width:100%;max-width:480px;margin:0 auto;padding:28px 16px 100px}
 .header{text-align:center;margin-bottom:28px}
 .avatar{
-  width:76px;height:76px;border-radius:22px;margin:0 auto 18px;position:relative;
-  background:linear-gradient(135deg,#2a3b57,#1b2233);
-  border:1px solid var(--border-2);display:flex;align-items:center;justify-content:center;
-  box-shadow:0 12px 30px rgba(0,0,0,.35);
+  width:76px;height:76px;border-radius:24px;margin:0 auto 18px;position:relative;
+  background:linear-gradient(160deg,#0ea5e9,#1e3a8a);
+  border:1px solid rgba(125,211,252,.35);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 30px rgba(14,165,233,.25);
 }
 .avatar svg{width:34px;height:34px;fill:var(--accent)}
 .title{font-size:23px;font-weight:700;color:var(--text);letter-spacing:.2px}
@@ -34,7 +34,7 @@ body{
 .card{
   background:linear-gradient(180deg,var(--card),var(--bg-soft));
   border:1px solid var(--border);border-radius:18px;padding:8px 20px;margin-bottom:16px;
-  box-shadow:0 10px 26px rgba(0,0,0,.22);
+  box-shadow:0 10px 26px rgba(0,0,0,.25);
 }
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px dashed var(--border)}
 .stat-row:last-child{border-bottom:none}
@@ -49,7 +49,7 @@ body{
 .status-offline .status-dot{background:var(--red);box-shadow:0 0 8px var(--red)}
 .progress-wrap{margin-top:16px;padding:14px 0}
 .progress-bar{height:7px;background:var(--border);border-radius:99px;overflow:hidden}
-.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent-2),var(--accent));transition:width .6s ease}
+.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#0ea5e9,#38bdf8);transition:width .6s ease}
 .progress-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text3)}
 .links-section{margin-top:20px}
 .links-title{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:13px;font-weight:600}
@@ -58,7 +58,7 @@ body{
   background:var(--card);border:1px solid var(--border);border-radius:14px;padding:13px 15px;
   margin-bottom:10px;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:13px;
 }
-.link-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.link-item:hover{border-color:var(--accent-2);transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
 .link-icon{
   width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
   font-size:15px;flex-shrink:0;font-family:'Font Awesome 6 Free';font-weight:900;
@@ -73,32 +73,32 @@ body{
 .link-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .link-protocol{font-size:11px;color:var(--text3);margin-top:3px}
 .link-copy{
-  font-size:11px;color:var(--accent);white-space:nowrap;display:flex;align-items:center;gap:6px;
+  font-size:11px;color:var(--accent-2);white-space:nowrap;display:flex;align-items:center;gap:6px;
   font-weight:600;opacity:.85;
 }
 .link-copy:hover{opacity:1}
 .link-item.copied .link-copy{color:var(--green)}
 .announce{
-  background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.18);border-radius:14px;
-  padding:14px 16px;font-size:12px;color:var(--blue);line-height:1.7;margin-top:4px;display:none;
+  background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.18);border-radius:14px;
+  padding:14px 16px;font-size:12px;color:var(--accent);line-height:1.7;margin-top:4px;display:none;
 }
 .announce.show{display:block}
 .footer{text-align:center;margin-top:28px;font-size:11px;color:var(--text3)}
-.footer a{color:var(--text2);text-decoration:none}
+.footer a{color:var(--accent-2);text-decoration:none}
 .footer a:hover{color:var(--accent)}
 .footer .tg-link{display:inline-flex;align-items:center;gap:5px;font-weight:600}
-.footer .tg-link i{color:var(--blue);font-size:12px}
+.footer .tg-link i{color:var(--accent-2);font-size:12px}
 .footer .footsep{margin:0 6px;opacity:.5}
 .footer .tg-link.hidden{display:none}
 .toast{
   position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(10px);
-  background:#232a38;color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;
+  background:#132038;color:#fff;padding:10px 22px;border-radius:999px;font-size:13px;font-weight:600;
   opacity:0;transition:all .3s;pointer-events:none;z-index:100;border:1px solid var(--border-2);
   box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.ok{border-color:rgba(74,222,128,.4)}
-@media(max-width:480px){body{font-size:13px}.container{padding:20px 14px 88px}}
+@media(max-width:480px){body{font-size:13px}.container{padding:20px 14px 92px}}
 </style>
 </head>
 <body>

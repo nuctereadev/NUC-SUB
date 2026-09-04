@@ -75,7 +75,12 @@ body{
 .link-clone i{font-family:'Font Awesome 6 Free';font-weight:900;font-size:10px}
 .announce{background:rgba(255,230,0,.05);border:1px solid rgba(255,230,0,.15);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--neon-yellow);line-height:1.7;margin-bottom:14px;display:none}
 .announce.show{display:block}
-.footer{text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:2px}
+.footer{text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,.35);letter-spacing:2px}
+.footer a{color:#22d3ee;text-decoration:none}
+.footer .tg-link{display:inline-flex;align-items:center;gap:5px;font-weight:600;letter-spacing:.5px}
+.footer .tg-link i{color:#22d3ee;font-size:13px}
+.footer .footsep{margin:0 6px;opacity:.5}
+.footer .tg-link.hidden{display:none}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(0,240,255,.1);border:1px solid var(--neon-cyan);color:var(--neon-cyan);padding:10px 24px;border-radius:12px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:100;letter-spacing:1px;box-shadow:0 0 20px rgba(0,240,255,.2)}
 .toast.show{opacity:1}
 @media(max-width:480px){body{padding:12px}.title{font-size:22px}.stat-num{font-size:16px}}
@@ -155,7 +160,11 @@ body{
     </div>
   </div>
 
-  <div class="footer">Powered by Neon v1.0</div>
+  <div class="footer">
+    <a href="@@TG_CHANNEL@@" class="tg-link" id="tgLink" target="_blank" rel="noopener"><svg viewBox="0 0 496 512" style="width:1em;height:1em;fill:currentColor;vertical-align:-0.125em;flex-shrink:0"><path d="M248 8C111 8 0 119 0 256s111 248 248 248 248-111 248-248S385 8 248 8zm121.8 169.9l-40.7 191.8c-3 13.6-11.2 16.9-22.7 10.5l-62.7-46.2-30.2 29.1c-3.4 3.4-6.1 6.1-12.5 6.1l4.5-63.7 116-104.8c5-4.5-1.1-7-7.8-2.5l-143.3 90.2-61.7-19.3c-13.4-4.2-13.7-13.4 2.8-19.9l241.3-93.1c11.2-4.1 21 2 17.3 19.5z"/></svg>Telegram</a>
+    <span class="footsep">·</span>
+    NUC-SUB by <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 <script>
@@ -186,6 +195,14 @@ links.forEach(function(linkEl){
   linkEl.addEventListener('click',function(e){ if(btn.contains(e.target)) return; copy(link); });
   btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
 });
+(function tgCheck(){
+  var tg=document.getElementById('tgLink');
+  if(!tg) return;
+  var href=(tg.getAttribute('href')||'').replace(/&amp;/g,'&');
+  if(!href || href.indexOf('TG_CHANNEL')>=0 || href==='#' || href.indexOf('t.me/')<0){
+    tg.classList.add('hidden');
+  }
+})();
 </script>
 </body>
 </html>
