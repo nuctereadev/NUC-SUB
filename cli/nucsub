@@ -274,6 +274,120 @@ open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
 PY
 }
 
+# --- Pasarguard panel API (per-admin sub_template sync) ----------------------
+# The panel shows the admin's own sub_template when set, and only falls back to
+# the .env SUBSCRIPTION_PAGE_TEMPLATE when it is empty. So apply/reset must also
+# write every admin's sub_template through the panel API, otherwise switching
+# themes has no visible effect for users of that admin.
+
+PG_CREDS_USER=""; PG_CREDS_PASS=""
+
+pg_creds_store() {  # pg_creds_store <user> <pass>
+    config_set pg_admin_user "$1"
+    config_set pg_admin_pass "$2"
+}
+
+pg_ensure_creds() {
+    PG_CREDS_USER="${PG_ADMIN_USER:-}"
+    PG_CREDS_PASS="${PG_ADMIN_PASS:-}"
+    [[ -z "$PG_CREDS_USER" ]] && PG_CREDS_USER="$(config_get pg_admin_user)"
+    [[ -z "$PG_CREDS_PASS" ]] && PG_CREDS_PASS="$(config_get pg_admin_pass)"
+    if [[ -z "$PG_CREDS_USER" ]]; then
+        if [[ -t 0 ]]; then
+            echo -ne "  Pasarguard admin username [admin]: "
+            read -r PG_CREDS_USER
+            [[ -z "$PG_CREDS_USER" ]] && PG_CREDS_USER="admin"
+            echo -ne "  Pasarguard admin password: "
+            read -rs PG_CREDS_PASS; echo
+        else
+            warn "Pasarguard admin credentials required — set PG_ADMIN_USER / PG_ADMIN_PASS"
+            warn "or store them once with: nucsub pglogin"
+            return 1
+        fi
+        [[ -n "$PG_CREDS_PASS" ]] || { warn "Password empty."; return 1; }
+        pg_creds_store "$PG_CREDS_USER" "$PG_CREDS_PASS"
+    fi
+    [[ -n "$PG_CREDS_USER" && -n "$PG_CREDS_PASS" ]]
+}
+
+pg_api_base() {
+    local u
+    u="$(config_get pg_api_url)"
+    [[ -n "$u" ]] && { echo "$u"; return 0; }
+    echo "${PASARGUARD_API:-https://127.0.0.1:8000}"
+}
+
+pg_api_token() {
+    local base user pass
+    base="$(pg_api_base)"
+    user="$PG_CREDS_USER"; pass="$PG_CREDS_PASS"
+    curl -sk -m 20 -X POST "$base/api/admin/token" \
+        -H 'Content-Type: application/x-www-form-urlencoded' \
+        --data-urlencode "grant_type=password" \
+        --data-urlencode "username=$user" \
+        --data-urlencode "password=$pass" \
+        | python3 -c 'import sys,json
+try:
+    print(json.load(sys.stdin).get("access_token",""))
+except Exception:
+    print("")'
+}
+
+pg_admin_set_all() {  # pg_admin_set_all <JSON value, e.g. "\"subscription/glass.html\"" or "\"\"">
+    local val="${1:-}" base token admins admin r ok=0
+    base="$(pg_api_base)"
+    token="$(pg_api_token)"
+    [[ -n "$token" ]] || { warn "Panel API login failed — check admin credentials."; return 1; }
+    admins="$(curl -sk -m 20 -H "Authorization: Bearer $token" "$base/api/admins" 2>/dev/null \
+        | python3 -c 'import sys,json
+try:
+    d=json.load(sys.stdin)
+    items=d.get("admins", d) if isinstance(d,dict) else d
+    for a in items:
+        if isinstance(a,dict) and a.get("username"):
+            print(a["username"])
+except Exception:
+    pass')"
+    [[ -n "$admins" ]] || { warn "No admins found via panel API."; return 1; }
+    while IFS= read -r admin; do
+        [[ -z "$admin" ]] && continue
+        r="$(curl -sk -m 20 -X PUT "$base/api/admin/$(printf %s "$admin" | tr -cd 'A-Za-z0-9_.-' )" \
+            -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+            -d "{\"sub_template\":$val}" -o /dev/null -w '%{http_code}' 2>/dev/null)"
+        [[ "$r" == "200" ]] && ok=$((ok+1))
+    done <<< "$admins"
+    if [[ $ok -gt 0 ]]; then
+        info "Per-admin sub_template set on $ok admin(s): $val"
+        return 0
+    fi
+    warn "Could not update any admin sub_template via API."
+    return 1
+}
+
+pg_sync() {  # pg_sync <theme-name|""> — push sub_template to every admin
+    local name="${1:-}" tries=0
+    if ! pg_ensure_creds; then
+        warn "Per-admin template override left unchanged (no credentials)."
+        return 1
+    fi
+    # The panel can take ~30s to become reachable after a restart; wait for it
+    # before touching the API so a fast apply never races its own restart.
+    while [[ $tries -lt 12 ]]; do
+        [[ -n "$(pg_api_token)" ]] && break
+        tries=$((tries+1))
+        sleep 5
+    done
+    if [[ $tries -ge 12 ]]; then
+        warn "Panel API did not become reachable in time."
+        return 1
+    fi
+    if [[ -n "$name" ]]; then
+        pg_admin_set_all "\"subscription/$name.html\""
+    else
+        pg_admin_set_all "\"\""
+    fi
+}
+
 # --------------------------------------------------------------- UI helpers ---
 print_header() {
     clear
@@ -371,16 +485,23 @@ cmd_apply() {
         mkdir -p "$PG_TEMPLATES_DIR"
         cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"
         chmod -R a+rX "$PG_TEMPLATES_DIR/$name.html"
-        if pg_env_apply "$name"; then
+        # The panel shows the admin's own sub_template live (no restart needed
+        # when the API is reachable). Restart only as a fallback so the .env
+        # default is picked up.
+        local env_ok=0 sync_ok=0
+        pg_env_apply "$name" && env_ok=1 || true
+        pg_sync "$name" && sync_ok=1 || true
+        if [[ $sync_ok -eq 1 ]]; then
+            ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
+        elif [[ $env_ok -eq 1 ]]; then
             if pg_restart_panel; then
                 ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
             else
-                warn "Theme deployed to $PG_TEMPLATES_DIR/$name.html and set in .env,"
-                warn "but the panel could not be restarted — restart Pasarguard manually to apply it."
+                warn "Theme '$name' set in the panel .env but the panel could not be restarted — restart Pasarguard manually."
             fi
         else
             warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
-            warn "Set SUBSCRIPTION_PAGE_TEMPLATE=subscription/$name.html in the panel .env and restart the panel to activate it."
+            warn "Activation needs the panel .env (PASARGUARD_ENV) or admin credentials (nucsub pglogin)."
         fi
         return
     fi
@@ -421,6 +542,7 @@ cmd_reset() {
     require_root
     if [[ "$PANEL" == "pasarguard" ]]; then
         if pg_env_apply ""; then
+            pg_sync "" || true
             pg_restart_panel || true
             ok "Pasarguard back to the built-in default subscription page."
         else
@@ -456,6 +578,7 @@ cmd_remove() {
         if [[ "$(current_theme_dir)" == "$name" ]]; then
             warn "Theme '$name' was active — panel returns to default."
             pg_env_apply "" || true
+            pg_sync "" || true
             pg_restart_panel || true
         fi
         ok "Removed theme '$name'."
@@ -678,6 +801,24 @@ cmd_telegram() {
     esac
 }
 
+# --------------------------------------------------- Pasarguard credentials ---
+cmd_pglogin() {
+    require_root
+    local user pass url
+    echo -ne "  Pasarguard API URL [https://127.0.0.1:8000]: "
+    read -r url
+    [[ -z "$url" ]] && url="https://127.0.0.1:8000"
+    echo -ne "  Pasarguard admin username [admin]: "
+    read -r user
+    [[ -z "$user" ]] && user="admin"
+    echo -ne "  Pasarguard admin password: "
+    read -rs pass; echo
+    [[ -n "$pass" ]] || die "Password empty."
+    config_set pg_api_url "$url"
+    pg_creds_store "$user" "$pass"
+    ok "Pasarguard credentials stored ($url)."
+}
+
 # ----------------------------------------------------------- Update / Uninstall ---
 cmd_update() {
     require_root
@@ -765,6 +906,7 @@ case "$cmd" in
     status)         cmd_status ;;
     webpanel)       cmd_webpanel "$@" ;;
     telegram)       cmd_telegram "$@" ;;
+    pglogin)        cmd_pglogin ;;
     update)         cmd_update ;;
     uninstall)      cmd_uninstall ;;
     menu)           cmd_menu ;;
@@ -790,6 +932,7 @@ Commands:
                       Control the web management panel
   telegram {get|set <url>|clear}
                       View or configure the Telegram channel shown in themes
+  pglogin             Store Pasarguard panel API credentials (for theme switching)
   update              Pull latest from GitHub and reinstall
   uninstall           Remove everything (themes, CLI, web panel, DB entry)
   menu                Interactive menu (default when no args given)
@@ -799,7 +942,7 @@ Commands:
 Interactive mode: run `nucsub` or `nucsub menu`
 Web panel:        nucsub webpanel {start|stop|restart|status|token}
 
-Requires: root, bash >= 4, sqlite3 (for DB access)
+Requires: root, bash >= 4; sqlite3 (3x-ui), python3 + curl (Pasarguard API)
 EOF
         ;;
     *) echo -e "${RED}Unknown command: $cmd${NC}"; echo "Run: nucsub help"; exit 1 ;;
