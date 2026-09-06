@@ -23,6 +23,7 @@ WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
 PANEL_CONF="$INSTALL_DIR/panel.conf"
+NUC_SUB_VERSION="2.0.1"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(minimal gradient matrix glass neon sunset arctic cyberpunk)
@@ -924,7 +925,7 @@ cmd_webpanel() {
             ;;
         status)
             title "Web Panel Status"; sep
-            web_panel_status
+            web_panel_status || true
             ;;
         token)
             [[ -f "$WEB_TOKEN_FILE" ]] && cat "$WEB_TOKEN_FILE" || warn "No token file."
@@ -942,7 +943,7 @@ web_panel_menu() {
         print_header
         title "Web Panel Management"
         sep
-        web_panel_status
+        web_panel_status || true
         sep
         echo -e "  ${GREEN}1)${NC} Start web panel        ${DIM}— install + run + show URL/token${NC}"
         echo -e "  ${GREEN}2)${NC} Stop web panel"
@@ -1020,6 +1021,8 @@ cmd_pglogin() {
 cmd_update() {
     require_root
     title "Update NUC-SUB"; sep
+    local force=0
+    [[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && force=1
     local tmp
     tmp="$(mktemp)"
     info "Fetching latest nucsub from GitHub..."
@@ -1027,11 +1030,14 @@ cmd_update() {
         warn "Could not fetch latest nucsub."
         rm -f "$tmp"; return 1
     fi
-    if cmp -s "$tmp" "$INSTALL_DIR/cli/nucsub"; then
-        ok "Already up to date."
+    local local_ver remote_ver
+    remote_ver="$(sed -n 's/^NUC_SUB_VERSION="\([^"]*\)".*/\1/p' "$tmp" | head -n 1)"
+    local_ver="$(sed -n 's/^NUC_SUB_VERSION="\([^"]*\)".*/\1/p' "$INSTALL_DIR/cli/nucsub" | head -n 1)"
+    if [[ "$force" -eq 0 && "$remote_ver" == "$local_ver" ]] && cmp -s "$tmp" "$INSTALL_DIR/cli/nucsub"; then
+        ok "Already up to date (v$local_ver)."
         rm -f "$tmp"; return 0
     fi
-    info "New version available — updating..."
+    info "Updating: v${local_ver:-?} → v${remote_ver:-?}"
     install -m 755 "$tmp" "$INSTALL_DIR/cli/nucsub"
     chmod +x "$INSTALL_DIR/cli/nucsub"
     ln -sf "$INSTALL_DIR/cli/nucsub" /usr/bin/nucsub
@@ -1042,7 +1048,7 @@ cmd_update() {
         XUI_SUB_NONINTERACTIVE=1 NUC_SUB_PANEL="$PANEL" SKIP_MENU=1 bash "$ish" </dev/null 2>&1 | tail -n 8 || true
     fi
     rm -f "$tmp"
-    ok "Update complete."
+    ok "Update complete — now NUC-SUB v${remote_ver:-latest}."
 }
 
 cmd_uninstall() {
@@ -1138,10 +1144,10 @@ case "$cmd" in
     webpanel)       cmd_webpanel "$@" ;;
     telegram)       cmd_telegram "$@" ;;
     pglogin)        cmd_pglogin ;;
-    update)         cmd_update ;;
+    update)         cmd_update "$@" ;;
     uninstall)      cmd_uninstall ;;
     menu)           cmd_menu ;;
-    version|-v|--version|-V)     echo "nucsub 2.0.0 — NUC-SUB" ;;
+    version|-v|--version|-V)     echo "nucsub $NUC_SUB_VERSION — NUC-SUB" ;;
     help|-h|--help|"")
         cat <<'EOF'
 nucsub — NUC-SUB Subscription theme engine for 3x-ui and Pasarguard panels

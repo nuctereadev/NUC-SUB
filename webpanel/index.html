@@ -251,7 +251,16 @@ async function loadThemes(){
 }
 
 function stripAnsi(s){return String(s||'').replace(/\x1b\[[0-9;]*m/g,'')}
-function parseThemeList(out){const set=new Set();const rx=/([A-Za-z0-9][A-Za-z0-9\-_.]*)\s*(?:runnable|missing\s+template)/gi;let m;while((m=rx.exec(stripAnsi(out))))set.add(m[1]);return[...set]}
+function parseThemeList(out){
+  const clean=stripAnsi(out);
+  const set=new Set();
+  // each list row is:  [★ ●] <name> <spaces> <downloaded|not downloaded|...>
+  // anchored to the start of the line so header/footer words never match.
+  const rx=/^[ \t]*[★●]?[ \t]*([A-Za-z0-9][A-Za-z0-9_-]*)[ \t]+(?:downloaded|not downloaded|missing template|runnable)\b/img;
+  let m;
+  while((m=rx.exec(clean))){set.add(m[1])}
+  return [...set];
+}
 function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);if(star)return star[1];const sum=clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);return sum?sum[1]:''}
 
 async function applyTheme(name){const res=await api('apply?name='+encodeURIComponent(name));if(res.ok){showToast('قالب «'+name+'» فعال شد');loadThemes()}else showToast((res.stderr||res.stdout||'خطا'),true)}
