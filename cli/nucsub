@@ -86,26 +86,32 @@ find_sqlite() {
 config_get() {
     local key="${1:-}"
     [[ -z "$key" || ! -f "$CONFIG_FILE" ]] && { echo ""; return 0; }
-    python3 -c "
-import json,sys
-d=json.load(open('$CONFIG_FILE'))
-print(d.get('$key',''))
-" 2>/dev/null || echo ""
+    python3 - "$CONFIG_FILE" "$key" <<'PY' 2>/dev/null || echo ""
+import json, sys
+p, k = sys.argv[1], sys.argv[2]
+print(json.load(open(p)).get(k, ''))
+PY
 }
 
 config_set() {
     local key="${1:-}" val="${2:-}"
     [[ -z "$key" ]] && die "config_set: missing key"
     mkdir -p "$(dirname "$CONFIG_FILE")"
+    local esc
+    esc="$(printf '%s' "$val" | sed 's/\\/\\\\/g; s/"/\\"/g')"
     if [[ -f "$CONFIG_FILE" ]]; then
-        python3 -c "
-import json
-d=json.load(open('$CONFIG_FILE'))
-d['$key']='$val'
-json.dump(d,open('$CONFIG_FILE','w'),indent=2,ensure_ascii=False)
-" 2>/dev/null || echo "{\"$key\":\"$val\"}" > "$CONFIG_FILE"
+        python3 - "$CONFIG_FILE" "$key" "$val" <<'PY' 2>/dev/null || true
+import json, sys
+p, k, v = sys.argv[1], sys.argv[2], sys.argv[3]
+d = json.load(open(p))
+d[k] = v
+json.dump(d, open(p, 'w'), indent=2, ensure_ascii=False)
+PY
+        if [[ ! -s "$CONFIG_FILE" ]]; then
+            printf '{\n  "%s": "%s"\n}\n' "$key" "$esc" > "$CONFIG_FILE"
+        fi
     else
-        echo "{\"$key\":\"$val\"}" > "$CONFIG_FILE"
+        printf '{\n  "%s": "%s"\n}\n' "$key" "$esc" > "$CONFIG_FILE"
     fi
     chmod 600 "$CONFIG_FILE"
 }
@@ -774,6 +780,70 @@ web_panel_status() {
     fi
 }
 
+# Detect the server's primary outbound IPv4 so the printed login URL is usable
+# (never 0.0.0.0 unless nothing else is available).
+web_panel_host() {
+    local h="${SUB_PANEL_HOST:-}"
+    if [[ -n "$h" && "$h" != "0.0.0.0" ]]; then echo "$h"; return 0; fi
+    h=""
+    if command -v ip >/dev/null 2>&1; then
+        h="$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \([0-9.]\{7,15\}\).*/\1/p')" || true
+    fi
+    if [[ -z "$h" ]] && command -v hostname >/dev/null 2>&1; then
+        h="$(hostname -I 2>/dev/null | awk '{print $1}')" || true
+    fi
+    [[ -z "$h" ]] && h="0.0.0.0"
+    echo "$h"
+}
+
+# Install the web panel as a real systemd service (survives reboots/reinstalls).
+# Returns 0 only when systemd accepted it; callers fall back to a nohup process.
+# Secrets live in a root-only EnvironmentFile, never in the (world-readable)
+# unit body; the service gets basic hardening for the public-facing HTTP server.
+web_panel_install_service() {
+    local port="${1:-}" token="$2" dbpath="${3:-}" unit="$WEB_SERVICE.service" uroot="" py="" envf="$INSTALL_DIR/.webpanel-env"
+    command -v systemctl >/dev/null 2>&1 || return 1
+    if [[ -d /etc/systemd/system ]]; then uroot="/etc/systemd/system"
+    elif [[ -d /usr/lib/systemd/system ]]; then uroot="/usr/lib/systemd/system"
+    else return 1; fi
+    py="$(command -v python3 || echo /usr/bin/python3)"
+    # only pass --db when a real path exists (Pasarguard installs have none)
+    local dbaro=""
+    [[ -n "$dbpath" && -e "$dbpath" ]] && dbaro="--db $dbpath"
+    umask 077
+    cat > "$envf" <<EOF
+NP_PORT=$port
+NP_TOKEN=$token
+NP_BASE=$WEB_BASE
+NP_CLI=$INSTALL_DIR/cli/nucsub
+NP_THEMES=$THEMES_DIR
+EOF
+    chmod 600 "$envf"
+    cat > "$uroot/$unit" <<EOF
+[Unit]
+Description=NUC-SUB web panel (subscription theme manager)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=-$envf
+ExecStart=$py $WEB_BASE/server.py --port \${NP_PORT} --token \${NP_TOKEN} --base \${NP_BASE} --cli \${NP_CLI} --themes \${NP_THEMES} $dbaro
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    chmod 600 "$uroot/$unit"
+    systemctl daemon-reload >/dev/null 2>&1 || return 1
+    systemctl enable "$WEB_SERVICE" >/dev/null 2>&1 || true
+    systemctl restart "$WEB_SERVICE" >/dev/null 2>&1 && systemctl is-active --quiet "$WEB_SERVICE" || return 1
+    return 0
+}
+
 cmd_webpanel() {
     local action="${1:-status}"
     case "$action" in
@@ -791,6 +861,7 @@ cmd_webpanel() {
                 done
             fi
             local port="${SUB_PANEL_PORT:-8080}"
+            [[ "$port" =~ ^[0-9]{1,5}$ ]] || { warn "Ignoring invalid SUB_PANEL_PORT='$port' — using 8080."; port=8080; }
             # smart port selection: if the requested/free port is occupied, pick the next free one
             if ! ss -tlnp 2>/dev/null | grep -q ":${port} "; then
                 : # port free
@@ -799,12 +870,25 @@ cmd_webpanel() {
                 warn "Port ${SUB_PANEL_PORT:-8080} occupied — using $port"
             fi
             local token=""
-            if [[ -f "$WEB_TOKEN_FILE" ]]; then token="$(<"$WEB_TOKEN_FILE")"
-            else token="$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)"; echo "$token" > "$WEB_TOKEN_FILE"; chmod 600 "$WEB_TOKEN_FILE"; fi
+            if [[ -f "$WEB_TOKEN_FILE" ]]; then
+                token="$(<"$WEB_TOKEN_FILE")"
+                # if the stored token is corrupted or contains special characters, regenerate
+                [[ "$token" =~ ^[A-Za-z0-9]{16,64}$ ]] || token=""
+            fi
+            if [[ -z "$token" ]]; then
+                token="$(head -c 32 /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | head -c 32)"
+                echo "$token" > "$WEB_TOKEN_FILE"
+                chmod 600 "$WEB_TOKEN_FILE"
+            fi
             echo "$port" > "$WEB_PORT_FILE"
-            if command -v python3 >/dev/null 2>&1; then
-                local dbpath=""
-                [[ "$PANEL" == "3xui" ]] && dbpath="$XUI_DB"
+            if ! command -v python3 >/dev/null 2>&1; then die "python3 required (install it first: apt install -y python3)."; fi
+            local dbpath=""
+            [[ "$PANEL" == "3xui" ]] && dbpath="$XUI_DB"
+            # prefer a real systemd service (auto-start on boot); nohup is the fallback
+            if web_panel_install_service "$port" "$token" "$dbpath"; then
+                ok "Web panel started (systemd $WEB_SERVICE) on port $port"
+            else
+                warn "systemd unavailable — starting in background (no auto-start on boot)..."
                 nohup python3 "$WEB_BASE/server.py" --port "$port" --token "$token" --base "$WEB_BASE" \
                      --cli "$INSTALL_DIR/cli/nucsub" --themes "$THEMES_DIR" --db "$dbpath" \
                      >"$INSTALL_DIR/webpanel.log" 2>&1 &
@@ -812,18 +896,21 @@ cmd_webpanel() {
                 sleep 1
                 if web_panel_status | grep -q "Running"; then
                     ok "Web panel started on port $port"
-                    echo ""
-                    echo -e "  ${CYAN}Login URL : ${BOLD}http://${SUB_PANEL_HOST:-0.0.0.0}:$port/${NC}"
-                    echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
-                    echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
                 else
                     warn "Start failed — check $INSTALL_DIR/webpanel.log"
                     tail -n 5 "$INSTALL_DIR/webpanel.log" 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g' | while IFS= read -r line; do warn "$line"; done
+                    return 1
                 fi
-            else die "python3 required (install it first: apt install -y python3)."; fi
+            fi
+            echo ""
+            echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
+            echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
+            echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
             ;;
         stop)
             require_root
+            systemctl stop "$WEB_SERVICE" 2>/dev/null || true
+            systemctl disable "$WEB_SERVICE" 2>/dev/null || true
             if [[ -f "$INSTALL_DIR/.webpanel.pid" ]]; then
                 kill "$(cat "$INSTALL_DIR/.webpanel.pid")" 2>/dev/null || true
                 rm -f "$INSTALL_DIR/.webpanel.pid"
@@ -973,7 +1060,7 @@ cmd_uninstall() {
     fi
     echo ""
     read -rp "  Type 'YES' to confirm: " confirm
-    [[ "$confirm" != "YES" ]] && { info "Cancelled."; return; }
+    [[ "$confirm" != "YES" ]] && { info "Cancelled."; return 1; }
 
     # Pasarguard: bring the panel back to its default page BEFORE deleting the
     # files, otherwise the last applied theme keeps rendering after uninstall.
@@ -1020,7 +1107,15 @@ cmd_menu() {
             5) clear; cmd_remove; pause_enter ;;
             6) clear; web_panel_menu ;;
             7) clear; cmd_update; pause_enter ;;
-            8) clear; cmd_uninstall; pause_enter ;;
+            8)
+                clear
+                if cmd_uninstall; then
+                    echo ""
+                    echo -e "${DIM}  NUC-SUB removed. Goodbye!${NC}\n"
+                    exit 0
+                fi
+                pause_enter
+                ;;
             9) clear; cmd_status; pause_enter ;;
             0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
