@@ -228,32 +228,11 @@ theme_is_runnable() {
     fi
 }
 
-db_get_subid() {
-    if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
-        sqlite3 "$XUI_DB" "SELECT sub_id FROM clients WHERE enable=1 LIMIT 1;" 2>/dev/null || true
-    fi
-}
-
 db_panel_setting() {
     local key="$1"
     if [[ -n "${_SQLITE}" && -e "$XUI_DB" ]]; then
         sqlite3 "$XUI_DB" "SELECT value FROM settings WHERE key='$key' ORDER BY id LIMIT 1;" 2>/dev/null || true
     fi
-}
-
-sub_url_for_sid() {
-    local sid="$1"; [[ -z "$sid" ]] && { echo ""; return 0; }
-    local host_override="${2:-}"
-    local webport webbase
-    webport="$(db_panel_setting webPort)"; webbase="$(db_panel_setting webBasePath)"
-    local host="${host_override:-${SUB_PANEL_HOST:-127.0.0.1}}"; local port="${webport:-2096}"
-    # 0.0.0.0 is a bind address, not a valid destination for outbound connections
-    [[ "$host" == "0.0.0.0" ]] && host="127.0.0.1"
-    if [[ -n "$webbase" && "$webbase" != "/" ]]; then
-        # normalize the panel's base path to avoid a double slash in the URL
-        webbase="$(printf '%s' "$webbase" | sed 's:^/::; s:/$::')"
-        echo "http://$host:$port/$webbase/sub/$sid"
-    else echo "http://$host:$port/sub/$sid"; fi
 }
 
 # ----------------------------------------------------------- Pasarguard panel ---
@@ -523,16 +502,15 @@ draw_menu() {
     sep
     echo -e "  ${BOLD}Main Menu${NC}\n"
     echo -e "  ${GREEN}1)${NC} Apply theme       ${DIM}— list all themes, pick one & activate${NC}"
-    echo -e "  ${GREEN}2)${NC} Preview theme     ${DIM}— view a theme rendered with live data${NC}"
-    echo -e "  ${GREEN}3)${NC} Reset to default  ${DIM}— back to panel built-in page${NC}"
-    echo -e "  ${GREEN}4)${NC} Remove theme      ${DIM}— delete a theme completely${NC}"
-    echo -e "  ${GREEN}5)${NC} Web panel         ${DIM}— start/stop web UI (token auth)${NC}"
-    echo -e "  ${GREEN}6)${NC} Update NUC-SUB    ${DIM}— pull latest from GitHub${NC}"
-    echo -e "  ${GREEN}7)${NC} Uninstall         ${DIM}— remove everything${NC}"
-    echo -e "  ${GREEN}8)${NC} Status & info     ${DIM}— panel DB, service, paths${NC}"
+    echo -e "  ${GREEN}2)${NC} Reset to default  ${DIM}— back to panel built-in page${NC}"
+    echo -e "  ${GREEN}3)${NC} Remove theme      ${DIM}— delete a theme completely${NC}"
+    echo -e "  ${GREEN}4)${NC} Web panel         ${DIM}— start/stop web UI (token auth)${NC}"
+    echo -e "  ${GREEN}5)${NC} Update NUC-SUB    ${DIM}— pull latest from GitHub${NC}"
+    echo -e "  ${GREEN}6)${NC} Uninstall         ${DIM}— remove everything${NC}"
+    echo -e "  ${GREEN}7)${NC} Status & info     ${DIM}— panel DB, service, paths${NC}"
     echo -e "  ${GREEN}0)${NC} Exit\n"
     sep
-    echo -ne "  ${BOLD}Select option [0-8]: ${NC}"
+    echo -ne "  ${BOLD}Select option [0-7]: ${NC}"
 }
 
 pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r; }
@@ -717,52 +695,6 @@ cmd_download() {
     fi
     download_theme "$name" || die "Failed to download theme '$name' ($REPO_URL)."
     ok "Theme '$name' downloaded — use 'nucsub apply $name' to activate it."
-}
-
-cmd_preview() {
-    require_root
-    [[ "$PANEL" == "pasarguard" ]] && die "Preview is only supported for 3x-ui panels."
-    local name="${1:-}" json=0
-    [[ "${2:-}" == "--json" ]] && json=1
-    if [[ -z "$name" ]]; then
-        local themes=()
-        while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
-        [[ ${#themes[@]} -eq 0 ]] && die "No themes installed."
-        title "Select theme to preview"; sep
-        select t in "${themes[@]}" "Cancel"; do
-            [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
-            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
-            warn "Invalid selection."
-        done
-    fi
-    valid_theme_name "$name" || die "Invalid theme name: '$name'"
-    local src="$THEMES_DIR/$name"
-    [[ -d "$src" ]] || die "Theme '$name' not found."
-    theme_is_runnable "$name" || die "Theme '$name' not runnable."
-
-    local sid
-    sid="$(db_get_subid)"
-    if [[ -z "$sid" ]]; then warn "No active subscription found in DB."; return 1; fi
-    local url
-    # the web panel needs a URL the USER's browser can reach → use the public IP
-    url="$(sub_url_for_sid "$sid" "$(web_panel_host)")"
-    [[ -z "$url" ]] && { warn "Could not compute sub URL."; return 1; }
-
-    if [[ "$json" -eq 1 ]]; then
-        # machine-readable output for the web panel: {"url": "...", "info": "..."}
-        local info
-        info="$(curl -sk -m 15 "${url}?format=info" 2>/dev/null || true)"
-        python3 - "$url" "$info" <<'PY'
-import json, sys
-print(json.dumps({"url": sys.argv[1], "info": sys.argv[2]}))
-PY
-        return 0
-    fi
-
-    title "Preview: $name"; sep
-    echo -e "  ${CYAN}Sub URL   : $url${NC}"
-    echo -e "  ${CYAN}View-model (?format=info):${NC}"
-    curl -sk --max-time 15 "${url}?format=info" || warn "fetch failed"
 }
 
 cmd_status() {
@@ -1137,12 +1069,11 @@ cmd_menu() {
         read -r choice
         case "$choice" in
             1) clear; cmd_apply; pause_enter ;;
-            2) clear; cmd_preview; pause_enter ;;
-            3) clear; cmd_reset; pause_enter ;;
-            4) clear; cmd_remove; pause_enter ;;
-            5) clear; web_panel_menu ;;
-            6) clear; cmd_update; pause_enter ;;
-            7)
+            2) clear; cmd_reset; pause_enter ;;
+            3) clear; cmd_remove; pause_enter ;;
+            4) clear; web_panel_menu ;;
+            5) clear; cmd_update; pause_enter ;;
+            6)
                 clear
                 if cmd_uninstall; then
                     echo ""
@@ -1151,7 +1082,7 @@ cmd_menu() {
                 fi
                 pause_enter
                 ;;
-            8) clear; cmd_status; pause_enter ;;
+            7) clear; cmd_status; pause_enter ;;
             0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1168,7 +1099,6 @@ case "$cmd" in
     download|dl)    cmd_download "$@" ;;
     reset)          cmd_reset ;;
     remove|rm)      cmd_remove "$@" ;;
-    preview)        cmd_preview "$@" ;;
     status)         cmd_status ;;
     webpanel)       cmd_webpanel "$@" ;;
     telegram)       cmd_telegram "$@" ;;
@@ -1191,7 +1121,6 @@ Commands:
   list                List themes (downloaded / not downloaded)
   download <theme>    Download a theme on demand (without applying it)
   apply <theme>       Download (if needed) + activate a theme
-  preview <theme>     Show live view-model data for a theme
   reset               Back to panel default (clear subThemeDir)
   remove <theme>      Remove a theme completely
   status              Show panel DB info, paths, and theme list

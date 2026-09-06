@@ -221,23 +221,6 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(run_cli(["remove", name]))
             return
 
-        if action == "preview":
-            name = (q.get("name") or [""])[0]
-            if not name or not is_valid_theme_name(name):
-                self._send_json({"error": "invalid or missing name"}, 400)
-                return
-            res = run_cli(["preview", name, "--json"])
-            # CLI emits {"url": "...", "info": "..."} on stdout.
-            url = ""
-            if res.get("ok"):
-                try:
-                    url = json.loads(res.get("stdout") or "{}").get("url", "")
-                except (json.JSONDecodeError, AttributeError):
-                    url = ""
-            res["url"] = url
-            self._send_json(res)
-            return
-
         if action == "settings":
             if self.command == "POST":
                 self._handle_settings_post()
