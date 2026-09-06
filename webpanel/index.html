@@ -140,7 +140,7 @@ footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
         <input id="token-input" type="password" placeholder="توکن را اینجا کپی کنید" autocomplete="off">
       </div>
       <button class="btn" onclick="doLogin()"><i class="fa-solid fa-sign-in-alt"></i> ورود</button>
-      <p class="hint">توکن در فایل <code>/opt/nuc-sub/install-result.txt</code> موجود است</p>
+      <p class="hint">توکن در فایل <code>/opt/nuc-sub/.webpanel-token</code> موجود است</p>
     </div>
   </div>
 
@@ -266,8 +266,18 @@ function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/�
 async function applyTheme(name){const res=await api('apply?name='+encodeURIComponent(name));if(res.ok){showToast('قالب «'+name+'» فعال شد');loadThemes()}else showToast((res.stderr||res.stdout||'خطا'),true)}
 async function removeTheme(name){if(!confirm('قالب «'+name+'» حذف شود؟'))return;const res=await api('remove?name='+encodeURIComponent(name));if(res.ok){showToast('قالب حذف شد');loadThemes()}else showToast('خطا',true)}
 async function resetTheme(){if(!confirm('برگشت به صفحه پیش‌فرض پنل؟'))return;const res=await api('reset');if(res.ok){showToast('به پیش‌فرض برگشت');loadThemes()}else showToast('خطا',true)}
-async function previewTheme(name){$('preview-title').innerHTML='<i class="fa-solid fa-eye"></i> پیش‌نمایش — '+esc(name);$('preview-ov').classList.add('show');try{const res=await api('preview?name='+encodeURIComponent(name));if(res.ok&&res.url){$('preview-frame').src=res.url}}catch(e){}}
-function closePreview(){$('preview-ov').classList.remove('show')}
+async function previewTheme(name){
+  const ov=$('preview-ov');const frame=$('preview-frame');
+  frame.src='about:blank';
+  $('preview-title').innerHTML='<i class="fa-solid fa-eye"></i> پیش‌نمایش — '+esc(name);
+  ov.classList.add('show');
+  try{
+    const res=await api('preview?name='+encodeURIComponent(name));
+    if(res.ok&&res.url) frame.src=res.url;
+    else{frame.srcdoc='<p style="padding:24px;text-align:center;color:#555">پیشنمایش در دسترس نیست. پنل فعال باشد.</p>'}
+  }catch(e){frame.srcdoc='<p style="padding:24px;text-align:center;color:red">خطا در پیشنمایش</p>'}
+}
+function closePreview(){$('preview-frame').src='about:blank';$('preview-ov').classList.remove('show')}
 
 async function loadSettings(){
   try{

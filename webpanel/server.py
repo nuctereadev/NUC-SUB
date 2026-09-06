@@ -13,7 +13,6 @@ Usage:
                    --cli <path/to/nucsub> --themes <themesDir> --db <xui.db>
 """
 import argparse
-import fcntl
 import hmac
 import json
 import mimetypes
@@ -227,7 +226,16 @@ class Handler(BaseHTTPRequestHandler):
             if not name or not is_valid_theme_name(name):
                 self._send_json({"error": "invalid or missing name"}, 400)
                 return
-            self._send_json(run_cli(["preview", name, "--json"]))
+            res = run_cli(["preview", name, "--json"])
+            # CLI emits {"url": "...", "info": "..."} on stdout.
+            url = ""
+            if res.get("ok"):
+                try:
+                    url = json.loads(res.get("stdout") or "{}").get("url", "")
+                except (json.JSONDecodeError, AttributeError):
+                    url = ""
+            res["url"] = url
+            self._send_json(res)
             return
 
         if action == "settings":
@@ -303,8 +311,6 @@ def main():
     ap.add_argument("--cli", default="/opt/nuc-sub/cli/nucsub")
     ap.add_argument("--themes")
     ap.add_argument("--db")
-    ap.add_argument("--ext-json", action="store_true",
-                    help="expose /api/info returning raw ?format=info JSON from the panel")
     ARGS = ap.parse_args()
 
     # Load settings from config.json (sibling to --base or in install dir)

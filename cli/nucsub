@@ -192,14 +192,28 @@ download_theme() {  # download_theme <name>
         ok "Theme '$name' downloaded."
     else
         local td="$THEMES_DIR/$name"
-        [[ -d "$td" ]] && return 0
+        [[ -d "$td" && -f "$td/index.html" ]] && return 0
         mkdir -p "$td/css" "$td/fonts" "$td/fa"
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/css/icons.css" -o "$td/css/icons.css" || return 1
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/css/fonts.css" -o "$td/css/fonts.css" || return 1
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || return 1
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || return 1
-        curl -fsSL -m 60 "$REPO_URL/themes/$name/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || return 1
+        # Fetch the 6 assets in parallel instead of one-after-another: on
+        # high-latency links a sequential download takes 30s+, which made the
+        # web-panel apply feel stuck. install.sh now pre-seeds every theme, so
+        # this path only triggers on demand (e.g. after `nucsub remove`).
+        if ! printf '%s\n' \
+            "$REPO_URL/themes/$name/index.html|$td/index.html" \
+            "$REPO_URL/themes/$name/css/icons.css|$td/css/icons.css" \
+            "$REPO_URL/themes/$name/css/fonts.css|$td/css/fonts.css" \
+            "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2|$td/fonts/IRANSansX-Bold.woff2" \
+            "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2|$td/fonts/IRANSansX-Regular.woff2" \
+            "$REPO_URL/themes/$name/fa/fa-solid-900.woff2|$td/fa/fa-solid-900.woff2" \
+            | xargs -P 6 -n 1 bash -c 'u="${1%%|*}"; f="${1#*|}"; curl -fsSL -m 60 "$u" -o "$f"' _ ; then
+            warn "Parallel fetch failed — retrying sequentially..."
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/css/icons.css" -o "$td/css/icons.css" || return 1
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/css/fonts.css" -o "$td/css/fonts.css" || return 1
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || return 1
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || return 1
+            curl -fsSL -m 60 "$REPO_URL/themes/$name/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || return 1
+        fi
         ok "Theme '$name' downloaded."
     fi
     return 0
@@ -229,12 +243,16 @@ db_panel_setting() {
 
 sub_url_for_sid() {
     local sid="$1"; [[ -z "$sid" ]] && { echo ""; return 0; }
+    local host_override="${2:-}"
     local webport webbase
     webport="$(db_panel_setting webPort)"; webbase="$(db_panel_setting webBasePath)"
-    local host="${SUB_PANEL_HOST:-127.0.0.1}"; local port="${webport:-2096}"
+    local host="${host_override:-${SUB_PANEL_HOST:-127.0.0.1}}"; local port="${webport:-2096}"
     # 0.0.0.0 is a bind address, not a valid destination for outbound connections
     [[ "$host" == "0.0.0.0" ]] && host="127.0.0.1"
-    if [[ -n "$webbase" && "$webbase" != "/" ]]; then echo "http://$host:$port/${webbase#/}/sub/$sid"
+    if [[ -n "$webbase" && "$webbase" != "/" ]]; then
+        # normalize the panel's base path to avoid a double slash in the URL
+        webbase="$(printf '%s' "$webbase" | sed 's:^/::; s:/$::')"
+        echo "http://$host:$port/$webbase/sub/$sid"
     else echo "http://$host:$port/sub/$sid"; fi
 }
 
@@ -504,18 +522,17 @@ draw_menu() {
     print_status_line
     sep
     echo -e "  ${BOLD}Main Menu${NC}\n"
-    echo -e "  ${GREEN}1)${NC} List themes              ${DIM}— show all installed themes${NC}"
-    echo -e "  ${GREEN}2)${NC} Apply theme              ${DIM}— activate a theme for subscription page${NC}"
-    echo -e "  ${GREEN}3)${NC} Preview theme            ${DIM}— view live data for a theme${NC}"
-    echo -e "  ${GREEN}4)${NC} Reset to default         ${DIM}— back to panel built-in page${NC}"
-    echo -e "  ${GREEN}5)${NC} Remove theme             ${DIM}— uninstall a theme completely${NC}"
-    echo -e "  ${GREEN}6)${NC} Web panel                ${DIM}— start/stop web UI (token auth)${NC}"
-    echo -e "  ${GREEN}7)${NC} Update NUC-SUB${DIM}— pull latest from GitHub${NC}"
-    echo -e "  ${GREEN}8)${NC} Uninstall completely     ${DIM}— remove everything${NC}"
-    echo -e "  ${GREEN}9)${NC} Status & info            ${DIM}— panel DB, service, paths${NC}"
+    echo -e "  ${GREEN}1)${NC} Apply theme       ${DIM}— list all themes, pick one & activate${NC}"
+    echo -e "  ${GREEN}2)${NC} Preview theme     ${DIM}— view a theme rendered with live data${NC}"
+    echo -e "  ${GREEN}3)${NC} Reset to default  ${DIM}— back to panel built-in page${NC}"
+    echo -e "  ${GREEN}4)${NC} Remove theme      ${DIM}— delete a theme completely${NC}"
+    echo -e "  ${GREEN}5)${NC} Web panel         ${DIM}— start/stop web UI (token auth)${NC}"
+    echo -e "  ${GREEN}6)${NC} Update NUC-SUB    ${DIM}— pull latest from GitHub${NC}"
+    echo -e "  ${GREEN}7)${NC} Uninstall         ${DIM}— remove everything${NC}"
+    echo -e "  ${GREEN}8)${NC} Status & info     ${DIM}— panel DB, service, paths${NC}"
     echo -e "  ${GREEN}0)${NC} Exit\n"
     sep
-    echo -ne "  ${BOLD}Select option [0-9]: ${NC}"
+    echo -ne "  ${BOLD}Select option [0-8]: ${NC}"
 }
 
 pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r; }
@@ -705,7 +722,8 @@ cmd_download() {
 cmd_preview() {
     require_root
     [[ "$PANEL" == "pasarguard" ]] && die "Preview is only supported for 3x-ui panels."
-    local name="${1:-}"
+    local name="${1:-}" json=0
+    [[ "${2:-}" == "--json" ]] && json=1
     if [[ -z "$name" ]]; then
         local themes=()
         while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
@@ -726,13 +744,25 @@ cmd_preview() {
     sid="$(db_get_subid)"
     if [[ -z "$sid" ]]; then warn "No active subscription found in DB."; return 1; fi
     local url
-    url="$(sub_url_for_sid "$sid")"
+    # the web panel needs a URL the USER's browser can reach → use the public IP
+    url="$(sub_url_for_sid "$sid" "$(web_panel_host)")"
     [[ -z "$url" ]] && { warn "Could not compute sub URL."; return 1; }
+
+    if [[ "$json" -eq 1 ]]; then
+        # machine-readable output for the web panel: {"url": "...", "info": "..."}
+        local info
+        info="$(curl -sk -m 15 "${url}?format=info" 2>/dev/null || true)"
+        python3 - "$url" "$info" <<'PY'
+import json, sys
+print(json.dumps({"url": sys.argv[1], "info": sys.argv[2]}))
+PY
+        return 0
+    fi
 
     title "Preview: $name"; sep
     echo -e "  ${CYAN}Sub URL   : $url${NC}"
     echo -e "  ${CYAN}View-model (?format=info):${NC}"
-    curl -sk "${url}?format=info" || warn "fetch failed"
+    curl -sk --max-time 15 "${url}?format=info" || warn "fetch failed"
 }
 
 cmd_status() {
@@ -1044,7 +1074,7 @@ cmd_update() {
     local ish="$INSTALL_DIR/install.sh"
     curl -fsSL -m 40 "$REPO_URL/install.sh" -o "$ish" || true
     if [[ -f "$ish" ]]; then
-        info "Refreshing web panel assets + default theme..."
+        info "Refreshing web panel assets + all themes..."
         XUI_SUB_NONINTERACTIVE=1 NUC_SUB_PANEL="$PANEL" SKIP_MENU=1 bash "$ish" </dev/null 2>&1 | tail -n 8 || true
     fi
     rm -f "$tmp"
@@ -1106,14 +1136,13 @@ cmd_menu() {
         draw_menu
         read -r choice
         case "$choice" in
-            1) clear; cmd_list; pause_enter ;;
-            2) clear; cmd_apply; pause_enter ;;
-            3) clear; cmd_preview; pause_enter ;;
-            4) clear; cmd_reset; pause_enter ;;
-            5) clear; cmd_remove; pause_enter ;;
-            6) clear; web_panel_menu ;;
-            7) clear; cmd_update; pause_enter ;;
-            8)
+            1) clear; cmd_apply; pause_enter ;;
+            2) clear; cmd_preview; pause_enter ;;
+            3) clear; cmd_reset; pause_enter ;;
+            4) clear; cmd_remove; pause_enter ;;
+            5) clear; web_panel_menu ;;
+            6) clear; cmd_update; pause_enter ;;
+            7)
                 clear
                 if cmd_uninstall; then
                     echo ""
@@ -1122,7 +1151,7 @@ cmd_menu() {
                 fi
                 pause_enter
                 ;;
-            9) clear; cmd_status; pause_enter ;;
+            8) clear; cmd_status; pause_enter ;;
             0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac

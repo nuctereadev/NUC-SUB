@@ -48,9 +48,11 @@ SRC_WEB=(
 )
 
 # 3x-ui themes, each with its self-hosted css / fonts / fa assets.
-# Only the default theme is installed; the rest are downloaded on demand when
-# the user applies them (keeps the server light).
+# ALL of them are downloaded during install so that `apply` in the terminal or
+# the web panel is instant — no slow on-demand GitHub fetch when picking a theme.
 DEFAULT_THEME="${NUC_SUB_DEFAULT_THEME:-gradient}"
+XUI_THEMES=(minimal gradient matrix glass neon sunset arctic cyberpunk)
+PG_THEMES=(gradient minimal glass sunset matrix neon arctic cyberpunk)
 
 INSTALL_DIR="${XUI_SUB_INSTALL_DIR:-/opt/nuc-sub}"
 THEMES_DIR="$INSTALL_DIR/themes"
@@ -164,35 +166,47 @@ fi
 
 # ---------------------------- per-panel download ------------------------------
 if [[ "$PANEL" == "3xui" ]]; then
-    echo -e "${BLUE}→ 2/4 Downloading 3x-ui files (default theme '${DEFAULT_THEME}' only)...${NC}"
+    echo -e "${BLUE}→ 2/4 Downloading 3x-ui files + all ${#XUI_THEMES[@]} themes...${NC}"
     if is_local; then
         copy_from_local "$LOCAL_SRC" "$INSTALL_DIR" "${SRC_WEB[@]}"
-        mkdir -p "$THEMES_DIR/$DEFAULT_THEME/css" "$THEMES_DIR/$DEFAULT_THEME/fonts" "$THEMES_DIR/$DEFAULT_THEME/fa"
-        cp -r "$LOCAL_SRC/themes/$DEFAULT_THEME/." "$THEMES_DIR/$DEFAULT_THEME/"
+        for t in "${XUI_THEMES[@]}"; do
+            mkdir -p "$THEMES_DIR/$t/css" "$THEMES_DIR/$t/fonts" "$THEMES_DIR/$t/fa"
+            cp -r "$LOCAL_SRC/themes/$t/." "$THEMES_DIR/$t/"
+        done
     else
         for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
-        td="$THEMES_DIR/$DEFAULT_THEME"
-        mkdir -p "$td/css" "$td/fonts" "$td/fa"
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/index.html" -o "$td/index.html" \
-            || { echo -e "${RED}✗ Failed to fetch default theme${NC}"; }
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/icons.css" -o "$td/css/icons.css" \
-            || { echo -e "${RED}✗ Failed to fetch default theme css${NC}"; }
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/fonts.css" -o "$td/css/fonts.css" \
-            || { echo -e "${RED}✗ Failed to fetch default theme fonts${NC}"; }
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || true
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || true
-        curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || true
+        for t in "${XUI_THEMES[@]}"; do
+            td="$THEMES_DIR/$t"
+            mkdir -p "$td/css" "$td/fonts" "$td/fa"
+            if curl -fsSL "$REPO_URL/themes/$t/index.html" -o "$td/index.html" \
+               && curl -fsSL "$REPO_URL/themes/$t/css/icons.css" -o "$td/css/icons.css" \
+               && curl -fsSL "$REPO_URL/themes/$t/css/fonts.css" -o "$td/css/fonts.css"; then
+                curl -fsSL "$REPO_URL/themes/$t/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || true
+                curl -fsSL "$REPO_URL/themes/$t/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || true
+                curl -fsSL "$REPO_URL/themes/$t/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || true
+                echo -e "${GREEN}  ✓ theme '$t'${NC}"
+            else
+                echo -e "${YELLOW}  ⚠ theme '$t' skipped (fetch failed)${NC}"
+            fi
+        done
     fi
 else  # pasarguard
-    echo -e "${BLUE}→ 2/4 Downloading Pasarguard files (default theme '${DEFAULT_THEME}' only)...${NC}"
+    echo -e "${BLUE}→ 2/4 Fetching web assets + all ${#PG_THEMES[@]} Pasarguard templates...${NC}"
     mkdir -p "$PG_SRC_DIR" "$WEB_DIR"
     if is_local; then
-        cp -f "$LOCAL_SRC/pasarguard-themes/subscription/$DEFAULT_THEME.html" "$PG_SRC_DIR/"
+        for t in "${PG_THEMES[@]}"; do
+            cp -f "$LOCAL_SRC/pasarguard-themes/subscription/$t.html" "$PG_SRC_DIR/"
+        done
         copy_from_local "$LOCAL_SRC" "$INSTALL_DIR" "${SRC_WEB[@]}"
     else
         for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
-        curl -fsSL "$REPO_URL/pasarguard-themes/subscription/$DEFAULT_THEME.html" -o "$PG_SRC_DIR/$DEFAULT_THEME.html" \
-            || { echo -e "${RED}✗ Failed to fetch default theme${NC}"; }
+        for t in "${PG_THEMES[@]}"; do
+            if curl -fsSL "$REPO_URL/pasarguard-themes/subscription/$t.html" -o "$PG_SRC_DIR/$t.html"; then
+                echo -e "${GREEN}  ✓ theme '$t'${NC}"
+            else
+                echo -e "${YELLOW}  ⚠ theme '$t' skipped (fetch failed)${NC}"
+            fi
+        done
     fi
 fi
 
@@ -248,16 +262,13 @@ else  # pasarguard
 fi
 
 echo ""
-echo -e "${GREEN}NUC-SUB installed successfully.${NC}"
+echo -e "${GREEN}NUC-SUB installed successfully — ${#XUI_THEMES[@]} themes ready.${NC}"
 echo ""
-echo -e "${CYAN}The web panel is NOT installed by default (available on both panels).${NC}"
-echo -e "  Choose themes from the terminal now, or enable the web panel later from"
-echo -e "  the menu (${BOLD}option ${GREEN}6${NC}${CYAN}) — it will print a URL and an access token.${NC}"
+echo -e "  ${CYAN}The web panel is NOT started by default — enable it from the menu (${BOLD}option 5${NC}${CYAN}).${NC}"
 echo ""
 echo -e "${CYAN}Quick commands:${NC}"
-echo -e "   nucsub list           ${DIM}# show themes (downloaded / not downloaded)${NC}"
-echo -e "   nucsub apply gradient ${DIM}# download + activate a theme${NC}"
-echo -e "   nucsub download matrix${DIM}# download a theme without activating${NC}"
+echo -e "   nucsub list           ${DIM}# show all themes with status${NC}"
+echo -e "   nucsub apply gradient ${DIM}# activate a theme${NC}"
 echo -e "   nucsub menu           ${DIM}# interactive menu${NC}"
 echo -e "   nucsub status         ${DIM}# full system info (panel = $PANEL)${NC}"
 echo ""
