@@ -348,6 +348,19 @@ if '@@TG_CHANNEL@@' in s:
 PY
 }
 
+inject_tg() {  # inject_tg <src-index.html> <dst-index.html> — copy pristine then fill the telegram slot
+    local src="$1" dst="$2" tg
+    [[ -f "$src" && -f "$dst" ]] || return 1
+    tg="$(config_get telegram_channel)"
+    cp -f "$src" "$dst"
+    python3 - "$dst" "$tg" <<'PY'
+import sys
+p, chan = sys.argv[1], sys.argv[2]
+s = open(p, encoding='utf-8').read()
+open(p, 'w', encoding='utf-8').write(s.replace('@@TG_CHANNEL@@', chan))
+PY
+}
+
 pg_env_value() {  # pg_env_value <KEY> — read a value from the panel .env
     [[ -n "$PG_ENV_FILE" && -f "$PG_ENV_FILE" ]] || return 1
     grep -E "^${1}=" "$PG_ENV_FILE" | head -n 1 | cut -d= -f2- | tr -d '"' | tr -d "'"
@@ -593,9 +606,11 @@ cmd_apply() {
     chmod -R a+rX "$DEPLOY_DIR/$name"
 
     # inject Telegram channel placeholder from config into deployed theme
-    local tg
-    tg="$(config_get telegram_channel)"
-    if [[ -f "$DEPLOY_DIR/$name/index.html" && -n "$tg" ]]; then
+    if [[ -f "$THEMES_DIR/$name/index.html" && -f "$DEPLOY_DIR/$name/index.html" ]]; then
+        inject_tg "$THEMES_DIR/$name/index.html" "$DEPLOY_DIR/$name/index.html"
+    elif [[ -f "$DEPLOY_DIR/$name/index.html" ]]; then
+        local tg
+        tg="$(config_get telegram_channel)"
         python3 - "$DEPLOY_DIR/$name/index.html" "$tg" <<'PY'
 import sys
 p,chan=sys.argv[1],sys.argv[2]
@@ -927,6 +942,20 @@ web_panel_menu() {
 }
 
 # --------------------------------------------------------------- Telegram cmd ---
+reapply_tg() {  # re-inject the telegram channel into the currently active theme
+    local cur
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        cur="$(pg_current_theme)"
+        [[ -n "$cur" && -f "$PG_THEMES_DIR/$cur.html" ]] || return 0
+        cp -f "$PG_THEMES_DIR/$cur.html" "$PG_TEMPLATES_DIR/$cur.html"
+        pg_inject_tg "$PG_TEMPLATES_DIR/$cur.html"
+        return 0
+    fi
+    cur="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
+    [[ -n "$cur" && -f "$THEMES_DIR/$cur/index.html" ]] || return 0
+    inject_tg "$THEMES_DIR/$cur/index.html" "$DEPLOY_DIR/$cur/index.html"
+}
+
 cmd_telegram() {
     local action="${1:-get}"
     local val
@@ -949,11 +978,13 @@ cmd_telegram() {
             fi
             config_set telegram_channel "$val"
             ok "Telegram channel set: $val"
+            reapply_tg
             ;;
         clear|unset)
             require_root
             config_set telegram_channel ""
             ok "Telegram channel cleared."
+            reapply_tg
             ;;
         *)
             echo -e "${YELLOW}Usage: nucsub telegram {get|set <url>|clear}${NC}"

@@ -262,6 +262,14 @@ class Handler(BaseHTTPRequestHandler):
                 updated[k] = v
 
         save_settings()
+
+        # Refresh the active theme so the channel link appears immediately.
+        if "telegram_channel" in updated:
+            if updated["telegram_channel"]:
+                run_cli(["telegram", "set", updated["telegram_channel"]])
+            else:
+                run_cli(["telegram", "clear"])
+
         self._send_json({"ok": True, "settings": SETTINGS, "updated": updated})
 
     # -- HTTP methods -------------------------------------------------------

@@ -253,6 +253,10 @@ body{
       <span data-i18n="support">پشتیبانی</span>
     </a>
     {{ end }}
+    <a id="tgBtn" class="act primary hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M9.04 15.43l-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21L9.04 15.43z"/></svg>
+      <span data-i18n="support">پشتیبانی</span>
+    </a>
     <a id="jsonBtn" class="act ghost" href="{{ .subJsonUrl }}" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm4 4a1 1 0 0 0-1 1v5a1 1 0 0 1-1 1 1 1 0 0 0 0 2 1 1 0 0 1 1 1v5a1 1 0 0 0 1 1h2v-2H9v-6H7V9h2V7h1a2 2 0 0 1 2 2v.3h2V9a2 2 0 0 1 2-2h1v.3h2v5.4h-2V9h-2v.3h-2V9a2 2 0 0 0-2-2z"/></svg>
       <span data-i18n="openApp">باز کردن در اپ</span>
@@ -300,6 +304,11 @@ var D = {
   up: {{ .downloadByte }}, down: {{ .uploadByte }}
 };
 function findEl(id){ var x=document.getElementById(id); return x?x:null; }
+
+var tg='@@TG_CHANNEL@@';
+var tgBtn=findEl('tgBtn');
+if(tg && tg.match(/t\.me\//) && tgBtn) tgBtn.classList.remove('hidden');
+else if(tgBtn) tgBtn.classList.add('hidden');
 function showToast(msg,ok){ var t=findEl('toast'); if(!t) return; t.textContent=msg; t.className=ok?'toast show ok':'toast show'; setTimeout(function(){t.classList.remove('show')},2000); }
 function rawLink(s){ return (s||'').replace(/&amp;/g,'&'); }
 function protocolOf(link){ var m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
