@@ -159,6 +159,56 @@
 
 
     <!-- =======================================================
+         MOBILE BOTTOM NAV
+         ======================================================= -->
+
+    <nav class="m-bottom-nav" aria-label="Mobile navigation">
+
+      <a class="m-nav-item" href="#statusbar" data-m-nav="system">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span data-i18n="nav.tab.system">System</span>
+      </a>
+
+      <a class="m-nav-item active" href="#themes-grid" data-m-nav="themes">
+        <i class="fa-solid fa-palette"></i>
+        <span data-i18n="nav.tab.themes">Themes</span>
+      </a>
+
+      <a class="m-nav-item" href="#tg-input" data-m-nav="settings">
+        <i class="fa-solid fa-gear"></i>
+        <span data-i18n="nav.tab.settings">Settings</span>
+      </a>
+
+    </nav>
+
+
+    <!-- =======================================================
+         MOBILE TOP APP BAR
+         ======================================================= -->
+
+    <header class="m-topbar">
+
+      <div class="m-topbar-brand">
+        <div class="logo">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <strong>NUC-SUB</strong>
+      </div>
+
+      <div class="m-topbar-title" id="m-topbar-title" data-i18n="nav.themes">Theme Manager</div>
+
+      <div class="m-topbar-actions">
+        <span class="m-conn-dot" aria-hidden="true"></span>
+        <button class="lang-toggle m-lang" type="button" onclick="toggleLang()" aria-label="language"></button>
+        <button class="m-icon-btn" onclick="logout()" type="button" data-i18n-title="nav.logout" title="خروج" aria-label="خروج">
+          <i class="fa-solid fa-sign-out-alt"></i>
+        </button>
+      </div>
+
+    </header>
+
+
+    <!-- =======================================================
          MAIN CONTENT
          ======================================================= -->
 
@@ -245,6 +295,30 @@
 
 
           <div class="page-header-actions">
+
+            <button
+              id="m-refresh-btn"
+              class="btn btn-secondary mobile-actions"
+              onclick="loadThemes()"
+              type="button"
+              data-i18n-title="page.refresh"
+              title="تازه‌سازی"
+              aria-label="تازه‌سازی"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+            </button>
+
+            <button
+              id="m-reset-btn"
+              class="btn btn-secondary mobile-actions"
+              onclick="resetTheme()"
+              type="button"
+              data-i18n-title="page.reset"
+              title="بازنشانی"
+              aria-label="بازنشانی"
+            >
+              <i class="fa-solid fa-undo"></i>
+            </button>
 
             <button
               class="btn btn-secondary"
@@ -580,6 +654,9 @@ const I18N={fa:{
   'nav.workspace':'Workspace',
   'nav.themes':'مدیریت قالب',
   'nav.settings':'تنظیمات',
+  'nav.tab.system':'سیستم',
+  'nav.tab.themes':'قالب',
+  'nav.tab.settings':'تنظیمات',
   'sidebar.status.title':'سیستم آنلاین',
   'sidebar.status.sub':'NUC-SUB Engine',
   'nav.logout':'خروج',
@@ -655,6 +732,9 @@ const I18N={fa:{
   'nav.workspace':'Workspace',
   'nav.themes':'Theme Manager',
   'nav.settings':'Settings',
+  'nav.tab.system':'System',
+  'nav.tab.themes':'Themes',
+  'nav.tab.settings':'Settings',
   'sidebar.status.title':'System online',
   'sidebar.status.sub':'NUC-SUB Engine',
   'nav.logout':'Sign out',
@@ -936,9 +1016,35 @@ async function saveTelegram(){
   } 
 } 
 
-applyLang(); 
+// --- additive: mobile bottom-nav active state + top-bar title sync ---------
+const MBT={show:window.matchMedia&&window.matchMedia('(max-width:820px)').matches};
+const MBT_TITLES={system:'sidebar.status.title',themes:'nav.themes',settings:'nav.settings'};
+function mbtSync(){
+  const items=Array.prototype.slice.call(document.querySelectorAll('.m-nav-item'));
+  if(!items.length)return;
+  const byId={system:$('statusbar'),themes:$('themes-grid'),settings:$('tg-input')};
+  let cur='themes';
+  for(const key in byId){const el=byId[key];if(el&&el.getBoundingClientRect().top<=90)cur=key}
+  items.forEach(it=>it.classList.toggle('active',it.getAttribute('data-m-nav')===cur));
+  const tt=$('m-topbar-title');
+  if(tt){const k=MBT_TITLES[cur];if(k)tt.textContent=t(k)}
+}
+function mbtBind(){
+  document.querySelectorAll('.m-nav-item').forEach(a=>{
+    a.addEventListener('click',()=>{
+      const id=a.getAttribute('href').slice(1);
+      if(id==='tg-input'){setTimeout(()=>{$('tg-input').focus()},220)}
+      mbtSync()
+    })
+  });
+  document.addEventListener('scroll',()=>{if(MBT.show)mbtSync()},{passive:true});
+}
+if(MBT.show){mbtBind();mbtSync()}
+const _mbtStatic=(window.requestAnimationFrame?requestAnimationFrame:setTimeout)(()=>{if(MBT.show)mbtSync()});
 
-(async()=>{ 
+applyLang();
+
+(async()=>{
   if(token){ 
     try{ 
       const r=await api('list'); 

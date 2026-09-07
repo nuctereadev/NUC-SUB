@@ -2525,3 +2525,628 @@ html[dir="ltr"] .input-shell input{
   }
 
 }
+
+/* =========================================================
+   DEDICATED MOBILE APP (base rules — hidden on desktop)
+   ========================================================= */
+
+.m-topbar,
+.m-bottom-nav,
+.mobile-actions{
+  display:none;
+}
+
+/* =========================================================
+   DEDICATED MOBILE APP (<= 820px)
+   Screen-first layout: sticky top app bar, fixed icon bottom
+   nav, no desktop chrome. Yellow accent only for the active /
+   primary / important tokens.
+   ========================================================= */
+
+@media(max-width:820px){
+
+  /* ---- page root ---- */
+
+  .dashboard{
+    display:block;
+  }
+
+  body{
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ---- hide desktop chrome on mobile ---- */
+
+  .sidebar{
+    display:none;
+  }
+
+  .main-content{
+    width:100%;
+    margin:0;
+  }
+
+  .topbar{
+    display:none;
+  }
+
+  .page-header{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+
+    padding:6px 0 12px;
+
+    border-bottom:none;
+  }
+
+  .page-header-main{
+    display:none;
+  }
+
+  .page-header-actions{
+    flex-direction:row;
+
+    padding:0;
+  }
+
+  .page-header-actions .btn:not(.mobile-actions){
+    display:none;
+  }
+
+  .overview-grid{
+    display:none;
+  }
+
+  /* ---- workspace becomes a single column ---- */
+
+  .workspace{
+    width:100%;
+    max-width:none;
+
+    min-height:100vh;
+
+    display:flex;
+    flex-direction:column;
+
+    padding:18px 16px calc(92px + env(safe-area-inset-bottom));
+  }
+
+  /* natural sort order for the reflowed single column:
+     status hero, themes, settings, footer                      */
+
+  .system-status-card{
+    order:1;
+  }
+
+  .panel-section{
+    order:2;
+
+    border-top-left-radius:0;
+    border-top-right-radius:0;
+  }
+
+  .settings-section{
+    order:3;
+  }
+
+  .footer{
+    order:4;
+  }
+
+  /* provide baked-in scroll offset so anchor links clear the
+     sticky app bar                                       */
+
+  #statusbar,
+  #themes-grid,
+  #tg-input{
+    scroll-margin-top:78px;
+  }
+
+  .system-status-card{
+    margin-top:0;
+    margin-bottom:12px;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    background:var(--card);
+  }
+
+  .system-status-icon{
+    width:40px;
+    height:40px;
+
+    border-radius:11px;
+  }
+
+  .system-status-label{
+    font-size:9px;
+  }
+
+  .system-status-value{
+    font-size:12px;
+  }
+
+  .system-status-value b{
+    color:#f0f0f0;
+
+    font-size:13px;
+  }
+
+  .panel-section{
+    margin:0 0 12px;
+  }
+
+  .section-header{
+    min-height:0;
+
+    align-items:center;
+    justify-content:space-between;
+
+    padding:16px 16px 12px;
+  }
+
+  .section-header h3{
+    font-size:14px;
+    font-weight:700;
+  }
+
+  .section-header p{
+    margin-top:3px;
+
+    font-size:10px;
+  }
+
+  .section-status{
+    display:none;
+  }
+
+  .section-count{
+    min-width:22px;
+    height:22px;
+
+    padding:0 7px;
+
+    font-size:10px;
+  }
+
+  .settings-section{
+    margin:12px 0 0;
+
+    padding:18px 16px;
+  }
+
+  .settings-icon{
+    width:38px;
+    height:38px;
+
+    border-radius:10px;
+
+    font-size:13px;
+  }
+
+  .settings-heading h3{
+    font-size:14px;
+  }
+
+  .settings-heading p{
+    font-size:10px;
+  }
+
+  .settings-form{
+    flex-direction:column;
+    align-items:stretch;
+
+    gap:12px;
+  }
+
+  .input-shell input{
+    height:50px;
+
+    padding-left:44px;
+    padding-right:14px;
+
+    font-size:14px;
+  }
+
+  .input-shell > i{
+    right:15px;
+
+    font-size:13px;
+  }
+
+  html[dir="ltr"] .input-shell input{
+    padding-right:44px;
+    padding-left:14px;
+  }
+
+  html[dir="ltr"] .input-shell > i{
+    right:auto;
+    left:15px;
+  }
+
+  .save-settings-btn{
+    width:100%;
+    height:50px;
+
+    margin-top:2px;
+
+    font-size:13px;
+  }
+
+  /* ---- theme cards: full width vertical list ---- */
+
+  .theme{
+    flex-direction:column;
+  }
+
+  .theme.active:before{
+    top:0;
+    bottom:auto;
+    right:0;
+    left:0;
+
+    width:100%;
+    height:2px;
+  }
+
+  .th-preview{
+    width:100%;
+    height:76px;
+
+    border-left:none;
+    border-bottom:1px solid var(--border);
+  }
+
+  .theme-icon{
+    width:44px;
+    height:44px;
+
+    font-size:17px;
+  }
+
+  .th-body{
+    padding:15px 16px;
+  }
+
+  .th-name{
+    font-size:15px;
+  }
+
+  .th-desc{
+    margin-top:4px;
+
+    font-size:11px;
+  }
+
+  .th-meta{
+    font-size:10px;
+  }
+
+  .th-btns{
+    width:100%;
+
+    gap:10px;
+  }
+
+  .th-btns .btn{
+    flex:1;
+
+    min-height:46px;
+
+    font-size:12px;
+  }
+
+  /* ---- footer ---- */
+
+  .footer{
+    flex-direction:column;
+
+    gap:8px;
+
+    margin-top:26px;
+  }
+
+  .footer-separator{
+    display:none;
+  }
+
+  /* ---- top app bar ---- */
+
+  .m-topbar{
+    height:56px;
+
+    position:sticky;
+    top:0;
+    z-index:80;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+
+    padding:0 14px;
+
+    border-bottom:1px solid var(--border);
+
+    background:rgba(9,9,9,.92);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+
+  .m-topbar-brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    flex-shrink:0;
+  }
+
+  .m-topbar-brand .logo{
+    width:27px;
+    height:27px;
+
+    border-radius:7px;
+
+    font-size:11px;
+  }
+
+  .m-topbar-brand strong{
+    font-size:12px;
+    font-weight:700;
+
+    white-space:nowrap;
+  }
+
+  .m-topbar-title{
+    min-width:0;
+    flex:1;
+
+    text-align:center;
+
+    color:#e8e8e8;
+
+    font-size:13px;
+    font-weight:600;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .m-topbar-actions{
+    display:flex;
+    align-items:center;
+    gap:9px;
+
+    flex-shrink:0;
+  }
+
+  .m-conn-dot{
+    width:8px;
+    height:8px;
+
+    border-radius:50%;
+    background:var(--green);
+
+    box-shadow:0 0 0 3px rgba(35,196,131,.1);
+  }
+
+  .m-lang{
+    min-width:40px;
+    height:30px;
+
+    padding:0 8px;
+
+    background:#151515;
+  }
+
+  .m-icon-btn{
+    width:34px;
+    height:34px;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    border:1px solid var(--border);
+    border-radius:9px;
+
+    background:#151515;
+    color:var(--text-secondary);
+
+    font-size:12px;
+
+    cursor:pointer;
+
+    transition:
+      background var(--transition-fast),
+      border-color var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .m-icon-btn:hover{
+    background:#1c1c1c;
+
+    border-color:var(--border-light);
+
+    color:#fff;
+  }
+
+  .m-icon-btn:active{
+    transform:translateY(1px);
+  }
+
+  /* ---- bottom navigation ---- */
+
+  .m-bottom-nav{
+    position:fixed;
+
+    right:0;
+    left:0;
+    bottom:0;
+
+    height:calc(62px + env(safe-area-inset-bottom));
+
+    display:flex;
+    align-items:stretch;
+
+    z-index:90;
+
+    padding:6px 14px calc(6px + env(safe-area-inset-bottom));
+
+    border-top:1px solid var(--border);
+
+    background:rgba(13,13,13,.97);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+
+  .m-nav-item{
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+
+    border-radius:11px;
+
+    color:var(--text-muted);
+
+    font-size:9px;
+    font-weight:500;
+
+    transition:
+      color var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .m-nav-item i{
+    font-size:16px;
+
+    transition:transform var(--transition-fast);
+  }
+
+  .m-nav-item.active{
+    color:var(--accent);
+  }
+
+  .m-nav-item.active i{
+    transform:translateY(-1px);
+  }
+
+  .m-nav-item:active{
+    background:rgba(255,225,0,.06);
+  }
+
+  /* ---- icon-only actions toolbar ---- */
+
+  .mobile-actions{
+    width:44px;
+    height:44px;
+
+    min-height:0;
+    padding:0;
+
+    font-size:13px;
+  }
+
+  .donate-btn{
+    left:16px;
+    right:auto;
+
+    bottom:calc(76px + env(safe-area-inset-bottom));
+  }
+
+  /* ---- mobile login card ---- */
+
+  .auth-view{
+    padding:34px 18px calc(44px + env(safe-area-inset-bottom));
+  }
+
+  .login{
+    max-width:440px;
+
+    padding:26px 20px;
+  }
+
+  .login-logo{
+    width:46px;
+    height:46px;
+
+    font-size:16px;
+  }
+
+  .login h2{
+    font-size:19px;
+  }
+
+  .login-copy{
+    font-size:11px;
+  }
+
+  .login-submit{
+    height:50px;
+
+    font-size:12px;
+  }
+
+  .lang-toggle--auth{
+    top:calc(14px + env(safe-area-inset-top));
+    right:16px;
+  }
+
+  html[dir="ltr"] .lang-toggle--auth{
+    right:auto;
+    left:16px;
+  }
+
+}
+
+/* =========================================================
+   DEDICATED MOBILE APP (<= 420px)
+   ========================================================= */
+
+@media(max-width:420px){
+
+  .m-topbar{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .workspace{
+    padding-left:13px;
+    padding-right:13px;
+  }
+
+  .m-topbar-title{
+    font-size:12px;
+  }
+
+  .m-conn-dot{
+    display:none;
+  }
+
+  .m-nav-item i{
+    font-size:15px;
+  }
+
+  .settings-section{
+    padding:14px;
+  }
+
+  .section-header{
+    padding-left:14px;
+    padding-right:14px;
+  }
+
+  .th-body{
+    padding-left:14px;
+    padding-right:14px;
+  }
+
+}

@@ -35,6 +35,7 @@
 .fa-spinner:before             { content: "\f110"; }
 .fa-check:before               { content: "\f00c"; }
 .fa-circle-check:before        { content: "\f058"; }
+.fa-circle-xmark:before        { content: "\f057"; }
 .fa-eye:before                 { content: "\f06e"; }
 .fa-trash:before               { content: "\f1f8"; }
 .fa-wrench:before              { content: "\f0ad"; }
@@ -49,6 +50,9 @@
 .fa-cube:before                { content: "\f1b2"; }
 .fa-bolt-lightning:before      { content: "\e0b7"; }
 .fa-swatchbook:before          { content: "\f5c3"; }
+.fa-code:before                { content: "\f121"; }
+.fa-chevron-left:before        { content: "\f053"; }
+.fa-gauge-high:before          { content: "\f625"; }
 .fa-gear:before                { content: "\f013"; }
 .fa-heart:before               { content: "\f004"; }
 .fa-sun:before                 { content: "\f185"; }
