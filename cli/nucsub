@@ -926,15 +926,43 @@ web_panel_menu() {
         echo -e "  ${GREEN}2)${NC} Stop web panel"
         echo -e "  ${GREEN}3)${NC} Restart web panel"
         echo -e "  ${GREEN}4)${NC} Show token"
+        echo -e "  ${GREEN}5)${NC} Telegram channel       ${DIM}— set / edit / delete the channel link (shown in themes)${NC}"
         echo -e "  ${GREEN}0)${NC} Back to main menu"
         sep
-        echo -ne "  ${BOLD}Select option [0-4]: ${NC}"
+        echo -ne "  ${BOLD}Select option [0-5]: ${NC}"
         read -r choice
         case "$choice" in
             1) cmd_webpanel start; pause_enter ;;
             2) cmd_webpanel stop; pause_enter ;;
             3) cmd_webpanel restart; pause_enter ;;
             4) title "Web Panel Token"; sep; cmd_webpanel token; pause_enter ;;
+            5) telegram_menu ;;
+            0) return ;;
+            *) warn "Invalid option: $choice"; sleep 1 ;;
+        esac
+    done
+}
+
+telegram_menu() {
+    while true; do
+        clear
+        print_header
+        title "Telegram Channel"
+        sep
+        echo -e "  ${DIM}Current channel:${NC}"
+        cmd_telegram get
+        sep
+        echo -e "  ${GREEN}1)${NC} Show current channel"
+        echo -e "  ${GREEN}2)${NC} Set / change channel"
+        echo -e "  ${GREEN}3)${NC} Delete channel (remove the link from themes)"
+        echo -e "  ${GREEN}0)${NC} Back to web panel menu"
+        sep
+        echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
+        read -r choice
+        case "$choice" in
+            1) title "Telegram Channel"; sep; cmd_telegram get; pause_enter ;;
+            2) cmd_telegram set; pause_enter ;;
+            3) cmd_telegram clear; pause_enter ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
