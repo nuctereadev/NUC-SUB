@@ -1,275 +1,755 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NUC-SUB — مدیریت قالب سابسکریپشن | Subscription Theme Engine</title>
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#0a0e17">
-<link rel="stylesheet" href="/css/fonts.css">
-<link rel="stylesheet" href="/css/icons.css">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg:#0a0e17;--bg-elevated:#111722;--card:#151c2a;--card-hover:#1a2334;
-  --border:#243042;--border-light:#2e3d52;--text:#e4e8ef;--text-dim:#9aa4b2;
-  --text-muted:#6b7688;--accent:#3b82f6;--accent-hover:#2563eb;
-  --accent-soft:rgba(59,130,246,.12);--green:#10b981;--green-soft:rgba(16,185,129,.12);
-  --red:#ef4444;--red-soft:rgba(239,68,68,.12);--radius:10px;--radius-sm:7px;
-  --shadow:0 2px 8px rgba(0,0,0,.25);--shadow-lg:0 8px 24px rgba(0,0,0,.35);
-}
-html{-webkit-text-size-adjust:100%}
-body{
-  font-family:'IranSansX',system-ui,-apple-system,sans-serif;
-  background:var(--bg);color:var(--text);min-height:100vh;
-  line-height:1.6;font-size:14px;-webkit-font-smoothing:antialiased;
-}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-.wrap{max-width:720px;margin:0 auto;padding:32px 20px 48px}
-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--border)}
-.brand{display:flex;align-items:center;gap:12px}
-.logo{width:40px;height:40px;border-radius:9px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
-.brand h1{font-size:16px;font-weight:600;letter-spacing:-.3px}
-.brand p{font-size:12px;color:var(--text-muted)}
-.header-actions{display:flex;align-items:center;gap:10px}
-.btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);
-  padding:9px 16px;font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;
-  transition:background .12s,box-shadow .12s;
-}
-.btn:hover{background:var(--accent-hover)}
-.btn:active{transform:translateY(1px)}
-.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border-light)}
-.btn.ghost:hover{background:var(--bg-elevated);border-color:var(--accent);color:var(--accent)}
-.btn.danger{background:var(--red-soft);color:#fca5a5;border:1px solid rgba(239,68,68,.2)}
-.btn.danger:hover{background:rgba(239,68,68,.18)}
-.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn.sm{padding:7px 12px;font-size:12px}
-.login{max-width:360px;margin:10vh auto 0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px 28px;box-shadow:var(--shadow-lg)}
-.login-logo{width:48px;height:48px;margin:0 auto 16px;border-radius:11px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px}
-.login h2{margin-bottom:4px;font-size:17px;text-align:center;font-weight:600}
-.login .sub{font-size:12px;color:var(--text-dim);text-align:center;margin-bottom:22px}
-.field{margin-bottom:4px}
-.field label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:500}
-.login input,.field input{
-  width:100%;background:var(--bg-elevated);border:1px solid var(--border-light);border-radius:var(--radius-sm);
-  padding:11px 13px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .12s,box-shadow .12s;
-}
-.login input:focus,.field input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
-.login .btn{margin-top:6px;width:100%;padding:12px}
-.login .hint{font-size:11px;color:var(--text-muted);margin-top:16px;text-align:center;line-height:1.7}
-.login .hint code{background:var(--bg-elevated);padding:1px 6px;border-radius:4px;font-size:10.5px;color:var(--accent);direction:ltr;display:inline-block;font-family:'JetBrains Mono',monospace}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
-.toolbar h2{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text-dim)}
-.toolbar h2 i{font-size:13px;color:var(--text-muted)}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.grid{display:grid;grid-template-columns:1fr;gap:12px}
-.theme{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;transition:border-color .12s,box-shadow .12s,background .12s}
-.theme:hover{border-color:var(--border-light);background:var(--card-hover)}
-.theme.active{border-color:var(--accent);background:var(--accent-soft)}
-.th-preview{width:84px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-elevated);border-left:1px solid var(--border);font-size:20px;color:var(--accent)}
-.theme.active .th-preview{background:var(--accent-soft);border-left-color:var(--accent)}
-.th-body{padding:14px 16px 12px;flex:1;min-width:0}
-.th-head{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
-.th-name{font-size:14px;font-weight:600;text-transform:capitalize}
-.th-badge{font-size:10px;padding:1px 7px;border-radius:12px;background:var(--green-soft);color:var(--green);font-weight:500;display:inline-flex;align-items:center;gap:4px}
-.th-badge.current{background:var(--accent-soft);color:#93c5fd}
-.th-desc{font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:10px}
-.th-btns{display:flex;gap:6px;flex-wrap:wrap}
-.statusbar{margin-top:24px;padding:12px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text-dim);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.statusbar b{color:var(--text);font-weight:500}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--bg-elevated);color:var(--text);border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:9px 16px;font-size:12px;opacity:0;transition:all .2s;z-index:100;box-shadow:var(--shadow-lg);pointer-events:none;max-width:calc(100% - 40px);text-align:center;display:inline-flex;align-items:center;gap:7px}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.err{background:var(--red-soft);border-color:rgba(239,68,68,.3);color:#fca5a5}
-.settings-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:24px}
-.settings-section h3{font-size:13px;font-weight:600;color:var(--text-dim);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.settings-section h3 i{color:var(--accent);font-size:13px}
-.settings-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.settings-row .field{flex:1;min-width:200px;margin-bottom:0}
-footer{text-align:center;margin-top:36px;font-size:11px;color:var(--text-muted)}
-/* Donate floating button */
-.donate-btn{
-  position:fixed;bottom:24px;right:24px;z-index:80;
-  width:52px;height:52px;border-radius:50%;
-  background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;
-  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:20px;box-shadow:0 4px 14px rgba(249,115,22,.45);
-  transition:transform .2s,box-shadow .2s;text-decoration:none;
-}
-.donate-btn:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(249,115,22,.55);text-decoration:none;color:#fff}
-.donate-btn:active{transform:scale(.96)}
-@media(max-width:480px){
-  .wrap{padding:24px 16px 40px}
-  .logo{width:36px;height:36px;font-size:14px}
-  .brand h1{font-size:14.5px}
-  .login{margin:6vh auto 0;padding:26px 20px}
-  .toolbar{flex-direction:column;align-items:stretch}
-  .toolbar .actions{width:100%}
-  .toolbar .actions .btn{flex:1}
-  .theme{flex-direction:column}
-  .th-preview{width:100%;height:72px;border-left:none;border-bottom:1px solid var(--border)}
-  .th-btns .btn{flex:1;min-width:82px}
-  .actions .btn.ghost{font-size:12px;padding:9px 10px}
-  .settings-row{flex-direction:column}
-  .settings-row .field{min-width:100%}
-  .donate-btn{bottom:16px;right:16px;width:46px;height:46px;font-size:18px}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NUC-SUB — مدیریت قالب سابسکریپشن | Subscription Theme Engine</title>
+
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#090909">
+
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/icons.css">
+  <link rel="stylesheet" href="css/panel.css">
 </head>
+
 <body>
-<div class="wrap" id="app">
-  <div id="view-login" style="display:none">
+
+<div class="app-shell" id="app">
+
+  <!-- =========================================================
+       LOGIN VIEW
+       ========================================================= -->
+
+  <div id="view-login" class="auth-view" style="display:none">
+
     <div class="login">
-      <div class="login-logo"><i class="fa-solid fa-lock"></i></div>
-      <h2>NUC-SUB</h2>
-      <p class="sub">Subscription Theme Engine — ورود به پنل</p>
-      <p class="sub" style="margin-top:-12px">توکن مدیریت را برای ادامه وارد کنید</p>
+
+      <div class="login-logo">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+
+      <div class="login-heading">
+        <span class="eyebrow">SECURE ACCESS</span>
+        <h2>NUC-SUB</h2>
+        <p>Subscription Theme Engine</p>
+      </div>
+
+      <div class="login-copy">
+        برای ورود به پنل مدیریت، توکن دسترسی خود را وارد کنید.
+      </div>
+
       <div class="field">
-        <label>توکن مدیریت</label>
-        <input id="token-input" type="password" placeholder="توکن را اینجا کپی کنید" autocomplete="off">
-      </div>
-      <button class="btn" onclick="doLogin()"><i class="fa-solid fa-sign-in-alt"></i> ورود</button>
-      <p class="hint">توکن در فایل <code>/opt/nuc-sub/.webpanel-token</code> موجود است</p>
-    </div>
-  </div>
+        <label for="token-input">توکن مدیریت</label>
 
-  <div id="view-main" style="display:none">
-    <header>
-      <div class="brand">
-        <div class="logo"><i class="fa-solid fa-layer-group"></i></div>
-        <div>
-          <h1>NUC-SUB</h1>
-          <p>Subscription Theme Engine</p>
+        <div class="input-shell">
+          <i class="fa-solid fa-key"></i>
+          <input
+            id="token-input"
+            type="password"
+            placeholder="توکن را اینجا وارد کنید"
+            autocomplete="off"
+            spellcheck="false"
+          >
         </div>
       </div>
-      <div class="header-actions">
-        <button class="btn ghost" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> خروج</button>
-      </div>
-    </header>
 
-    <div class="toolbar">
-      <h2><i class="fa-solid fa-list"></i> قالب‌های نصب‌شده</h2>
-      <div class="actions">
-        <button class="btn ghost" onclick="loadThemes()"><i class="fa-solid fa-rotate-right"></i> تازه‌سازی</button>
-        <button class="btn ghost" onclick="resetTheme()"><i class="fa-solid fa-undo"></i> پیش‌فرض</button>
+      <button class="btn btn-primary login-submit" onclick="doLogin()">
+        <i class="fa-solid fa-sign-in-alt"></i>
+        <span>ورود به پنل</span>
+      </button>
+
+      <div class="login-meta">
+        <i class="fa-solid fa-shield-halved"></i>
+
+        <span>
+          توکن در فایل
+          <code>/opt/nuc-sub/.webpanel-token</code>
+          قرار دارد.
+        </span>
       </div>
+
     </div>
 
-    <div class="grid" id="themes-grid">
-      <div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>
+    <div class="auth-footer">
+      Powered by NUCTEREA
     </div>
 
-    <div class="statusbar" id="statusbar"><span class="dot"></span> <span>در حال دریافت وضعیت...</span></div>
-
-    <div class="settings-section">
-      <h3><i class="fa-solid fa-gear"></i> تنظیمات کانال تلگرام</h3>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">لینک کانال تلگرام خود را وارد کنید تا در قالب‌های سابسکریپشن نمایش داده شود</p>
-      <div class="settings-row">
-        <div class="field">
-          <label>لینک کانال تلگرام</label>
-          <input id="tg-input" type="text" placeholder="https://t.me/your_channel" autocomplete="off" dir="ltr">
-        </div>
-        <button class="btn" onclick="saveTelegram()" style="align-self:flex-end;margin-top:14px;padding:11px 20px"><i class="fa-solid fa-check"></i> ذخیره</button>
-      </div>
-      <p id="tg-status" style="font-size:11px;color:var(--text-muted);margin-top:8px"></p>
-    </div>
-
-    <footer>NUC-SUB · Created by <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a> · MIT License</footer>
   </div>
+
+
+  <!-- =========================================================
+       MAIN APPLICATION
+       ========================================================= -->
+
+  <div id="view-main" class="dashboard" style="display:none">
+
+    <!-- =======================================================
+         SIDEBAR
+         ======================================================= -->
+
+    <aside class="sidebar">
+
+      <div class="sidebar-top">
+
+        <div class="brand">
+
+          <div class="logo">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+
+          <div class="brand-copy">
+            <h1>NUC-SUB</h1>
+            <p>Theme Engine</p>
+          </div>
+
+        </div>
+
+
+        <div class="sidebar-divider"></div>
+
+
+        <nav class="sidebar-nav">
+
+          <div class="nav-label">
+            Workspace
+          </div>
+
+          <button class="nav-item active" type="button">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Theme Manager</span>
+            <span class="nav-active-indicator"></span>
+          </button>
+
+          <button class="nav-item" type="button" onclick="$('tg-input').focus()">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+          </button>
+
+        </nav>
+
+      </div>
+
+
+      <div class="sidebar-bottom">
+
+        <div class="sidebar-status">
+          <span class="sidebar-status-dot"></span>
+
+          <div>
+            <strong>System online</strong>
+            <span>NUC-SUB Engine</span>
+          </div>
+        </div>
+
+        <button class="sidebar-logout" onclick="logout()" type="button">
+          <i class="fa-solid fa-sign-out-alt"></i>
+          <span>خروج</span>
+        </button>
+
+      </div>
+
+    </aside>
+
+
+    <!-- =======================================================
+         MAIN CONTENT
+         ======================================================= -->
+
+    <main class="main-content">
+
+      <!-- =====================================================
+           TOP BAR
+           ===================================================== -->
+
+      <header class="topbar">
+
+        <div class="topbar-left">
+
+          <div class="mobile-brand">
+            <div class="logo">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+
+            <div>
+              <strong>NUC-SUB</strong>
+              <span>Theme Engine</span>
+            </div>
+          </div>
+
+          <div class="breadcrumb">
+
+            <span>NUC-SUB</span>
+
+            <i class="fa-solid fa-chevron-left"></i>
+
+            <strong>Theme Manager</strong>
+
+          </div>
+
+        </div>
+
+
+        <div class="topbar-actions">
+
+          <div class="connection-state">
+            <span class="connection-dot"></span>
+            <span>Connected</span>
+          </div>
+
+          <button class="btn btn-secondary btn-icon-text" onclick="logout()" type="button">
+            <i class="fa-solid fa-sign-out-alt"></i>
+            <span>خروج</span>
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- =====================================================
+           WORKSPACE
+           ===================================================== -->
+
+      <div class="workspace">
+
+
+        <!-- ===================================================
+             PAGE HEADER
+             =================================================== -->
+
+        <section class="page-header">
+
+          <div class="page-header-main">
+
+            <div class="page-kicker">
+              <span class="kicker-line"></span>
+              SUBSCRIPTION INFRASTRUCTURE
+            </div>
+
+            <h2>Theme Manager</h2>
+
+            <p>
+              قالب‌های صفحه اشتراک خود را مدیریت و فعال‌سازی کنید.
+            </p>
+
+          </div>
+
+
+          <div class="page-header-actions">
+
+            <button
+              class="btn btn-secondary"
+              onclick="loadThemes()"
+              type="button"
+            >
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>تازه‌سازی</span>
+            </button>
+
+            <button
+              class="btn btn-secondary"
+              onclick="resetTheme()"
+              type="button"
+            >
+              <i class="fa-solid fa-undo"></i>
+              <span>پیش‌فرض</span>
+            </button>
+
+          </div>
+
+        </section>
+
+
+        <!-- ===================================================
+             CURRENT STATUS
+             =================================================== -->
+
+        <section class="overview-grid">
+
+          <div class="overview-card">
+
+            <div class="overview-icon">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+
+            <div class="overview-content">
+              <span class="overview-label">Installed Themes</span>
+              <strong id="theme-count">—</strong>
+              <span class="overview-description">
+                قالب‌های موجود در سیستم
+              </span>
+            </div>
+
+          </div>
+
+
+          <div class="overview-card">
+
+            <div class="overview-icon status-icon">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+
+            <div class="overview-content">
+              <span class="overview-label">Current Theme</span>
+              <strong id="current-theme-label">—</strong>
+              <span class="overview-description">
+                قالب فعال سیستم
+              </span>
+            </div>
+
+          </div>
+
+
+          <div class="overview-card">
+
+            <div class="overview-icon">
+              <i class="fa-solid fa-server"></i>
+            </div>
+
+            <div class="overview-content">
+              <span class="overview-label">Engine</span>
+              <strong>NUC-SUB</strong>
+              <span class="overview-description">
+                Subscription Theme Engine
+              </span>
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ===================================================
+             THEMES SECTION
+             =================================================== -->
+
+        <section class="panel-section">
+
+          <div class="section-header">
+
+            <div>
+
+              <div class="section-title-row">
+
+                <h3>
+                  قالب‌های نصب‌شده
+                </h3>
+
+                <span class="section-count" id="theme-section-count">
+                  —
+                </span>
+
+              </div>
+
+              <p>
+                قالب فعال صفحه اشتراک را انتخاب یا مدیریت کنید.
+              </p>
+
+            </div>
+
+
+            <div class="section-status">
+
+              <span class="mini-status-dot"></span>
+
+              <span>Theme engine ready</span>
+
+            </div>
+
+          </div>
+
+
+          <div class="theme-list" id="themes-grid">
+
+            <div class="loading-state">
+
+              <span class="loading-spinner">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+              </span>
+
+              <div>
+                <strong>در حال بارگذاری قالب‌ها</strong>
+                <span>در حال دریافت اطلاعات از سرور...</span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- ===================================================
+             SYSTEM STATUS
+             =================================================== -->
+
+        <section class="system-status-card" id="statusbar">
+
+          <div class="system-status-main">
+
+            <div class="system-status-icon">
+              <span class="dot"></span>
+            </div>
+
+            <div>
+              <span class="system-status-label">Current configuration</span>
+
+              <div class="system-status-value">
+                <span>قالب فعال:</span>
+                <b>در حال دریافت وضعیت...</b>
+              </div>
+            </div>
+
+          </div>
+
+
+          <div class="system-status-meta">
+            <i class="fa-solid fa-shield-halved"></i>
+            Protected
+          </div>
+
+        </section>
+
+
+        <!-- ===================================================
+             TELEGRAM SETTINGS
+             =================================================== -->
+
+        <section class="settings-section">
+
+          <div class="settings-header">
+
+            <div class="settings-heading">
+
+              <div class="settings-icon">
+                <i class="fa-solid fa-gear"></i>
+              </div>
+
+              <div>
+
+                <span class="section-eyebrow">
+                  CONFIGURATION
+                </span>
+
+                <h3>
+                  تنظیمات کانال تلگرام
+                </h3>
+
+                <p>
+                  لینک کانال تلگرام در قالب‌های سابسکریپشن نمایش داده خواهد شد.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="settings-form">
+
+            <div class="field settings-field">
+
+              <label for="tg-input">
+                لینک کانال تلگرام
+              </label>
+
+              <div class="input-shell">
+
+                <i class="fa-solid fa-link"></i>
+
+                <input
+                  id="tg-input"
+                  type="text"
+                  placeholder="https://t.me/your_channel"
+                  autocomplete="off"
+                  dir="ltr"
+                  spellcheck="false"
+                >
+
+              </div>
+
+            </div>
+
+
+            <button
+              class="btn btn-primary save-settings-btn"
+              onclick="saveTelegram()"
+              type="button"
+            >
+              <i class="fa-solid fa-check"></i>
+              <span>ذخیره تغییرات</span>
+            </button>
+
+          </div>
+
+
+          <div class="setting-feedback" id="tg-status"></div>
+
+        </section>
+
+
+        <!-- ===================================================
+             FOOTER
+             =================================================== -->
+
+        <footer class="footer">
+
+          <div>
+            NUC-SUB · Subscription Theme Engine
+          </div>
+
+          <a
+            href="https://github.com/nuctereadev"
+            target="_blank"
+            rel="noopener"
+          >
+            <i class="fa-solid fa-code"></i>
+            NUCTEREA
+          </a>
+
+          <span class="footer-separator"></span>
+
+          <span>MIT License</span>
+
+        </footer>
+
+
+      </div>
+
+    </main>
+
+  </div>
+
 </div>
 
-<a href="https://nuctereadev.github.io/support/" target="_blank" rel="noopener" class="donate-btn" title="حمایت مالی"><i class="fa-solid fa-heart"></i></a>
+
+<!-- ===========================================================
+     SUPPORT
+     =========================================================== -->
+
+<a
+  href="https://nuctereadev.github.io/support/"
+  target="_blank"
+  rel="noopener"
+  class="donate-btn"
+  title="حمایت مالی"
+  aria-label="حمایت مالی"
+>
+  <i class="fa-solid fa-heart"></i>
+</a>
+
+
+<!-- ===========================================================
+     TOAST
+     =========================================================== -->
 
 <div class="toast" id="toast"></div>
 
+
 <script>
-const TOKEN_KEY='xui_sub_token';
-let token=localStorage.getItem(TOKEN_KEY)||'';
+const TOKEN_KEY='xui_sub_token'; 
+let token=localStorage.getItem(TOKEN_KEY)||''; 
 
-function $(id){return document.getElementById(id)}
-function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200)}
+function $(id){return document.getElementById(id)} 
+function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200)} 
+ 
+async function api(path,opts){ 
+  const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{})); 
+  const data=await r.json().catch(()=>({})); 
+  if(r.status===401){showLogin();throw new Error('unauthorized')} 
+  return data; 
+} 
+ 
+function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'} 
+function showMain(){$('view-login').style.display='none';$('view-main').style.display='';loadSettings()} 
+ 
+function doLogin(){ 
+  token=$('token-input').value.trim(); 
+  if(!token){showToast('توکن را وارد کنید',true);return} 
+  localStorage.setItem(TOKEN_KEY,token); 
+  api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showToast('توکن نامعتبر',true)}).catch(()=>showToast('توکن نامعتبر',true)); 
+} 
+function logout(){token='';localStorage.removeItem(TOKEN_KEY);showLogin()} 
+$('token-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}); 
+ 
+const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'}; 
+function getIcon(name){return THEME_ICONS[name]||THEME_ICONS.default} 
+ 
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')} 
+ 
+function cardFor(name,active){ 
+  const en=esc(name);const ej=String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); 
+  return `<div class="theme ${active?'active':''}">
+    <div class="th-preview">
+      <div class="theme-icon">
+        <i class="${getIcon(name)}"></i>
+      </div>
+    </div>
 
-async function api(path,opts){
-  const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{}));
-  const data=await r.json().catch(()=>({}));
-  if(r.status===401){showLogin();throw new Error('unauthorized')}
-  return data;
-}
+    <div class="th-body">
 
-function showLogin(){$('view-login').style.display='block';$('view-main').style.display='none'}
-function showMain(){$('view-login').style.display='none';$('view-main').style.display='block';loadSettings()}
+      <div class="th-head">
+        <span class="th-name">${en}</span>
+        ${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}
+      </div>
 
-function doLogin(){
-  token=$('token-input').value.trim();
-  if(!token){showToast('توکن را وارد کنید',true);return}
-  localStorage.setItem(TOKEN_KEY,token);
-  api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showToast('توکن نامعتبر',true)}).catch(()=>showToast('توکن نامعتبر',true));
-}
-function logout(){token='';localStorage.removeItem(TOKEN_KEY);showLogin()}
-$('token-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+      <div class="th-desc">
+        قالب ${en} برای صفحه اشتراک
+      </div>
 
-const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'};
-function getIcon(name){return THEME_ICONS[name]||THEME_ICONS.default}
+      <div class="th-meta">
+        <span>
+          <i class="fa-solid fa-layer-group"></i>
+          Subscription Theme
+        </span>
+      </div>
 
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+      <div class="th-btns">
+        <button class="btn sm btn-primary" onclick="applyTheme('${ej}')" ${active?'disabled':''}>
+          <i class="fa-solid fa-circle-check"></i>
+          <span>فعال‌سازی</span>
+        </button>
 
-function cardFor(name,active){
-  const en=esc(name);const ej=String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  return `<div class="theme ${active?'active':''}"><div class="th-preview"><i class="${getIcon(name)}"></i></div><div class="th-body"><div class="th-head"><span class="th-name">${en}</span>${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}</div><div class="th-desc">قالب ${en} برای صفحه اشتراک</div><div class="th-btns"><button class="btn sm" onclick="applyTheme('${ej}')" ${active?'disabled':''}><i class="fa-solid fa-circle-check"></i> فعال‌سازی</button><button class="btn danger sm" onclick="removeTheme('${ej}')"><i class="fa-solid fa-trash"></i> حذف</button></div></div></div>`;
-}
+        <button class="btn danger sm" onclick="removeTheme('${ej}')">
+          <i class="fa-solid fa-trash"></i>
+          <span>حذف</span>
+        </button>
+      </div>
 
-async function loadThemes(){
-  const grid=$('themes-grid');
-  grid.innerHTML='<div style="padding:24px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> بارگذاری...</div>';
-  try{
-    const res=await api('list');const out=res.stdout||'';const gridHtml=[];const active=extractActive(out);
-    for(const name of parseThemeList(out))gridHtml.push(cardFor(name,active===name));
-    grid.innerHTML=gridHtml.join('')||'<div style="padding:24px;text-align:center;color:var(--text-muted)">قالبی یافت نشد</div>';
-    $('statusbar').innerHTML=`<span class="dot"></span> <span>قالب فعال: <b>${active||'پیش‌فرض پنل'}</b></span>`;
-  }catch(e){grid.innerHTML='<div style="padding:24px;text-align:center;color:var(--red)"><i class="fa-solid fa-warning"></i> خطا در دریافت لیست</div>'}
-}
+    </div>
+  </div>`; 
+} 
+ 
+async function loadThemes(){ 
+  const grid=$('themes-grid'); 
+  grid.innerHTML='<div class="loading-state"><span class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i></span><div><strong>در حال بارگذاری قالب‌ها</strong><span>در حال دریافت اطلاعات از سرور...</span></div></div>'; 
+  try{ 
+    const res=await api('list');const out=res.stdout||'';const gridHtml=[];const active=extractActive(out); 
+    const themes=parseThemeList(out);
 
-function stripAnsi(s){return String(s||'').replace(/\x1b\[[0-9;]*m/g,'')}
-function parseThemeList(out){
-  const clean=stripAnsi(out);
-  const set=new Set();
-  // each list row is:  [★ ●] <name> <spaces> <downloaded|not downloaded|...>
-  // anchored to the start of the line so header/footer words never match.
-  const rx=/^[ \t]*[★●]?[ \t]*([A-Za-z0-9][A-Za-z0-9_-]*)[ \t]+(?:downloaded|not downloaded|missing template|runnable)\b/img;
-  let m;
-  while((m=rx.exec(clean))){set.add(m[1])}
-  return [...set];
-}
-function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);if(star)return star[1];const sum=clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);return sum?sum[1]:''}
+    for(const name of themes)gridHtml.push(cardFor(name,active===name)); 
 
-async function applyTheme(name){const res=await api('apply?name='+encodeURIComponent(name));if(res.ok){showToast('قالب «'+name+'» فعال شد');loadThemes()}else showToast((res.stderr||res.stdout||'خطا'),true)}
-async function removeTheme(name){if(!confirm('قالب «'+name+'» حذف شود؟'))return;const res=await api('remove?name='+encodeURIComponent(name));if(res.ok){showToast('قالب حذف شد');loadThemes()}else showToast('خطا',true)}
-async function resetTheme(){if(!confirm('برگشت به صفحه پیش‌فرض پنل؟'))return;const res=await api('reset');if(res.ok){showToast('به پیش‌فرض برگشت');loadThemes()}else showToast('خطا',true)}
+    grid.innerHTML=gridHtml.join('')||'<div class="empty-state"><i class="fa-solid fa-palette"></i><strong>قالبی یافت نشد</strong><span>هیچ قالب قابل استفاده‌ای در سیستم وجود ندارد.</span></div>'; 
 
-async function loadSettings(){
-  try{
-    const res=await api('settings');
-    if(res.ok&&res.settings){
-      $('tg-input').value=res.settings.telegram_channel||'';
-    }
-  }catch(e){}
-}
-async function saveTelegram(){
-  const url=$('tg-input').value.trim();
-  const st=$('tg-status');
-  try{
-    const res=await api('settings',{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({telegram_channel:url})});
-    if(res.ok){st.style.color='var(--green)';st.textContent='ذخیره شد';setTimeout(()=>{st.textContent=''},2000)}
-    else{st.style.color='var(--red)';st.textContent=res.error||'خطا'}
-  }catch(e){st.style.color='var(--red)';st.textContent='خطا در ذخیره'}
-}
+    $('statusbar').innerHTML=`
+      <div class="system-status-main">
+        <div class="system-status-icon">
+          <span class="dot"></span>
+        </div>
 
-if(token){api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showLogin()}).catch(showLogin)}
-else showLogin();
+        <div>
+          <span class="system-status-label">Current configuration</span>
+
+          <div class="system-status-value">
+            <span>قالب فعال:</span>
+            <b>${active||'پیش‌فرض پنل'}</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="system-status-meta">
+        <i class="fa-solid fa-shield-halved"></i>
+        Protected
+      </div>
+    `;
+
+    if($('theme-count'))$('theme-count').textContent=themes.length;
+    if($('theme-section-count'))$('theme-section-count').textContent=themes.length;
+    if($('current-theme-label'))$('current-theme-label').textContent=active||'Default';
+
+  }catch(e){
+    grid.innerHTML='<div class="error-state"><i class="fa-solid fa-warning"></i><strong>خطا در دریافت لیست قالب‌ها</strong><span>ارتباط با API برقرار نشد.</span></div>'
+  } 
+} 
+ 
+function stripAnsi(s){return String(s||'').replace(/\x1b\[[0-9;]*m/g,'')} 
+function parseThemeList(out){ 
+  const clean=stripAnsi(out); 
+  const set=new Set(); 
+  const rx=/^[ \t]*[★●]?[ \t]*([A-Za-z0-9][A-Za-z0-9_-]*)[ \t]+(?:downloaded|not downloaded|missing template|runnable)\b/img; 
+  let m; 
+  while((m=rx.exec(clean))){set.add(m[1])} 
+  return [...set]; 
+} 
+function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);if(star)return star[1];const sum=clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);return sum?sum[1]:''} 
+
+async function applyTheme(name){
+  const res=await api('apply?name='+encodeURIComponent(name));
+  if(res.ok){
+    showToast('قالب «'+name+'» فعال شد');
+    loadThemes()
+  }else showToast((res.stderr||res.stdout||'خطا'),true)
+} 
+
+async function removeTheme(name){
+  if(!confirm('قالب «'+name+'» حذف شود؟'))return;
+  const res=await api('remove?name='+encodeURIComponent(name));
+  if(res.ok){
+    showToast('قالب حذف شد');
+    loadThemes()
+  }else showToast('خطا',true)
+} 
+
+async function resetTheme(){
+  if(!confirm('برگشت به صفحه پیش‌فرض پنل؟'))return;
+  const res=await api('reset');
+  if(res.ok){
+    showToast('به پیش‌فرض برگشت');
+    loadThemes()
+  }else showToast('خطا',true)
+} 
+ 
+async function loadSettings(){ 
+  try{ 
+    const res=await api('settings'); 
+    if(res.ok&&res.settings){ 
+      $('tg-input').value=res.settings.telegram_channel||''; 
+    } 
+  }catch(e){} 
+} 
+
+async function saveTelegram(){ 
+  const url=$('tg-input').value.trim(); 
+  const st=$('tg-status'); 
+  try{ 
+    const res=await api('settings',{
+      method:'POST',
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({telegram_channel:url})
+    }); 
+
+    if(res.ok){
+      st.style.color='var(--green)';
+      st.textContent='ذخیره شد';
+      setTimeout(()=>{st.textContent=''},2000)
+    } 
+    else{
+      st.style.color='var(--red)';
+      st.textContent=res.error||'خطا'
+    } 
+  }catch(e){
+    st.style.color='var(--red)';
+    st.textContent='خطا در ذخیره'
+  } 
+} 
+ 
+if(token){
+  api('list')
+    .then(r=>{
+      if(r.ok){
+        showMain();
+        loadThemes()
+      }else showLogin()
+    })
+    .catch(showLogin)
+} 
+else showLogin(); 
 </script>
+
 </body>
 </html>
