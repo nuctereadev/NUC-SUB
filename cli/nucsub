@@ -747,7 +747,11 @@ web_panel_status() {
         up=1
     fi
     if [[ -n "$up" ]]; then
-        port="$(cat "$WEB_PORT_FILE" 2>/dev/null || echo 8080)"
+        port="$(cat "$WEB_PORT_FILE" 2>/dev/null || true)"
+        if [[ -z "$port" ]]; then
+            port="$(ss -tlnp 2>/dev/null | grep 'python3' | grep -oE ':[0-9]{2,5}' | head -n1 | tr -d ':')"
+            [[ -z "$port" ]] && port="8080"
+        fi
         token="$(cat "$WEB_TOKEN_FILE" 2>/dev/null || echo "unknown")"
         echo -e "  ${GREEN}● Running${NC} on port $port"
         echo -e "  ${DIM}  Token: $token${NC}"

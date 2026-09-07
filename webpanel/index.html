@@ -23,55 +23,61 @@
 
   <div id="view-login" class="auth-view" style="display:none">
 
-    <div class="login">
+    <button
+      class="lang-toggle lang-toggle--auth"
+      type="button"
+      onclick="toggleLang()"
+      aria-label="language"
+    ></button>
+
+    <div class="login" id="login-card">
 
       <div class="login-logo">
         <i class="fa-solid fa-lock"></i>
       </div>
 
       <div class="login-heading">
-        <span class="eyebrow">SECURE ACCESS</span>
-        <h2>NUC-SUB</h2>
-        <p>Subscription Theme Engine</p>
+        <span class="eyebrow" data-i18n="login.eyebrow">SECURE ACCESS</span>
+        <h2 data-i18n="login.title">NUC-SUB</h2>
+        <p data-i18n="login.subtitle">Subscription Theme Engine</p>
       </div>
 
-      <div class="login-copy">
+      <div class="login-copy" data-i18n="login.copy">
         برای ورود به پنل مدیریت، توکن دسترسی خود را وارد کنید.
       </div>
 
       <div class="field">
-        <label for="token-input">توکن مدیریت</label>
+        <label for="token-input" data-i18n="login.token.label">توکن مدیریت</label>
 
         <div class="input-shell">
           <i class="fa-solid fa-key"></i>
           <input
             id="token-input"
             type="password"
+            data-i18n-ph="login.token.ph"
             placeholder="توکن را اینجا وارد کنید"
             autocomplete="off"
             spellcheck="false"
           >
         </div>
+
+        <div class="login-error" id="login-error" role="alert"></div>
       </div>
 
-      <button class="btn btn-primary login-submit" onclick="doLogin()">
+      <button class="btn btn-primary login-submit" id="login-btn" onclick="doLogin()">
         <i class="fa-solid fa-sign-in-alt"></i>
-        <span>ورود به پنل</span>
+        <span data-i18n="login.btn">ورود به پنل</span>
       </button>
 
       <div class="login-meta">
         <i class="fa-solid fa-shield-halved"></i>
 
-        <span>
-          توکن در فایل
-          <code>/opt/nuc-sub/.webpanel-token</code>
-          قرار دارد.
-        </span>
+        <span data-i18n="login.meta" data-i18n-html="1">توکن در فایل <code>/opt/nuc-sub/.webpanel-token</code> قرار دارد.</span>
       </div>
 
     </div>
 
-    <div class="auth-footer">
+    <div class="auth-footer" data-i18n="login.footer">
       Powered by NUCTEREA
     </div>
 
@@ -99,8 +105,8 @@
           </div>
 
           <div class="brand-copy">
-            <h1>NUC-SUB</h1>
-            <p>Theme Engine</p>
+            <h1 data-i18n="brand.title">NUC-SUB</h1>
+            <p data-i18n="brand.sub">Theme Engine</p>
           </div>
 
         </div>
@@ -111,19 +117,19 @@
 
         <nav class="sidebar-nav">
 
-          <div class="nav-label">
+          <div class="nav-label" data-i18n="nav.workspace">
             Workspace
           </div>
 
           <button class="nav-item active" type="button">
             <i class="fa-solid fa-layer-group"></i>
-            <span>Theme Manager</span>
+            <span data-i18n="nav.themes">Theme Manager</span>
             <span class="nav-active-indicator"></span>
           </button>
 
           <button class="nav-item" type="button" onclick="$('tg-input').focus()">
             <i class="fa-solid fa-gear"></i>
-            <span>Settings</span>
+            <span data-i18n="nav.settings">Settings</span>
           </button>
 
         </nav>
@@ -133,18 +139,18 @@
 
       <div class="sidebar-bottom">
 
-        <div class="sidebar-status">
+        <div class="sidebar-status" style="display:none">
           <span class="sidebar-status-dot"></span>
 
           <div>
-            <strong>System online</strong>
-            <span>NUC-SUB Engine</span>
+            <strong data-i18n="sidebar.status.title">System online</strong>
+            <span data-i18n="sidebar.status.sub">NUC-SUB Engine</span>
           </div>
         </div>
 
         <button class="sidebar-logout" onclick="logout()" type="button">
           <i class="fa-solid fa-sign-out-alt"></i>
-          <span>خروج</span>
+          <span data-i18n="nav.logout">خروج</span>
         </button>
 
       </div>
@@ -173,17 +179,17 @@
 
             <div>
               <strong>NUC-SUB</strong>
-              <span>Theme Engine</span>
+              <span data-i18n="brand.sub">Theme Engine</span>
             </div>
           </div>
 
           <div class="breadcrumb">
 
-            <span>NUC-SUB</span>
+            <span data-i18n="crumb.root">NUC-SUB</span>
 
             <i class="fa-solid fa-chevron-left"></i>
 
-            <strong>Theme Manager</strong>
+            <strong data-i18n="nav.themes">Theme Manager</strong>
 
           </div>
 
@@ -192,14 +198,16 @@
 
         <div class="topbar-actions">
 
+          <button class="lang-toggle" type="button" onclick="toggleLang()" aria-label="language"></button>
+
           <div class="connection-state">
             <span class="connection-dot"></span>
-            <span>Connected</span>
+            <span data-i18n="topbar.conn">Connected</span>
           </div>
 
           <button class="btn btn-secondary btn-icon-text" onclick="logout()" type="button">
             <i class="fa-solid fa-sign-out-alt"></i>
-            <span>خروج</span>
+            <span data-i18n="nav.logout">خروج</span>
           </button>
 
         </div>
@@ -224,12 +232,12 @@
 
             <div class="page-kicker">
               <span class="kicker-line"></span>
-              SUBSCRIPTION INFRASTRUCTURE
+              <span data-i18n="page.kicker">SUBSCRIPTION INFRASTRUCTURE</span>
             </div>
 
-            <h2>Theme Manager</h2>
+            <h2 data-i18n="page.title">Theme Manager</h2>
 
-            <p>
+            <p data-i18n="page.desc">
               قالب‌های صفحه اشتراک خود را مدیریت و فعال‌سازی کنید.
             </p>
 
@@ -244,7 +252,7 @@
               type="button"
             >
               <i class="fa-solid fa-rotate-right"></i>
-              <span>تازه‌سازی</span>
+              <span data-i18n="page.refresh">تازه‌سازی</span>
             </button>
 
             <button
@@ -253,7 +261,7 @@
               type="button"
             >
               <i class="fa-solid fa-undo"></i>
-              <span>پیش‌فرض</span>
+              <span data-i18n="page.reset">پیش‌فرض</span>
             </button>
 
           </div>
@@ -274,9 +282,9 @@
             </div>
 
             <div class="overview-content">
-              <span class="overview-label">Installed Themes</span>
+              <span class="overview-label" data-i18n="ov.installed">Installed Themes</span>
               <strong id="theme-count">—</strong>
-              <span class="overview-description">
+              <span class="overview-description" data-i18n="ov.installed.desc">
                 قالب‌های موجود در سیستم
               </span>
             </div>
@@ -291,9 +299,9 @@
             </div>
 
             <div class="overview-content">
-              <span class="overview-label">Current Theme</span>
+              <span class="overview-label" data-i18n="ov.current">Current Theme</span>
               <strong id="current-theme-label">—</strong>
-              <span class="overview-description">
+              <span class="overview-description" data-i18n="ov.current.desc">
                 قالب فعال سیستم
               </span>
             </div>
@@ -308,9 +316,9 @@
             </div>
 
             <div class="overview-content">
-              <span class="overview-label">Engine</span>
+              <span class="overview-label" data-i18n="ov.engine">Engine</span>
               <strong>NUC-SUB</strong>
-              <span class="overview-description">
+              <span class="overview-description" data-i18n="ov.engine.desc">
                 Subscription Theme Engine
               </span>
             </div>
@@ -332,7 +340,7 @@
 
               <div class="section-title-row">
 
-                <h3>
+                <h3 data-i18n="sec.title">
                   قالب‌های نصب‌شده
                 </h3>
 
@@ -342,7 +350,7 @@
 
               </div>
 
-              <p>
+              <p data-i18n="sec.desc">
                 قالب فعال صفحه اشتراک را انتخاب یا مدیریت کنید.
               </p>
 
@@ -353,7 +361,7 @@
 
               <span class="mini-status-dot"></span>
 
-              <span>Theme engine ready</span>
+              <span data-i18n="sec.ready">Theme engine ready</span>
 
             </div>
 
@@ -369,8 +377,8 @@
               </span>
 
               <div>
-                <strong>در حال بارگذاری قالب‌ها</strong>
-                <span>در حال دریافت اطلاعات از سرور...</span>
+                <strong data-i18n="js.loadT">در حال بارگذاری قالب‌ها</strong>
+                <span data-i18n="js.loadS">در حال دریافت اطلاعات از سرور...</span>
               </div>
 
             </div>
@@ -393,11 +401,11 @@
             </div>
 
             <div>
-              <span class="system-status-label">Current configuration</span>
+              <span class="system-status-label" data-i18n="status.title">Current configuration</span>
 
               <div class="system-status-value">
-                <span>قالب فعال:</span>
-                <b>در حال دریافت وضعیت...</b>
+                <span data-i18n="status.active">قالب فعال:</span>
+                <b data-i18n="status.loading">در حال دریافت وضعیت...</b>
               </div>
             </div>
 
@@ -406,7 +414,7 @@
 
           <div class="system-status-meta">
             <i class="fa-solid fa-shield-halved"></i>
-            Protected
+            <span data-i18n="status.protected">Protected</span>
           </div>
 
         </section>
@@ -428,15 +436,15 @@
 
               <div>
 
-                <span class="section-eyebrow">
+                <span class="section-eyebrow" data-i18n="set.eyebrow">
                   CONFIGURATION
                 </span>
 
-                <h3>
+                <h3 data-i18n="set.title">
                   تنظیمات کانال تلگرام
                 </h3>
 
-                <p>
+                <p data-i18n="set.desc">
                   لینک کانال تلگرام در قالب‌های سابسکریپشن نمایش داده خواهد شد.
                 </p>
 
@@ -451,7 +459,7 @@
 
             <div class="field settings-field">
 
-              <label for="tg-input">
+              <label for="tg-input" data-i18n="set.tg.label">
                 لینک کانال تلگرام
               </label>
 
@@ -462,6 +470,7 @@
                 <input
                   id="tg-input"
                   type="text"
+                  data-i18n-ph="set.tg.ph"
                   placeholder="https://t.me/your_channel"
                   autocomplete="off"
                   dir="ltr"
@@ -479,7 +488,7 @@
               type="button"
             >
               <i class="fa-solid fa-check"></i>
-              <span>ذخیره تغییرات</span>
+              <span data-i18n="set.save">ذخیره تغییرات</span>
             </button>
 
           </div>
@@ -496,14 +505,15 @@
 
         <footer class="footer">
 
-          <div>
+          <span data-i18n="foot.left">
             NUC-SUB · Subscription Theme Engine
-          </div>
+          </span>
 
           <a
             href="https://github.com/nuctereadev"
             target="_blank"
             rel="noopener"
+            data-i18n="foot.right"
           >
             <i class="fa-solid fa-code"></i>
             NUCTEREA
@@ -511,7 +521,7 @@
 
           <span class="footer-separator"></span>
 
-          <span>MIT License</span>
+          <span data-i18n="foot.license">MIT License</span>
 
         </footer>
 
@@ -534,6 +544,7 @@
   target="_blank"
   rel="noopener"
   class="donate-btn"
+  data-i18n-title="foot.support.title"
   title="حمایت مالی"
   aria-label="حمایت مالی"
 >
@@ -551,34 +562,224 @@
 <script>
 const TOKEN_KEY='xui_sub_token'; 
 let token=localStorage.getItem(TOKEN_KEY)||''; 
+let LANG=(localStorage.getItem('xui_sub_lang')||'fa')==='en'?'en':'fa'; 
+
+const I18N={fa:{
+  'app.title':'NUC-SUB | مدیریت قالب سابسکریپشن',
+  'login.eyebrow':'دسترسی امن',
+  'login.title':'NUC-SUB',
+  'login.subtitle':'موتور قالب اشتراک',
+  'login.copy':'برای ورود به پنل مدیریت، توکن دسترسی خود را وارد کنید.',
+  'login.token.label':'توکن مدیریت',
+  'login.token.ph':'توکن را اینجا وارد کنید',
+  'login.btn':'ورود به پنل',
+  'login.meta':'توکن در فایل <code>/opt/nuc-sub/.webpanel-token</code> قرار دارد.',
+  'login.footer':'Powered by NUCTEREA',
+  'brand.title':'NUC-SUB',
+  'brand.sub':'موتور قالب',
+  'nav.workspace':'Workspace',
+  'nav.themes':'مدیریت قالب',
+  'nav.settings':'تنظیمات',
+  'sidebar.status.title':'سیستم آنلاین',
+  'sidebar.status.sub':'NUC-SUB Engine',
+  'nav.logout':'خروج',
+  'topbar.conn':'متصل',
+  'crumb.root':'NUC-SUB',
+  'page.kicker':'SUBSCRIPTION INFRASTRUCTURE',
+  'page.title':'مدیریت قالب',
+  'page.desc':'قالب‌های صفحه اشتراک خود را مدیریت و فعال‌سازی کنید.',
+  'page.refresh':'تازه‌سازی',
+  'page.reset':'بازنشانی',
+  'ov.installed':'Installed Themes',
+  'ov.installed.desc':'قالب‌های موجود در سیستم',
+  'ov.current':'Current Theme',
+  'ov.current.desc':'قالب فعال سیستم',
+  'ov.engine':'Engine',
+  'ov.engine.desc':'Subscription Theme Engine',
+  'sec.title':'قالب‌های نصب‌شده',
+  'sec.desc':'قالب فعال صفحه اشتراک را انتخاب یا مدیریت کنید.',
+  'sec.ready':'Theme engine ready',
+  'status.title':'Current configuration',
+  'status.active':'قالب فعال:',
+  'status.loading':'در حال دریافت وضعیت…',
+  'status.protected':'Protected',
+  'status.value.default':'پیش‌فرض پنل',
+  'set.eyebrow':'CONFIGURATION',
+  'set.title':'تنظیمات کانال تلگرام',
+  'set.desc':'لینک کانال تلگرام در قالب‌های سابسکریپشن نمایش داده خواهد شد.',
+  'set.tg.label':'لینک کانال تلگرام',
+  'set.tg.ph':'https://t.me/your_channel',
+  'set.save':'ذخیره تغییرات',
+  'foot.left':'NUC-SUB · Subscription Theme Engine',
+  'foot.right':'NUCTEREA',
+  'foot.license':'MIT License',
+  'foot.support.title':'حمایت مالی',
+  'js.tokenEmpty':'لطفاً توکن را وارد کنید',
+  'js.tokenInvalid':'توکن واردشده معتبر نیست',
+  'js.welcome':'خوش آمدید',
+  'js.loadT':'در حال بارگذاری قالب‌ها',
+  'js.loadS':'در حال دریافت اطلاعات از سرور…',
+  'js.emptyT':'قالبی یافت نشد',
+  'js.emptyS':'هیچ قالب قابل استفاده‌ای در سیستم وجود ندارد.',
+  'js.errT':'خطا در دریافت لیست قالب‌ها',
+  'js.errS':'ارتباط با API برقرار نشد.',
+  'js.applyOk':'قالب «{n}» فعال شد',
+  'js.removeQ':'قالب «{n}» حذف شود؟',
+  'js.removeOk':'قالب حذف شد',
+  'js.removeErr':'خطا در حذف قالب',
+  'js.resetQ':'به صفحه‌ی پیش‌فرض پنل برگردد؟',
+  'js.resetOk':'به پیش‌فرض برگشت',
+  'js.resetErr':'خطا در بازنشانی',
+  'js.cardDesc':'قالب {n} برای صفحه اشتراک',
+  'js.cardTag':'Subscription Theme',
+  'js.activate':'فعال‌سازی',
+  'js.delete':'حذف',
+  'js.active':'فعال',
+  'js.saved':'ذخیره شد',
+  'js.saveErrInvalid':'لینک تلگرام معتبر نیست',
+  'js.saveErr':'خطا در ذخیره',
+  'lang.btnTitle':'تغییر زبان'
+},en:{
+  'app.title':'NUC-SUB | Subscription Theme Engine',
+  'login.eyebrow':'SECURE ACCESS',
+  'login.title':'NUC-SUB',
+  'login.subtitle':'Subscription Theme Engine',
+  'login.copy':'Enter your access token to sign in to the admin panel.',
+  'login.token.label':'Admin token',
+  'login.token.ph':'Enter token here',
+  'login.btn':'Sign in',
+  'login.meta':'Your token is stored at <code>/opt/nuc-sub/.webpanel-token</code>.',
+  'login.footer':'Powered by NUCTEREA',
+  'brand.title':'NUC-SUB',
+  'brand.sub':'Theme Engine',
+  'nav.workspace':'Workspace',
+  'nav.themes':'Theme Manager',
+  'nav.settings':'Settings',
+  'sidebar.status.title':'System online',
+  'sidebar.status.sub':'NUC-SUB Engine',
+  'nav.logout':'Sign out',
+  'topbar.conn':'Connected',
+  'crumb.root':'NUC-SUB',
+  'page.kicker':'SUBSCRIPTION INFRASTRUCTURE',
+  'page.title':'Theme Manager',
+  'page.desc':'Manage and activate your subscription page themes.',
+  'page.refresh':'Refresh',
+  'page.reset':'Reset',
+  'ov.installed':'Installed Themes',
+  'ov.installed.desc':'Themes available on the system',
+  'ov.current':'Current Theme',
+  'ov.current.desc':'System\'s active theme',
+  'ov.engine':'Engine',
+  'ov.engine.desc':'Subscription Theme Engine',
+  'sec.title':'Installed themes',
+  'sec.desc':'Select or manage the active subscription page theme.',
+  'sec.ready':'Theme engine ready',
+  'status.title':'Current configuration',
+  'status.active':'Active theme:',
+  'status.loading':'Fetching status…',
+  'status.protected':'Protected',
+  'status.value.default':'panel default',
+  'set.eyebrow':'CONFIGURATION',
+  'set.title':'Telegram channel settings',
+  'set.desc':'The Telegram channel link is shown in subscription themes.',
+  'set.tg.label':'Telegram channel link',
+  'set.tg.ph':'https://t.me/your_channel',
+  'set.save':'Save changes',
+  'foot.left':'NUC-SUB · Subscription Theme Engine',
+  'foot.right':'NUCTEREA',
+  'foot.license':'MIT License',
+  'foot.support.title':'Support us',
+  'js.tokenEmpty':'Please enter your token',
+  'js.tokenInvalid':'Invalid token',
+  'js.welcome':'Welcome',
+  'js.loadT':'Loading themes',
+  'js.loadS':'Fetching data from server…',
+  'js.emptyT':'No themes found',
+  'js.emptyS':'No usable themes are installed on the system.',
+  'js.errT':'Failed to load the theme list',
+  'js.errS':'Could not reach the API.',
+  'js.applyOk':'Theme "{n}" activated',
+  'js.removeQ':'Delete theme "{n}"?',
+  'js.removeOk':'Theme deleted',
+  'js.removeErr':'Failed to delete theme',
+  'js.resetQ':'Revert to the default panel page?',
+  'js.resetOk':'Reverted to default',
+  'js.resetErr':'Reset failed',
+  'js.cardDesc':'{n} subscription page theme',
+  'js.cardTag':'Subscription Theme',
+  'js.activate':'Activate',
+  'js.delete':'Delete',
+  'js.active':'Active',
+  'js.saved':'Saved',
+  'js.saveErrInvalid':'Invalid Telegram link',
+  'js.saveErr':'Failed to save',
+  'lang.btnTitle':'Switch language'
+}}; 
+
+function t(k){return (I18N[LANG]&&I18N[LANG][k]!=null)?I18N[LANG][k]:(I18N.fa[k]!=null?I18N.fa[k]:k)} 
+function tf(k,m){return t(k).replace(/\{(\w+)\}/g,($0,name)=>m[name]!=null?m[name]:$0)} 
+function applyLang(){ 
+  const doc=document.documentElement; 
+  doc.lang=LANG; 
+  doc.dir=LANG==='fa'?'rtl':'ltr'; 
+  document.title=t('app.title'); 
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(k)el.innerHTML=t(k)}); 
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{const k=el.getAttribute('data-i18n-ph');if(k)el.placeholder=t(k)}); 
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{const k=el.getAttribute('data-i18n-title');if(k)el.title=t(k)}); 
+  const label=LANG==='fa'?'EN':'فا'; 
+  document.querySelectorAll('.lang-toggle').forEach(b=>{b.textContent=label;b.title=t('lang.btnTitle')}); 
+} 
+function setLang(l){if(l==='fa'||l==='en'){LANG=l;localStorage.setItem('xui_sub_lang',l);applyLang()}} 
+function toggleLang(){setLang(LANG==='fa'?'en':'fa')} 
 
 function $(id){return document.getElementById(id)} 
-function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-warning"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');setTimeout(()=>t.classList.remove('show'),2200)} 
- 
+function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-circle-xmark"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.remove('show'),2600)} 
 async function api(path,opts){ 
   const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{})); 
   const data=await r.json().catch(()=>({})); 
   if(r.status===401){showLogin();throw new Error('unauthorized')} 
   return data; 
 } 
- 
 function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'} 
 function showMain(){$('view-login').style.display='none';$('view-main').style.display='';loadSettings()} 
- 
-function doLogin(){ 
-  token=$('token-input').value.trim(); 
-  if(!token){showToast('توکن را وارد کنید',true);return} 
-  localStorage.setItem(TOKEN_KEY,token); 
-  api('list').then(r=>{if(r.ok){showMain();loadThemes()}else showToast('توکن نامعتبر',true)}).catch(()=>showToast('توکن نامعتبر',true)); 
+function showLoginError(msg){ 
+  const el=$('login-error'); 
+  if(el){el.textContent=msg;el.classList.add('show')} 
+  const f=document.querySelector('#view-login .field'); 
+  if(f)f.classList.add('error'); 
+  const card=$('login-card'); 
+  if(card){card.classList.remove('shake');void card.offsetWidth;card.classList.add('shake')} 
+  const btn=$('login-btn'); 
+  if(btn&&$('token-input').value.trim()==='')btn.focus(); 
+  showToast(msg,true); 
+} 
+function clearLoginError(){ 
+  const el=$('login-error'); 
+  if(el)el.classList.remove('show'); 
+  const f=document.querySelector('#view-login .field'); 
+  if(f)f.classList.remove('error'); 
+} 
+async function doLogin(){ 
+  const btn=$('login-btn'); 
+  const val=$('token-input').value.trim(); 
+  clearLoginError(); 
+  if(!val){showLoginError(t('js.tokenEmpty'));return} 
+  token=val; 
+  if(btn){btn.disabled=true;btn.classList.add('loading')} 
+  try{ 
+    const r=await api('list'); 
+    if(r&&r.ok){localStorage.setItem(TOKEN_KEY,val);clearLoginError();showMain();loadThemes();if(btn)btn.disabled=false,btn.classList.remove('loading');showToast(t('js.welcome'))} 
+    else{localStorage.removeItem(TOKEN_KEY);if(btn)btn.disabled=false,btn.classList.remove('loading');showLoginError(t('js.tokenInvalid'))} 
+  }catch(e){localStorage.removeItem(TOKEN_KEY);if(btn)btn.disabled=false,btn.classList.remove('loading');showLoginError(t('js.tokenInvalid'))} 
 } 
 function logout(){token='';localStorage.removeItem(TOKEN_KEY);showLogin()} 
 $('token-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}); 
- 
+$('token-input').addEventListener('input',clearLoginError); 
+
 const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'}; 
 function getIcon(name){return THEME_ICONS[name]||THEME_ICONS.default} 
- 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')} 
- 
+
 function cardFor(name,active){ 
   const en=esc(name);const ej=String(name).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); 
   return `<div class="theme ${active?'active':''}">
@@ -592,47 +793,44 @@ function cardFor(name,active){
 
       <div class="th-head">
         <span class="th-name">${en}</span>
-        ${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> فعال</span>':''}
+        ${active?'<span class="th-badge current"><i class="fa-solid fa-circle-check"></i> '+t('js.active')+'</span>':''}
       </div>
 
       <div class="th-desc">
-        قالب ${en} برای صفحه اشتراک
+        ${tf('js.cardDesc',{n:en})}
       </div>
 
       <div class="th-meta">
         <span>
           <i class="fa-solid fa-layer-group"></i>
-          Subscription Theme
+          ${t('js.cardTag')}
         </span>
       </div>
 
       <div class="th-btns">
         <button class="btn sm btn-primary" onclick="applyTheme('${ej}')" ${active?'disabled':''}>
           <i class="fa-solid fa-circle-check"></i>
-          <span>فعال‌سازی</span>
+          <span>${t('js.activate')}</span>
         </button>
 
         <button class="btn danger sm" onclick="removeTheme('${ej}')">
           <i class="fa-solid fa-trash"></i>
-          <span>حذف</span>
+          <span>${t('js.delete')}</span>
         </button>
       </div>
 
     </div>
   </div>`; 
 } 
- 
+
 async function loadThemes(){ 
   const grid=$('themes-grid'); 
-  grid.innerHTML='<div class="loading-state"><span class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i></span><div><strong>در حال بارگذاری قالب‌ها</strong><span>در حال دریافت اطلاعات از سرور...</span></div></div>'; 
+  grid.innerHTML='<div class="loading-state"><span class="loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i></span><div><strong>'+t('js.loadT')+'</strong><span>'+t('js.loadS')+'</span></div></div>'; 
   try{ 
     const res=await api('list');const out=res.stdout||'';const gridHtml=[];const active=extractActive(out); 
-    const themes=parseThemeList(out);
-
+    const themes=parseThemeList(out); 
     for(const name of themes)gridHtml.push(cardFor(name,active===name)); 
-
-    grid.innerHTML=gridHtml.join('')||'<div class="empty-state"><i class="fa-solid fa-palette"></i><strong>قالبی یافت نشد</strong><span>هیچ قالب قابل استفاده‌ای در سیستم وجود ندارد.</span></div>'; 
-
+    grid.innerHTML=gridHtml.join('')||'<div class="empty-state"><i class="fa-solid fa-palette"></i><strong>'+t('js.emptyT')+'</strong><span>'+t('js.emptyS')+'</span></div>'; 
     $('statusbar').innerHTML=`
       <div class="system-status-main">
         <div class="system-status-icon">
@@ -640,30 +838,28 @@ async function loadThemes(){
         </div>
 
         <div>
-          <span class="system-status-label">Current configuration</span>
+          <span class="system-status-label">${t('status.title')}</span>
 
           <div class="system-status-value">
-            <span>قالب فعال:</span>
-            <b>${active||'پیش‌فرض پنل'}</b>
+            <span>${t('status.active')}</span>
+            <b>${active||t('status.value.default')}</b>
           </div>
         </div>
       </div>
 
       <div class="system-status-meta">
         <i class="fa-solid fa-shield-halved"></i>
-        Protected
+        ${t('status.protected')}
       </div>
-    `;
-
-    if($('theme-count'))$('theme-count').textContent=themes.length;
-    if($('theme-section-count'))$('theme-section-count').textContent=themes.length;
-    if($('current-theme-label'))$('current-theme-label').textContent=active||'Default';
-
-  }catch(e){
-    grid.innerHTML='<div class="error-state"><i class="fa-solid fa-warning"></i><strong>خطا در دریافت لیست قالب‌ها</strong><span>ارتباط با API برقرار نشد.</span></div>'
+    `; 
+    if($('theme-count'))$('theme-count').textContent=themes.length; 
+    if($('theme-section-count'))$('theme-section-count').textContent=themes.length; 
+    if($('current-theme-label'))$('current-theme-label').textContent=active||t('status.value.default'); 
+  }catch(e){ 
+    grid.innerHTML='<div class="error-state"><i class="fa-solid fa-warning"></i><strong>'+t('js.errT')+'</strong><span>'+t('js.errS')+'</span></div>' 
   } 
 } 
- 
+
 function stripAnsi(s){return String(s||'').replace(/\x1b\[[0-9;]*m/g,'')} 
 function parseThemeList(out){ 
   const clean=stripAnsi(out); 
@@ -675,32 +871,32 @@ function parseThemeList(out){
 } 
 function extractActive(out){const clean=stripAnsi(out);const star=clean.match(/★\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/);if(star)return star[1];const sum=clean.match(/\bActive:?\s*([A-Za-z0-9][A-Za-z0-9\-_.]*)/i);return sum?sum[1]:''} 
 
-async function applyTheme(name){
-  const res=await api('apply?name='+encodeURIComponent(name));
-  if(res.ok){
-    showToast('قالب «'+name+'» فعال شد');
-    loadThemes()
-  }else showToast((res.stderr||res.stdout||'خطا'),true)
+async function applyTheme(name){ 
+  const res=await api('apply?name='+encodeURIComponent(name)); 
+  if(res.ok){ 
+    showToast(tf('js.applyOk',{n:name})); 
+    loadThemes() 
+  }else showToast((res.stderr||res.stdout||t('js.removeErr')),true) 
 } 
 
-async function removeTheme(name){
-  if(!confirm('قالب «'+name+'» حذف شود؟'))return;
-  const res=await api('remove?name='+encodeURIComponent(name));
-  if(res.ok){
-    showToast('قالب حذف شد');
-    loadThemes()
-  }else showToast('خطا',true)
+async function removeTheme(name){ 
+  if(!confirm(tf('js.removeQ',{n:name})))return; 
+  const res=await api('remove?name='+encodeURIComponent(name)); 
+  if(res.ok){ 
+    showToast(t('js.removeOk')); 
+    loadThemes() 
+  }else showToast(t('js.removeErr'),true) 
 } 
 
-async function resetTheme(){
-  if(!confirm('برگشت به صفحه پیش‌فرض پنل؟'))return;
-  const res=await api('reset');
-  if(res.ok){
-    showToast('به پیش‌فرض برگشت');
-    loadThemes()
-  }else showToast('خطا',true)
+async function resetTheme(){ 
+  if(!confirm(t('js.resetQ')))return; 
+  const res=await api('reset'); 
+  if(res.ok){ 
+    showToast(t('js.resetOk')); 
+    loadThemes() 
+  }else showToast(t('js.resetErr'),true) 
 } 
- 
+
 async function loadSettings(){ 
   try{ 
     const res=await api('settings'); 
@@ -714,41 +910,44 @@ async function saveTelegram(){
   const url=$('tg-input').value.trim(); 
   const st=$('tg-status'); 
   try{ 
-    const res=await api('settings',{
-      method:'POST',
-      headers:{
-        'Authorization':'Bearer '+token,
-        'Content-Type':'application/json'
-      },
-      body:JSON.stringify({telegram_channel:url})
+    const res=await api('settings',{ 
+      method:'POST', 
+      headers:{ 
+        'Authorization':'Bearer '+token, 
+        'Content-Type':'application/json' 
+      }, 
+      body:JSON.stringify({telegram_channel:url}) 
     }); 
-
-    if(res.ok){
-      st.style.color='var(--green)';
-      st.textContent='ذخیره شد';
-      setTimeout(()=>{st.textContent=''},2000)
+    if(res.ok){ 
+      st.style.color='var(--green)'; 
+      st.textContent=t('js.saved'); 
+      showToast(t('js.saved')); 
+      setTimeout(()=>{st.textContent=''},2000) 
     } 
-    else{
-      st.style.color='var(--red)';
-      st.textContent=res.error||'خطا'
+    else{ 
+      st.style.color='var(--red)'; 
+      st.textContent=res.error||t('js.saveErr'); 
+      showToast(res.error||t('js.saveErr'),true); 
     } 
-  }catch(e){
-    st.style.color='var(--red)';
-    st.textContent='خطا در ذخیره'
+  }catch(e){ 
+    st.style.color='var(--red)'; 
+    st.textContent=t('js.saveErr'); 
+    showToast(t('js.saveErr'),true); 
   } 
 } 
- 
-if(token){
-  api('list')
-    .then(r=>{
-      if(r.ok){
-        showMain();
-        loadThemes()
-      }else showLogin()
-    })
-    .catch(showLogin)
-} 
-else showLogin(); 
+
+applyLang(); 
+
+(async()=>{ 
+  if(token){ 
+    try{ 
+      const r=await api('list'); 
+      if(r&&r.ok){showMain();loadThemes()} 
+      else showLogin(); 
+    }catch(e){showLogin()} 
+  } 
+  else showLogin(); 
+})(); 
 </script>
 
 </body>

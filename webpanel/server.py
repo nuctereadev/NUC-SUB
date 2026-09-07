@@ -26,6 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 ARGS = None
+HOST_PORT = 8080
 SETTINGS = {}
 SETTINGS_FILE = ""
 
@@ -194,7 +195,9 @@ class Handler(BaseHTTPRequestHandler):
         action = seg[-1]
 
         if action == "status":
-            self._send_json(run_cli(["status"]))
+            out = run_cli(["status"])
+            out["port"] = HOST_PORT
+            self._send_json(out)
             return
 
         if action == "list":
@@ -294,7 +297,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    global ARGS, SETTINGS_FILE
+    global ARGS, SETTINGS_FILE, HOST_PORT
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--token")
@@ -316,12 +319,20 @@ def main():
         test.bind(("0.0.0.0", port))
     except OSError:
         port = find_free_port(port + 1, port + 100)
-        print(f"⚠ Port {ARGS.port} occupied — using port {port} instead", flush=True)
+        print(f"[nuc-sub] ⚠ port {ARGS.port} is occupied — web panel will use port {port}", flush=True)
     finally:
         test.close()
 
+    # Persist the effective port so the CLI/menus report the real running port.
+    try:
+        with open(os.path.join(install_dir, ".webport"), "w") as f:
+            f.write(str(port))
+    except OSError:
+        pass
+
+    HOST_PORT = port
     srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
-    print(f"NUC-SUB web panel listening on :{port}", flush=True)
+    print(f"[nuc-sub] web panel listening on http://0.0.0.0:{port}", flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
