@@ -952,17 +952,15 @@ telegram_menu() {
         echo -e "  ${DIM}Current channel:${NC}"
         cmd_telegram get
         sep
-        echo -e "  ${GREEN}1)${NC} Show current channel"
-        echo -e "  ${GREEN}2)${NC} Set / change channel"
-        echo -e "  ${GREEN}3)${NC} Delete channel (remove the link from themes)"
+        echo -e "  ${GREEN}1)${NC} Set / change channel"
+        echo -e "  ${GREEN}2)${NC} Delete channel (remove the link from themes)"
         echo -e "  ${GREEN}0)${NC} Back to web panel menu"
         sep
-        echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
+        echo -ne "  ${BOLD}Select option [0-2]: ${NC}"
         read -r choice
         case "$choice" in
-            1) title "Telegram Channel"; sep; cmd_telegram get; pause_enter ;;
-            2) cmd_telegram set; pause_enter ;;
-            3) cmd_telegram clear; pause_enter ;;
+            1) cmd_telegram set; pause_enter ;;
+            2) cmd_telegram clear; pause_enter ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
