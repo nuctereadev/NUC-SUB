@@ -80,96 +80,334 @@
 
 </script>
 <!-- /skill:chrome -->
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ user.username }} - سابسکریپشن</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#11120f;--surface:#191a16;--surface-2:#20211c;--surface-3:#292a23;
-  --line:#34352d;--text:#f0f0e8;--muted:#a7a89d;--quiet:#73746c;
-  --yellow:#ffe100;--yellow-soft:#24220e;--green:#8bd49b;--red:#ee8d83;--amber:#e7bd67;
-  --max:1080px;--radius:18px;--ease:cubic-bezier(.22,1,.36,1)
-}
-html[data-theme="light"]{--bg:#f4f4ed;--surface:#ffffff;--surface-2:#f0f0e8;--surface-3:#e5e5da;--line:#d7d7ca;--text:#20211c;--muted:#62635a;--quiet:#898a7f;--yellow:#b79d00;--yellow-soft:#faf2bc;--green:#317d43;--red:#a84238;--amber:#8b6416}
-body{min-height:100vh;background:radial-gradient(circle at 82% 0%,#2a2b19 0,transparent 34%),var(--bg);color:var(--text);font-family:'Vazirmatn',system-ui,sans-serif;font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
-button,a{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}
-.shell{width:min(calc(100% - 32px),var(--max));margin:auto;padding:24px 0 42px}
-.masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line);padding-bottom:18px}
-.wordmark{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.04em;font-size:13px}
-.mark{width:29px;height:29px;display:grid;place-items:center;background:var(--yellow);color:#18180f;border-radius:9px;font-weight:900;font-size:14px}
-.mast-actions{display:flex;gap:8px}.icon-btn{width:38px;height:38px;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;background:transparent;color:var(--muted);transition:.2s var(--ease)}
-.icon-btn:hover,.icon-btn:focus-visible{color:var(--yellow);border-color:var(--yellow);outline:none}.icon-btn svg{width:17px;height:17px;fill:currentColor}
-.intro{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);gap:clamp(32px,7vw,92px);align-items:end;padding:64px 0 42px}
-.eyebrow{display:flex;align-items:center;gap:9px;color:var(--yellow);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.eyebrow i{width:7px;height:7px;border-radius:50%;background:currentColor}
-h1{font-size:clamp(32px,5vw,58px);line-height:1.1;letter-spacing:-.045em;margin:13px 0 17px;max-width:12ch;word-break:break-word}
-.subline{color:var(--muted);max-width:38ch;font-size:14px}
-.identity{border-inline-start:1px solid var(--line);padding-inline-start:27px}.identity-label{font-size:11px;color:var(--quiet);margin-bottom:7px}.identity-user{font-size:20px;font-weight:700;word-break:break-word;direction:ltr;text-align:right}.status{display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:7px 11px;border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:12px}.status::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}.st-on{color:var(--green);border-color:#3b6144;background:#172219}.st-lim{color:var(--red);border-color:#713c37;background:#2b1917}.st-exp{color:var(--amber);border-color:#65501f;background:#282310}.st-held{color:var(--yellow);border-color:#655b17;background:#28250e}.st-dis{color:var(--quiet)}
-.overview{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.metric{padding:21px 18px 22px;border-inline-start:1px solid var(--line);min-width:0}.metric:first-child{border-inline-start:0}.metric-label{display:block;color:var(--quiet);font-size:11px;margin-bottom:9px}.metric-value{font-size:clamp(17px,2.5vw,26px);font-weight:750;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}.metric:first-child .metric-value{color:var(--yellow)}
-.content{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.55fr);gap:24px;padding-top:34px}.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px}.section-title{font-size:16px;font-weight:750}.section-meta{font-size:11px;color:var(--quiet)}
-.configs{display:flex;flex-direction:column;gap:8px}.config{display:flex;align-items:center;gap:14px;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--surface);transition:transform .2s var(--ease),border-color .2s,background .2s;cursor:pointer}.config:hover{transform:translateY(-2px);border-color:#77775e;background:var(--surface-2)}.config:focus-within{outline:2px solid var(--yellow);outline-offset:2px}.config-symbol{width:39px;height:39px;display:grid;place-items:center;border-radius:11px;background:var(--surface-3);color:var(--yellow);font-weight:850;font-size:11px;letter-spacing:.05em;flex:none}.config-main{min-width:0;flex:1}.config-name{font-size:13px;font-weight:700;direction:ltr;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.config-type{font-size:10px;color:var(--quiet);direction:ltr;text-align:right;margin-top:2px;text-transform:uppercase;letter-spacing:.08em}.copy{height:34px;padding:0 11px;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:9px;display:flex;align-items:center;gap:6px;font-size:11px;flex:none;transition:.2s}.copy:hover{background:var(--yellow);border-color:var(--yellow);color:#1d1d13}.copy svg{width:14px;height:14px;fill:currentColor}
-.side{display:flex;flex-direction:column;gap:22px}.usage-block,.details-block{border-top:1px solid var(--line);padding-top:14px}.usage-readout{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:6px 0 12px}.usage-number{font-size:28px;font-weight:800;letter-spacing:-.05em}.usage-number small{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0}.usage-percent{font-size:12px;color:var(--yellow);font-variant-numeric:tabular-nums}.bar{height:7px;background:var(--surface-3);border-radius:99px;overflow:hidden}.bar-fill{height:100%;width:0;background:var(--yellow);border-radius:inherit;transition:width .7s var(--ease)}.usage-note{display:flex;justify-content:space-between;color:var(--quiet);font-size:11px;margin-top:8px}.details{display:flex;flex-direction:column}.detail{display:flex;justify-content:space-between;align-items:start;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:12px}.detail:last-child{border-bottom:0}.detail dt{color:var(--quiet);flex:none}.detail dd{text-align:left;word-break:break-word;font-weight:650;font-variant-numeric:tabular-nums}.notice{margin-top:22px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);color:var(--muted);font-size:12px}.notice strong{color:var(--text);font-weight:700}.actions{display:flex;gap:9px;margin-top:21px;flex-wrap:wrap}.action{min-height:44px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;border:1px solid var(--line);font-size:12px;font-weight:700;transition:.2s var(--ease)}.action.primary{background:var(--yellow);border-color:var(--yellow);color:#19190f}.action.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}.action.secondary{color:var(--muted);background:var(--surface)}.action.secondary:hover{border-color:var(--yellow);color:var(--yellow)}.action svg{width:16px;height:16px;fill:currentColor}.hidden{display:none!important}
-.footer{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);margin-top:42px;padding-top:14px;color:var(--quiet);font-size:10px}.footer a{color:var(--muted)}.footer a:hover{color:var(--yellow)}.toast{position:fixed;inset:auto 50% 22px auto;transform:translateX(50%) translateY(12px);opacity:0;pointer-events:none;background:var(--surface-3);border:1px solid var(--line);color:var(--text);padding:9px 16px;border-radius:9px;font-size:12px;transition:.25s var(--ease);z-index:5}.toast.show{opacity:1;transform:translateX(50%) translateY(0)}
-@media(max-width:720px){.shell{width:min(calc(100% - 28px),520px);padding-top:16px}.intro{display:block;padding:42px 0 30px}.identity{border-inline-start:0;border-top:1px solid var(--line);padding:18px 0 0;margin-top:30px}.identity-user{font-size:18px}.overview{grid-template-columns:1fr 1fr}.metric{padding:16px 13px}.metric:first-child{grid-column:span 2;border-bottom:1px solid var(--line)}.metric:nth-child(3){border-inline-start:0}.content{display:flex;flex-direction:column;padding-top:28px;gap:31px}.side{display:grid;grid-template-columns:1fr 1fr;gap:24px}.notice{grid-column:1/-1;margin-top:0}.footer{margin-top:31px}}
-@media(max-width:420px){body{font-size:13px}.shell{width:min(calc(100% - 24px),390px)}.masthead{padding-bottom:13px}.wordmark{font-size:12px}.intro{padding-top:35px}h1{font-size:34px}.overview{margin-inline:-1px}.metric{padding-inline:10px}.metric-value{font-size:18px}.side{display:block}.usage-block,.details-block{margin-bottom:28px}.config{gap:10px;padding:12px}.config-symbol{width:35px;height:35px}.copy{padding-inline:9px}.copy span{display:none}.actions{display:grid;grid-template-columns:1fr}.action{width:100%}.footer{display:block}.footer span{display:block;margin-bottom:4px}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ user.username }} - سابسکریپشن</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+  <style>
+    *{box-sizing:border-box}
+    :root{
+      --bg:oklch(12.5% .014 92);
+      --surface:oklch(16.5% .016 92);
+      --surface-raised:oklch(20% .018 92);
+      --surface-soft:oklch(18% .016 92);
+      --line:oklch(31% .015 92);
+      --line-strong:oklch(43% .014 92);
+      --text:oklch(94% .012 92);
+      --muted:oklch(70% .018 92);
+      --faint:oklch(56% .016 92);
+      --accent:#FFE100;
+      --accent-ink:oklch(16% .02 92);
+      --success:oklch(77% .14 150);
+      --warning:oklch(82% .14 83);
+      --danger:oklch(72% .15 28);
+      --info:oklch(76% .11 230);
+      --radius-lg:24px;
+      --radius-md:16px;
+      --radius-sm:11px;
+      --ease:cubic-bezier(.16,1,.3,1);
+    }
+    html[data-theme="light"]{
+      --bg:oklch(96% .012 92);
+      --surface:oklch(99% .008 92);
+      --surface-raised:oklch(94% .014 92);
+      --surface-soft:oklch(97% .01 92);
+      --line:oklch(84% .014 92);
+      --line-strong:oklch(71% .018 92);
+      --text:oklch(20% .018 92);
+      --muted:oklch(43% .02 92);
+      --faint:oklch(58% .018 92);
+      --accent-ink:oklch(20% .02 92);
+    }
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      background:
+        radial-gradient(700px 360px at 80% -10%,oklch(32% .045 92 / .22),transparent 65%),
+        radial-gradient(560px 320px at 8% 105%,oklch(27% .024 92 / .18),transparent 66%),
+        var(--bg);
+      font-family:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;
+      font-size:15px;
+      line-height:1.55;
+      -webkit-font-smoothing:antialiased;
+      transition:background .3s var(--ease),color .3s var(--ease);
+    }
+    button,a{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+    .page{width:min(100% - 32px,1040px);margin:0 auto;padding:24px 0 36px}
+    .sitebar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:48px}
+    .wordmark{display:flex;align-items:center;gap:12px;min-width:0}
+    .mark{width:36px;height:36px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);border-radius:10px;flex:none}
+    .mark svg{width:18px;height:18px;fill:currentColor}
+    .wordmark-copy{min-width:0}
+    .wordmark-title{font-size:.85rem;font-weight:800;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .wordmark-meta{font-size:.7rem;color:var(--faint);white-space:nowrap}
+    .tools{display:flex;gap:8px;flex:none}
+    .icon-button{width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--muted);display:grid;place-items:center;transition:transform .2s var(--ease),border-color .2s,color .2s,background .2s}
+    .icon-button:hover{transform:translateY(-2px);border-color:var(--line-strong);color:var(--text);background:var(--surface)}
+    .icon-button svg{width:17px;height:17px;fill:currentColor}
+    .hidden{display:none!important}
+
+    .intro{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:64px;align-items:end;margin-bottom:40px}
+    .eyebrow{display:flex;align-items:center;gap:9px;color:var(--faint);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
+    .eyebrow::before{content:"";width:22px;height:2px;background:var(--accent);border-radius:10px}
+    .username{margin:0;max-width:18ch;font-size:clamp(2rem,5vw,3.4rem);line-height:1.08;letter-spacing:-.045em;font-weight:800;overflow-wrap:anywhere}
+    .subline{margin:16px 0 0;color:var(--muted);font-size:.92rem}
+    .status-block{justify-self:end;width:min(100%,300px);padding-bottom:3px}
+    .status-label{font-size:.7rem;color:var(--faint);margin-bottom:10px}
+    .status{display:flex;align-items:center;gap:10px;color:var(--success);font-size:1.25rem;font-weight:800}
+    .status-dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px color-mix(in oklch,currentColor 14%,transparent);flex:none}
+    .status-note{margin:10px 0 0;color:var(--muted);font-size:.78rem;line-height:1.8}
+    .status.st-lim{color:var(--danger)}.status.st-exp{color:var(--warning)}.status.st-held{color:var(--info)}.status.st-dis{color:var(--faint)}
+
+    .dashboard{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(290px,.75fr);gap:24px;align-items:stretch}
+    .primary-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:28px;min-width:0}
+    .panel-kicker{display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--faint);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .panel-kicker .live{display:inline-flex;align-items:center;gap:7px;color:var(--success);letter-spacing:0;text-transform:none;font-size:.75rem}
+    .live::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+    .remaining{display:flex;align-items:baseline;gap:10px;margin-top:26px;min-width:0}
+    .remaining-number{font-size:clamp(2.6rem,7vw,4.9rem);font-weight:800;line-height:.95;letter-spacing:-.07em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+    .remaining-unit{color:var(--muted);font-size:.95rem;font-weight:600}
+    .usage-track{height:10px;background:var(--surface-raised);border-radius:100px;overflow:hidden;margin-top:26px}
+    .usage-fill{height:100%;width:0;border-radius:inherit;background:var(--accent);transition:width .7s var(--ease)}
+    .usage-copy{display:flex;justify-content:space-between;gap:16px;margin-top:10px;color:var(--muted);font-size:.78rem}
+    .usage-copy strong{color:var(--text);font-variant-numeric:tabular-nums}
+    .data-line{display:flex;gap:20px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+    .data-stat{display:flex;flex-direction:column;gap:4px;min-width:110px}
+    .data-stat span{font-size:.73rem;color:var(--faint)}
+    .data-stat strong{font-size:1rem;font-variant-numeric:tabular-nums}
+    .c-accent{color:var(--accent)}.c-info{color:var(--info)}.c-success{color:var(--success)}.c-warning{color:var(--warning)}
+
+    .facts{padding:4px 0 0}
+    .fact-list{margin:0;border-top:1px solid var(--line)}
+    .fact{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;padding:17px 0;border-bottom:1px solid var(--line)}
+    .fact-label{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.8rem}
+    .fact-label svg{width:15px;height:15px;fill:var(--faint);flex:none}
+    .fact-value{font-size:.86rem;font-weight:700;text-align:left;direction:ltr;overflow-wrap:anywhere}
+    .status-inline{color:var(--success)}
+    .status-inline.st-lim{color:var(--danger)}.status-inline.st-exp{color:var(--warning)}.status-inline.st-held{color:var(--info)}.status-inline.st-dis{color:var(--faint)}
+    .fact-caption{margin:20px 0 0;color:var(--faint);font-size:.74rem;line-height:1.8}
+
+    .notice{margin:26px 0 0;padding:16px 18px;background:var(--surface-soft);border:1px solid var(--line);border-radius:var(--radius-md);color:var(--muted);font-size:.82rem;line-height:1.85}
+    .notice strong{display:block;color:var(--text);font-size:.78rem;margin-bottom:4px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+    .action{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--line);text-decoration:none;font-size:.82rem;font-weight:800;transition:transform .2s var(--ease),background .2s,border-color .2s,color .2s}
+    .action:hover{transform:translateY(-2px)}
+    .action svg{width:16px;height:16px;fill:currentColor}
+    .action.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .action.primary:hover{background:#f5d500}
+    .action.secondary{background:var(--surface);color:var(--text)}
+    .action.secondary:hover{border-color:var(--line-strong);background:var(--surface-raised)}
+
+    .configs{margin-top:54px}
+    .section-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}
+    .section-heading h2{margin:0;font-size:1.2rem;letter-spacing:-.025em}
+    .section-heading p{margin:0;color:var(--faint);font-size:.75rem}
+    .copy-all{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);border:0;padding:8px 0;font-size:.76rem;font-weight:800;white-space:nowrap}
+    .copy-all:hover{color:var(--accent)}
+    .copy-all svg{width:14px;height:14px;fill:currentColor}
+    .link-list{border-top:1px solid var(--line)}
+    .link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:17px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:padding .2s var(--ease)}
+    .link-row:hover{padding-inline:10px;background:var(--surface-soft)}
+    .link-main{display:flex;align-items:center;gap:13px;min-width:0}
+    .link-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--accent);flex:none}
+    .link-mark svg{width:16px;height:16px;fill:currentColor}
+    .link-copy{min-width:0}
+    .link-name{font-size:.86rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+    .link-type{margin-top:3px;color:var(--faint);font-size:.7rem;letter-spacing:.08em;direction:ltr;text-align:left}
+    .copy-one{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:.73rem;font-weight:800;transition:background .2s,color .2s,border-color .2s}
+    .copy-one:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+    .copy-one svg{width:14px;height:14px;fill:currentColor}
+    .empty{padding:20px 0;color:var(--faint);font-size:.83rem}
+
+    .footer{margin-top:48px;color:var(--faint);font-size:.7rem;text-align:center}
+    .footer a{color:var(--muted);font-weight:800;text-decoration:none}
+    .footer a:hover{color:var(--accent)}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:var(--surface-raised);border:1px solid var(--line-strong);color:var(--text);padding:10px 18px;border-radius:100px;font-size:.78rem;font-weight:800;transition:opacity .25s var(--ease),transform .25s var(--ease);z-index:5}
+    .toast.show{opacity:1;transform:translate(-50%,0)}
+    .toast.ok{border-color:color-mix(in oklch,var(--success) 55%,var(--line));color:var(--success)}
+
+    @media (max-width:760px){
+      .page{width:min(100% - 28px,560px);padding-top:18px}
+      .sitebar{margin-bottom:38px}
+      .intro,.dashboard{grid-template-columns:1fr;gap:26px}
+      .status-block{justify-self:stretch;width:auto}
+      .status-note{max-width:38ch}
+      .primary-panel{padding:22px}
+      .facts{padding-top:0}
+      .configs{margin-top:42px}
+    }
+    @media (max-width:430px){
+      body{font-size:14px}
+      .page{width:min(100% - 24px,430px)}
+      .sitebar{margin-bottom:32px}
+      .wordmark-meta{display:none}
+      .username{font-size:2.25rem}
+      .remaining{margin-top:22px}
+      .remaining-number{font-size:3.1rem}
+      .data-line{gap:16px}
+      .data-stat{min-width:calc(50% - 16px)}
+      .action{flex:1 1 100%}
+      .section-heading{align-items:start;flex-direction:column;gap:8px}
+      .section-heading .copy-all{padding-top:0}
+      .link-row{gap:10px}
+      .copy-one span{display:none}
+      .copy-one{width:40px;justify-content:center;padding:8px}
+    }
+  </style>
 </head>
 <body>
-<main class="shell">
-  <header class="masthead">
-    <div class="wordmark"><span class="mark">N</span><span data-i18n="brand">NUCTEREA / SUBSCRIPTION</span></div>
-    <div class="mast-actions">
-      <button class="icon-btn" id="langBtn" aria-label="Language" title="English"><svg viewBox="0 0 24 24"><path d="M12.9 14.8 10.4 12l.1-.1A17 17 0 0 0 14.1 6H17V4h-7V2H8v2H1v2h11.1a15 15 0 0 1-4 6.5 16 16 0 0 1-2.1-3.1H4a19 19 0 0 0 2.7 4.5L2 17l1.4 1.4 4.7-4.7 3.4 3.4zM18 10h-2l-4.5 12h2l1.1-3h4.8l1.1 3h2zm-2.7 7 1.7-4.5 1.7 4.5z"/></svg></button>
-      <button class="icon-btn" id="themeBtn" aria-label="Theme" title="تغییر تم"><svg viewBox="0 0 24 24" id="themeIcon"><path d="M12 3a9 9 0 1 0 9 9c0-.4 0-.8-.1-1.2a5.4 5.4 0 0 1-4.4 2.2 5.4 5.4 0 0 1-3.1-9.8C13 3.1 12.5 3 12 3z"/></svg></button>
-    </div>
-  </header>
-
-  <section class="intro" aria-labelledby="page-title">
-    <div><div class="eyebrow"><i></i><span data-i18n="overview">SUBSCRIPTION OVERVIEW</span></div><h1 id="page-title" data-i18n="access">Your access, at a glance.</h1><p class="subline" data-i18n="subline">Your connection details and remaining allowance, kept simple.</p></div>
-    <div class="identity"><div class="identity-label" data-i18n="account">ACCOUNT</div><div class="identity-user">{{ user.username }}</div><div class="status {% if user.status.value == 'active' %}st-on{% elif user.status.value == 'limited' %}st-lim{% elif user.status.value == 'expired' %}st-exp{% elif user.status.value == 'on_hold' %}st-held{% else %}st-dis{% endif %}"><span data-i18n-status="{{ user.status.value }}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</span></div></div>
-  </section>
-
-  <section class="overview" aria-label="Subscription metrics">
-    <div class="metric"><span class="metric-label" data-i18n="remaining">REMAINING</span><div class="metric-value" id="remainV">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</div></div>
-    <div class="metric"><span class="metric-label" data-i18n="total">TOTAL QUOTA</span><div class="metric-value" id="totalV">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div></div>
-    <div class="metric"><span class="metric-label" data-i18n="used">USED</span><div class="metric-value" id="usedV">{{ user.used_traffic | bytesformat }}</div></div>
-    <div class="metric"><span class="metric-label" data-i18n="daysLeft">DAYS LEFT</span><div class="metric-value" id="daysLeft">∞</div></div>
-  </section>
-
-  <div class="content">
-    <section aria-labelledby="configs-title">
-      <div class="section-head"><h2 class="section-title" id="configs-title" data-i18n="configs">Configurations</h2><span class="section-meta" id="linkCount"></span></div>
-      <div class="configs" id="linksList">
-      {% if links %}{% for link in links %}
-        <div class="config" data-link="{{ link }}"><div class="config-symbol">LINK</div><div class="config-main"><div class="config-name"></div><div class="config-type"></div></div><button class="copy" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11z"/></svg><span data-i18n="copy">کپی</span></button></div>
-      {% endfor %}{% else %}<div class="config"><div class="config-main"><div class="config-name" style="color:var(--quiet)" data-i18n="noConfigs">No configurations yet</div></div></div>{% endif %}
+  <main class="page">
+    <header class="sitebar">
+      <div class="wordmark">
+        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+        <div class="wordmark-copy">
+          <div class="wordmark-title" data-i18n="brand">V2Ray Subscription</div>
+          <div class="wordmark-meta" data-i18n="slogan">داشبورد اختصاصی سرویس</div>
+        </div>
       </div>
-      <div class="actions"><a id="tgBtn" class="action primary hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="m21.8 4.6-3.3 15.5c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-4.9 8.5-9.3c.4-.4-.1-.6-.6-.2l-10.6 7-5-1.6c-1.1-.3-1.1-1.1.2-1.6l19.5-7.5c.9-.3 1.7.2 1.4 1.6z"/></svg><span data-i18n="support">کانال و پشتیبانی</span></a><button class="action secondary" id="copyAllBtn"><svg viewBox="0 0 24 24"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11z"/></svg><span data-i18n="copyAll">کپی همه</span></button></div>
+      <div class="tools">
+        <button class="icon-button" id="langBtn" type="button" title="English" aria-label="Language">
+          <svg viewBox="0 0 24 24"><path d="M12.87 15.07 10.33 12.56l.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56L2.58 17.58 4 19l5-5 3.11 3.11.76-2.04ZM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12Zm-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
+        </button>
+        <button class="icon-button" id="themeBtn" type="button" title="تغییر تم" aria-label="Theme">
+          <svg viewBox="0 0 24 24" id="iconSun" class="hidden"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5Zm0 3a2 2 0 1 1-2 2 2 2 0 0 1 2-2Zm9-2h-3a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2ZM4 11H1a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2Zm4.5-5.5a1 1 0 0 0-1.41 0l-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41Zm11 5.41-1.41-1.41-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41ZM20.41 21a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29L5.29 7.3a1 1 0 1 1 1.41-1.42l13.7 13.7a1 1 0 0 1 .01 1.42Z"/></svg>
+          <svg viewBox="0 0 24 24" id="iconMoon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1Z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="intro" aria-labelledby="accountTitle">
+      <div>
+        <div class="eyebrow" data-i18n="sub">Subscription</div>
+        <h1 class="username" id="accountTitle">{{ user.username }}</h1>
+        <p class="subline" data-i18n="intro">وضعیت سرویس و دسترسی شما در یک نگاه</p>
+      </div>
+      <div class="status-block">
+        <div class="status-label" data-i18n="currentStatus">وضعیت فعلی</div>
+        <div class="status {% if user.status.value == 'active' %}st-on{% elif user.status.value == 'limited' %}st-lim{% elif user.status.value == 'expired' %}st-exp{% elif user.status.value == 'on_hold' %}st-held{% else %}st-dis{% endif %}">
+          <span class="status-dot"></span>
+          <span data-i18n-status="{{ user.status.value }}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</span>
+        </div>
+        <p class="status-note" data-i18n="statusHint">دسترسی شما برای استفاده از کانفیگ‌ها آماده است.</p>
+      </div>
     </section>
 
-    <aside class="side">
-      <section class="usage-block" id="usageBlock"><div class="section-head"><h2 class="section-title" data-i18n="usage">Data usage</h2><span class="section-meta" id="usagePct">0%</span></div><div class="usage-readout"><div class="usage-number" id="usageNumber">0<small> GB</small></div><div class="usage-percent" data-i18n="usedOf">used of quota</div></div><div class="bar"><div class="bar-fill" id="usageFill"></div></div><div class="usage-note"><span id="upV"></span><span id="downV"></span></div></section>
-      <section class="details-block"><div class="section-head"><h2 class="section-title" data-i18n="details">Details</h2></div><dl class="details"><div class="detail"><dt data-i18n="expire">Expiry</dt><dd>{% if user.expire %}{{ user.expire | datetime }}{% else %}<span data-i18n="unlim">∞ Unlimited</span>{% endif %}</dd></div>{% if user.hwid_limit is not none %}<div class="detail"><dt data-i18n="device">Device limit</dt><dd>{% if user.hwid_limit == 0 %}∞{% else %}{{ user.hwid_limit }}{% endif %}</dd></div>{% endif %}<div class="detail"><dt data-i18n="username">Username</dt><dd dir="ltr">{{ user.username }}</dd></div></dl></section>
-    </aside>
-  </div>
+    <section class="dashboard" aria-label="Subscription overview">
+      <div class="primary-panel">
+        <div class="panel-kicker">
+          <span data-i18n="remainingData">داده باقی‌مانده</span>
+          <span class="live"><span data-i18n="accountLive">حساب فعال</span></span>
+        </div>
+        <div class="remaining">
+          <strong class="remaining-number" id="remainV">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</strong>
+          <span class="remaining-unit" data-i18n="available">قابل استفاده</span>
+        </div>
+        <div class="usage-track" id="usageTrack" aria-hidden="true"><div class="usage-fill" id="usageFill"></div></div>
+        <div class="usage-copy"><span><span data-i18n="usedLabel">مصرف‌شده</span> <strong id="usedInline">{{ user.used_traffic | bytesformat }}</strong></span><span id="usagePct">0٪</span></div>
+        <div class="data-line">
+          <div class="data-stat"><span data-i18n="total">حجم کل</span><strong class="c-accent" id="totalV">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</strong></div>
+          <div class="data-stat"><span data-i18n="upload">آپلود</span><strong class="c-info" id="upV">—</strong></div>
+          <div class="data-stat"><span data-i18n="download">دانلود</span><strong class="c-success" id="downV">—</strong></div>
+        </div>
+      </div>
 
-  {% if announce %}<div class="notice"><strong data-i18n="notice">Notice</strong><br>{{ announce | replace('\\n','<br>') }}</div>{% endif %}
-  {% if user.note %}<div class="notice"><strong data-i18n="note">Note</strong><br>{{ user.note }}</div>{% endif %}
-  <footer class="footer"><span data-i18n="madeWith">Made with NUC-SUB</span><a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></footer>
-</main>
-<div class="toast" id="toast"></div>
-<script>
-var D={expire:{% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},total:{% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},used:{% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %}};
-var I18N={brand:{fa:'NUCTEREA / SUBSCRIPTION',en:'NUCTEREA / SUBSCRIPTION'},overview:{fa:'نمای کلی سابسکریپشن',en:'SUBSCRIPTION OVERVIEW'},access:{fa:'دسترسی شما، یک‌جا.',en:'Your access, at a glance.'},subline:{fa:'جزئیات اتصال و حجم باقی‌مانده، ساده و روشن.',en:'Your connection details and remaining allowance, kept simple.'},account:{fa:'حساب کاربری',en:'ACCOUNT'},remaining:{fa:'باقیمانده',en:'REMAINING'},total:{fa:'حجم کل',en:'TOTAL QUOTA'},used:{fa:'مصرف‌شده',en:'USED'},daysLeft:{fa:'روز مانده',en:'DAYS LEFT'},configs:{fa:'کانفیگ‌ها',en:'Configurations'},copy:{fa:'کپی',en:'Copy'},copyAll:{fa:'کپی همه',en:'Copy all'},support:{fa:'کانال و پشتیبانی',en:'Channel & Support'},usage:{fa:'مصرف داده',en:'Data usage'},usedOf:{fa:'مصرف از سهمیه',en:'used of quota'},details:{fa:'جزئیات',en:'Details'},expire:{fa:'تاریخ انقضا',en:'Expiry'},device:{fa:'محدودیت دستگاه',en:'Device limit'},username:{fa:'نام کاربری',en:'Username'},unlim:{fa:'∞ نامحدود',en:'∞ Unlimited'},noConfigs:{fa:'کانفیگی ثبت نشده است',en:'No configurations yet'},notice:{fa:'اطلاعیه',en:'Notice'},note:{fa:'یادداشت',en:'Note'},madeWith:{fa:'ساخته شده با NUC-SUB',en:'Made with NUC-SUB'},copied:{fa:'کپی شد',en:'Copied'},configN:{fa:'کانفیگ',en:'Config'},active:{fa:'فعال',en:'Active'},limited:{fa:'محدود',en:'Limited'},expired:{fa:'منقضی',en:'Expired'},on_hold:{fa:'در انتظار',en:'On hold'},disabled:{fa:'غیرفعال',en:'Disabled'}};
-var lang='fa';function el(id){return document.getElementById(id)}function fmt(n){if(!n||n<=0)return'0 B';var u=['B','KB','MB','GB','TB'],i=0;while(n>=1024&&i<4){n/=1024;i++}return(n>=100?Math.round(n):n.toFixed(1))+' '+u[i]}function toast(s){var t=el('toast');t.textContent=s;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},1800)}function apply(){document.querySelectorAll('[data-i18n]').forEach(function(x){var k=x.dataset.i18n;if(I18N[k])x.textContent=I18N[k][lang]});document.querySelectorAll('[data-i18n-status]').forEach(function(x){var k=x.dataset.i18nStatus;if(I18N[k])x.textContent=I18N[k][lang]});document.documentElement.lang=lang;document.documentElement.dir=lang==='fa'?'rtl':'ltr'}
-function copy(s){if(navigator.clipboard)navigator.clipboard.writeText(s).then(function(){toast(I18N.copied[lang])});else{var t=document.createElement('textarea');t.value=s;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();toast(I18N.copied[lang])}}
-(function(){try{lang=localStorage.getItem('nuc-lang')||'fa';var th=localStorage.getItem('nuc-theme')||'dark';document.documentElement.dataset.theme=th}catch(e){}apply();el('langBtn').onclick=function(){lang=lang==='fa'?'en':'fa';try{localStorage.setItem('nuc-lang',lang)}catch(e){}apply()};el('themeBtn').onclick=function(){var n=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem('nuc-theme',n)}catch(e){}};
-if(D.expire){var days=Math.ceil((new Date(String(D.expire).replace(' ','T')).getTime()-Date.now())/86400000);if(!isNaN(days))el('daysLeft').textContent=Math.max(0,days)}
-var total=Number(D.total)||0,used=Number(D.used)||0,percent=total?Math.min(100,used/total*100):0;el('usagePct').textContent=percent.toFixed(0)+'%';el('usageFill').style.width=percent+'%';el('usageNumber').innerHTML=fmt(used).replace(' ','<small> ')+'</small>';if(!total){el('usageNumber').innerHTML='∞';el('usagePct').textContent='∞'}
-var cards=[].slice.call(document.querySelectorAll('.config[data-link]'));el('linkCount').textContent=cards.length+' '+(lang==='fa'?'مورد':'items');var all=[];cards.forEach(function(card,i){var link=(card.dataset.link||'').replace(/&amp;/g,'&');all.push(link);var proto=(link.match(/^([a-z0-9]+):\\/\\//i)||[])[1]||'link';card.querySelector('.config-type').textContent=proto.toUpperCase();var hash=link.split('#')[1],name='';try{name=hash?decodeURIComponent(hash):''}catch(e){name=hash||''}card.querySelector('.config-name').textContent=name||I18N.configN[lang]+' '+(i+1);card.querySelector('.copy').onclick=function(e){e.stopPropagation();copy(link)};card.onclick=function(e){if(!e.target.closest('button'))copy(link)}});if(!cards.length)el('copyAllBtn').classList.add('hidden');else el('copyAllBtn').onclick=function(){copy(all.join('\n'))};var tg='@@TG_CHANNEL@@';if(/^https?:\\/\\/t\\.me\\//i.test(tg))el('tgBtn').classList.remove('hidden')})();
-</script>
+      <div class="facts">
+        <div class="fact-list">
+          <div class="fact">
+            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1-8 8 8 8 0 0 1 8-8Zm-.5 4h1.5v5.5l4 2.4-.8 1.3-4.7-2.8V8Z"/></svg><span data-i18n="expire">تاریخ انقضا</span></span>
+            <span class="fact-value" id="expireV">{% if user.expire %}{{ user.expire | datetime }}{% else %}<span data-i18n="unlim">∞ نامحدود</span>{% endif %}</span>
+          </div>
+          <div class="fact">
+            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm-1-5h2v2h-2Zm0-8h2v6h-2Z"/></svg><span data-i18n="daysLeft">روز مانده</span></span>
+            <span class="fact-value c-warning" id="daysLeft">—</span>
+          </div>
+          {% if user.hwid_limit is not none %}
+          <div class="fact">
+            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="m12 1 9 4v6c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4Zm0 2.18L5 6.29v4.17c0 3.77 2.62 7.03 7 8.08V3.18Z"/></svg><span data-i18n="device">محدودیت دستگاه</span></span>
+            <span class="fact-value">{% if user.hwid_limit == 0 %}∞{% else %}{{ user.hwid_limit }}{% endif %}</span>
+          </div>
+          {% endif %}
+          <div class="fact">
+            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.3 0-10 1.67-10 5v1h20v-1c0-3.33-6.7-5-10-5Z"/></svg><span data-i18n="username">نام کاربری</span></span>
+            <span class="fact-value">{{ user.username }}</span>
+          </div>
+        </div>
+        <p class="fact-caption" data-i18n="factsHint">جزئیات حساب شما بدون شلوغی، همیشه در دسترس است.</p>
+      </div>
+    </section>
+
+    {% if announce %}<div class="notice"><strong data-i18n="announcement">اعلان</strong>{{ announce | replace('\\n', '<br>') }}</div>{% endif %}
+    {% if user.note %}<div class="notice"><strong data-i18n="note">یادداشت</strong>{{ user.note }}</div>{% endif %}
+
+    <div class="actions">
+      <a id="tgBtn" class="action primary hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="m9.04 15.43-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21Z"/></svg><span data-i18n="support">کانال و پشتیبانی</span></a>
+      <button class="action secondary" id="quickCopy" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copyAll">کپی همه کانفیگ‌ها</span></button>
+      <button class="action secondary hidden" id="qrBtn" type="button"><span data-i18n="qr">کد QR</span></button>
+    </div>
+
+    <section class="configs" aria-labelledby="configsTitle">
+      <div class="section-heading">
+        <div><h2 id="configsTitle" data-i18n="configs">کانفیگ‌ها</h2><p><span id="linkCount">0</span> <span data-i18n="readyConfigs">اتصال آماده</span></p></div>
+        <button class="copy-all" id="copyAllBtn" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copyAllShort">کپی همه</span></button>
+      </div>
+      <div class="link-list" id="linksList">
+        {% if links %}
+        {% for link in links %}
+        <div class="link-row" data-link="{{ link }}">
+          <div class="link-main"><div class="link-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2ZM8 13.5H7v-3h1v3Zm5 0h-1v-3h1v3Zm5 0h-1v-3h1v3Z"/></svg></div><div class="link-copy"><div class="link-name"></div><div class="link-type"></div></div></div>
+          <button class="copy-one" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copy">کپی</span></button>
+        </div>
+        {% endfor %}
+        {% else %}<div class="empty" data-i18n="noConfigs">کانفیگی ثبت نشده است</div>{% endif %}
+      </div>
+    </section>
+
+    <footer class="footer"><span data-i18n="madeWith">ساخته شده با</span> NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></footer>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    var D={
+      expire:{% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},
+      total:{% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},
+      used:{% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %},
+      up:null,down:null
+    };
+    var I18N={
+      brand:{fa:'V2Ray Subscription',en:'V2Ray Subscription'},slogan:{fa:'داشبورد اختصاصی سرویس',en:'Your VPN Dashboard'},sub:{fa:'سابسکریپشن',en:'Subscription'},intro:{fa:'وضعیت سرویس و دسترسی شما در یک نگاه',en:'Your service status and access at a glance'},currentStatus:{fa:'وضعیت فعلی',en:'Current status'},statusHint:{fa:'دسترسی شما برای استفاده از کانفیگ‌ها آماده است.',en:'Your access is ready for configuration use.'},remainingData:{fa:'داده باقی‌مانده',en:'Remaining data'},accountLive:{fa:'حساب فعال',en:'Account live'},available:{fa:'قابل استفاده',en:'available'},usedLabel:{fa:'مصرف‌شده',en:'used'},total:{fa:'حجم کل',en:'Total data'},upload:{fa:'آپلود',en:'Upload'},download:{fa:'دانلود',en:'Download'},expire:{fa:'تاریخ انقضا',en:'Expiry'},unlim:{fa:'∞ نامحدود',en:'∞ Unlimited'},daysLeft:{fa:'روز مانده',en:'Days left'},device:{fa:'محدودیت دستگاه',en:'Device limit'},username:{fa:'نام کاربری',en:'Username'},factsHint:{fa:'جزئیات حساب شما بدون شلوغی، همیشه در دسترس است.',en:'Your account details, kept clear and close.'},announcement:{fa:'اعلان',en:'Announcement'},note:{fa:'یادداشت',en:'Note'},support:{fa:'کانال و پشتیبانی',en:'Channel & Support'},qr:{fa:'کد QR',en:'QR code'},copyAll:{fa:'کپی همه کانفیگ‌ها',en:'Copy all configs'},copyAllShort:{fa:'کپی همه',en:'Copy all'},configs:{fa:'کانفیگ‌ها',en:'Configurations'},readyConfigs:{fa:'اتصال آماده',en:'ready connections'},copy:{fa:'کپی',en:'Copy'},copied:{fa:'کپی شد',en:'Copied'},noConfigs:{fa:'کانفیگی ثبت نشده است',en:'No configs yet'},madeWith:{fa:'ساخته شده با',en:'Made with'},configN:{fa:'کانفیگ',en:'Config'},active:{fa:'فعال',en:'Active'},limited:{fa:'محدود',en:'Limited'},expired:{fa:'منقضی',en:'Expired'},on_hold:{fa:'در انتظار',en:'On hold'},disabled:{fa:'غیرفعال',en:'Disabled'}
+    };
+    var lang='fa';
+    function el(id){return document.getElementById(id)}
+    function toast(message,ok){var t=el('toast');if(!t)return;t.textContent=message;t.className='toast show'+(ok?' ok':'');clearTimeout(window.__toast);window.__toast=setTimeout(function(){t.classList.remove('show')},2200)}
+    function rawLink(value){return(value||'').replace(/&amp;/g,'&')}
+    function protocolOf(link){var match=link.match(/^([a-z0-9]+):\/\//i);return match?match[1].toLowerCase():'unknown'}
+    function nameOf(link,index){var parts=link.split('#');if(parts.length>1&&parts[1]){try{return decodeURIComponent(parts[1])}catch(e){return parts[1]}}return(I18N.configN[lang]||'Config')+' '+(index+1)}
+    function fmtBytes(value){if(value==null||isNaN(value)||value<=0)return'0 B';var units=['B','KB','MB','GB','TB'],i=0,n=Number(value);while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toFixed(n>=100?0:1)+' '+units[i]}
+    function copyText(text){var done=function(){toast(I18N.copied[lang],true)};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){fallbackCopy(text,done)})}else fallbackCopy(text,done)}
+    function fallbackCopy(text,done){var area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');done()}catch(e){}document.body.removeChild(area)}
+    function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(function(node){var key=node.getAttribute('data-i18n');if(I18N[key])node.textContent=I18N[key][lang]});document.querySelectorAll('[data-i18n-status]').forEach(function(node){var key=node.getAttribute('data-i18n-status');if(I18N[key])node.textContent=I18N[key][lang]})}
+    function setTheme(theme){document.documentElement.setAttribute('data-theme',theme);el('iconSun').classList.toggle('hidden',theme==='dark');el('iconMoon').classList.toggle('hidden',theme==='light');try{localStorage.setItem('nuc-theme',theme)}catch(e){}}
+    function setLang(next){lang=next;document.documentElement.lang=next;document.documentElement.dir=next==='fa'?'rtl':'ltr';applyI18n();try{localStorage.setItem('nuc-lang',next)}catch(e){}}
+    (function init(){
+      var savedTheme='dark',savedLang='fa';try{savedTheme=localStorage.getItem('nuc-theme')||'dark';savedLang=localStorage.getItem('nuc-lang')||'fa'}catch(e){}
+      setTheme(savedTheme);setLang(savedLang);
+      el('themeBtn').addEventListener('click',function(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')});
+      el('langBtn').addEventListener('click',function(){setLang(lang==='fa'?'en':'fa')});
+      var telegram='@@TG_CHANNEL@@';if(telegram&&/t\.me\//.test(telegram))el('tgBtn').classList.remove('hidden');
+      if(D.expire){var expiry=new Date(String(D.expire).replace(' ','T'));var days=Math.ceil((expiry.getTime()-Date.now())/86400000);if(!isNaN(days))el('daysLeft').textContent=Math.max(days,0)}
+      var cards=Array.from(document.querySelectorAll('.link-row[data-link]'));
+      var total=Number(D.total)||0,used=Number(D.used)||0,percent=total>0?Math.min(100,used/total*100):0;
+      el('usageFill').style.width=percent.toFixed(2)+'%';el('usagePct').textContent=percent.toFixed(0)+'٪';
+      if(D.up&&Number(D.up)>0)el('upV').textContent=fmtBytes(D.up);if(D.down&&Number(D.down)>0)el('downV').textContent=fmtBytes(D.down);
+      el('linkCount').textContent=cards.length;
+      cards.forEach(function(card,index){var link=rawLink(card.getAttribute('data-link')),proto=protocolOf(link);card.querySelector('.link-name').textContent=nameOf(link,index);card.querySelector('.link-type').textContent=proto.toUpperCase();var button=card.querySelector('.copy-one');button.addEventListener('click',function(event){event.stopPropagation();copyText(link)});card.addEventListener('click',function(event){if(!button.contains(event.target))copyText(link)})});
+      function allLinks(){return cards.map(function(card){return rawLink(card.getAttribute('data-link'))}).join('\n')}
+      el('copyAllBtn').addEventListener('click',function(){if(cards.length)copyText(allLinks())});el('quickCopy').addEventListener('click',function(){if(cards.length)copyText(allLinks())});
+      if(!cards.length){el('copyAllBtn').classList.add('hidden');el('quickCopy').classList.add('hidden')}
+    })();
+  </script>
 </body>
 </html>
