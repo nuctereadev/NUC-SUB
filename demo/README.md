@@ -49,12 +49,15 @@ python -m http.server 8080 --directory demo/site
 ```
 demo/
   build.py        # موتور رندر (Jinja2 + Go-template) -> demo/site/
+  gallery.html    # ⭐ گالری (HTML خام — همین فایل را ویرایش کن؛ build از آن کپی میکند)
   serve.py        # اجرای محلی (render + سرور + مرورگر)
   vercel.json     # پیکربندی Vercel
   requirements.txt  # jinja2
   README.md
   site/           # خروجی رندر شده (gitignored — خودکار ساخته میشود)
-    index.html    # گالری انتخابگر با ۱۶ کارت
+    index.html    # گالری (کپی از gallery.html توسط build.py)
     pg/           # قالبهای PasarGuard
     xui/          # قالبهای 3x-ui (با asset های هر قالب)
 ```
+
+> **مهم:** برای ویرایش گالری، **`demo/gallery.html`** را ویرایش کن، نه `demo/site/index.html`. هنگام اجرای `build.py` یا `serve.py`، فایل `gallery.html` بهصورت کلمهبهکلمه به `site/index.html` کپی میشود و ویرایشهای تو **از دست نمیروند**.

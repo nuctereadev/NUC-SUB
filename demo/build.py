@@ -258,8 +258,16 @@ def main():
     for k, v in sorted(fail.items()):
         print(f"  FAIL {k}: {v}")
 
+    # Copy the hand-edited gallery (source of truth) instead of regenerating it,
+    # so the user's customizations survive every build.
+    gallery_src = os.path.join(DEMO_DIR, "gallery.html")
+    if os.path.isfile(gallery_src):
+        with open(gallery_src, encoding="utf-8") as f:
+            gallery_html = f.read()
+    else:
+        gallery_html = gallery_page()  # fallback template
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8") as f:
-        f.write(gallery_page())
+        f.write(gallery_html)
     print(f"\nwritten to {OUT}")
 
 
