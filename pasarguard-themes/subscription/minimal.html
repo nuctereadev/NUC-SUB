@@ -3,442 +3,1414 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ user.username }} - سابسکریپشن</title>
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+<title>صفحه اشتراک | Subscription</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-/*PALETTE-BEGIN*/
-:root{
-  --bg:#101014;--bg2:#16161c;--card:#191921;--card2:#20202a;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
-  --text:#f2f2f5;--text2:rgba(226,226,232,.64);--text3:rgba(226,226,232,.42);
-  --accent:#8b5cf6;--accent2:#a855f7;--accent-ink:#fff;
-  --ok:#34d399;--warn:#fbbf24;--err:#f87171;--info:#60a5fa;
-  --shadow:0 4px 18px rgba(0,0,0,.20);
-  --glow1:rgba(139,92,246,.08);--glow2:rgba(168,85,247,.05);--glow3:rgba(139,92,246,.05);
-}
-html[data-theme="light"]{
-  --bg:#f6f6f8;--bg2:#f1f1f4;--card:#ffffff;--card2:#f5f5f8;--border:rgba(30,30,40,.09);--border2:rgba(30,30,40,.16);
-  --text:#1c1c24;--text2:rgba(28,28,36,.62);--text3:rgba(28,28,36,.42);
-  --accent:#7c3aed;--accent2:#9333ea;--accent-ink:#fff;
-  --shadow:0 4px 16px rgba(0,0,0,.07);
-  --glow1:rgba(139,92,246,.06);--glow2:rgba(168,85,247,.04);--glow3:rgba(139,92,246,.04);
-}
-/*PALETTE-BEGIN*/
-/*EXTRA-BEGIN*/
+  /* ========== CSS Variables ========== */
+  :root[data-theme="dark"] {
+    --bg: #0b0d12;
+    --bg2: #11141b;
+    --card: #161a23;
+    --card2: #1c2130;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.1);
+    --text: #e8eef8;
+    --text2: #a8b3c7;
+    --text3: #6b7689;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --ok: #22c55e;
+    --warn: #eab308;
+    --err: #ef4444;
+    --info: #3b82f6;
+    --shadow: 0 4px 24px rgba(0,0,0,0.35);
+    --glow1: 0 0 40px rgba(99,102,241,0.15);
+    --glow2: 0 0 60px rgba(139,92,246,0.1);
+    --glow3: 0 0 30px rgba(59,130,246,0.12);
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7fb;
+    --bg2: #eef0f6;
+    --card: #ffffff;
+    --card2: #f8f9fc;
+    --border: rgba(0,0,0,0.06);
+    --border2: rgba(0,0,0,0.1);
+    --text: #0f172a;
+    --text2: #475569;
+    --text3: #94a3b8;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --ok: #16a34a;
+    --warn: #ca8a04;
+    --err: #dc2626;
+    --info: #2563eb;
+    --shadow: 0 2px 16px rgba(15,23,42,0.06);
+    --glow1: 0 0 40px rgba(99,102,241,0.1);
+    --glow2: 0 0 60px rgba(139,92,246,0.07);
+    --glow3: 0 0 30px rgba(59,130,246,0.08);
+  }
 
-/*EXTRA-BEGIN*/
-body{
-  font-family:'Vazirmatn','IranSansX',system-ui,-apple-system,'Segoe UI',sans-serif;
-  min-height:100vh;color:var(--text);
-  background:
-    radial-gradient(1100px 620px at 18% -10%,var(--glow1),transparent 60%),
-    radial-gradient(900px 560px at 88% 12%,var(--glow2),transparent 55%),
-    radial-gradient(1000px 700px at 50% 118%,var(--glow3),transparent 60%),
-    linear-gradient(160deg,var(--bg),var(--bg2));
-  background-attachment:fixed;
-  padding:22px 14px 40px;display:flex;flex-direction:column;align-items:center;
-  -webkit-font-smoothing:antialiased;line-height:1.6;font-size:14px;
-  transition:background .35s,color .35s;
-}
-.container{width:100%;max-width:480px}
+  /* ========== Reset & Base ========== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+    font-size: 15px;
+    transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+  }
 
-/* ------------------------------------------------ top bar */
-.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-.brand{display:flex;align-items:center;gap:10px;min-width:0}
-.brand-logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 8px 20px var(--glow1)}
-.brand-logo svg{width:20px;height:20px;fill:#fff}
-.brand-name{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.brand-sub{font-size:10.5px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top-actions{display:flex;gap:6px;flex-shrink:0}
-.tbtn{width:34px;height:34px;border-radius:11px;border:1px solid var(--border);background:var(--card);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s;font-size:13px}
-.tbtn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-.tbtn svg{width:16px;height:16px;fill:currentColor}
+  /* Background decoration */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -20%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--accent2) 0%, transparent 70%);
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* ------------------------------------------------ header */
-.header{text-align:center;margin-bottom:18px}
-.id{font-size:15px;font-weight:800;word-break:break-word;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.role{font-size:11.5px;color:var(--text3);margin-top:2px;letter-spacing:.3px}
-.status-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 16px;margin-top:12px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid}
-.st-on{background:rgba(74,222,128,.12);color:var(--ok);border-color:rgba(74,222,128,.28)}
-.st-lim{background:rgba(248,113,113,.12);color:var(--err);border-color:rgba(248,113,113,.28)}
-.st-exp{background:rgba(251,191,36,.12);color:var(--warn);border-color:rgba(251,191,36,.30)}
-.st-held{background:rgba(139,92,246,.14);color:#a78bfa;border-color:rgba(139,92,246,.30)}
-.st-dis{background:rgba(148,163,184,.12);color:#94a3b8;border-color:rgba(148,163,184,.28)}
-.pulse{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
 
-/* ------------------------------------------------ cards */
-.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow);transition:background .35s,border-color .35s}
-.card-title{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.4px;margin-bottom:14px}
-.card-title svg{width:14px;height:14px;fill:var(--text3)}
+  /* ========== Topbar ========== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--glow1);
+  }
+  .brand-name {
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+  }
+  .icon-btn:hover {
+    background: var(--card2);
+    color: var(--text);
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+  .icon-btn svg { width: 18px; height: 18px; }
 
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{background:var(--card2);border:1px solid var(--border);border-radius:15px;padding:13px 10px;text-align:center}
-.tile-l{display:flex;align-items:center;justify-content:center;gap:5px;font-size:10.5px;color:var(--text3);margin-bottom:7px}
-.tile-l svg{width:11px;height:11px;fill:var(--text3)}
-.tile-v{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.2px}
-.c-purple{color:var(--accent)}.c-blue{color:var(--info)}.c-green{color:var(--ok)}
-.c-warn{color:var(--warn)}.c-gold{color:#fbbf24}
+  /* ========== Header ========== */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    animation: fadeInUp 0.6s ease;
+  }
+  .header-username {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .header-subtitle {
+    color: var(--text2);
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  .status-chip::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  .status-active { background: rgba(34,197,94,0.12); color: var(--ok); border: 1px solid rgba(34,197,94,0.25); }
+  .status-active::before { background: var(--ok); }
+  .status-limited { background: rgba(239,68,68,0.12); color: var(--err); border: 1px solid rgba(239,68,68,0.25); }
+  .status-limited::before { background: var(--err); }
+  .status-expired { background: rgba(234,179,8,0.12); color: var(--warn); border: 1px solid rgba(234,179,8,0.25); }
+  .status-expired::before { background: var(--warn); }
+  .status-on_hold { background: rgba(139,92,246,0.12); color: var(--accent2); border: 1px solid rgba(139,92,246,0.25); }
+  .status-on_hold::before { background: var(--accent2); }
+  .status-disabled { background: rgba(107,118,137,0.15); color: var(--text3); border: 1px solid var(--border2); }
+  .status-disabled::before { background: var(--text3); }
 
-.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);gap:12px}
-.row:last-child{border-bottom:none}
-.row .lbl{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:12.5px;flex-shrink:0}
-.row .lbl svg{width:13px;height:13px;fill:var(--text3);flex-shrink:0}
-.row .val{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;text-align:left;word-break:break-word}
+  /* ========== Cards Grid ========== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.5s ease;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border2);
+    box-shadow: var(--shadow);
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--accent), transparent);
+    opacity: 0.08;
+    border-radius: 0 0 0 80px;
+  }
+  .stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+  .stat-icon svg { width: 18px; height: 18px; }
+  .stat-label {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value small {
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 500;
+  }
 
-/* ------------------------------------------------ usage */
-.usage-top{display:flex;align-items:center;gap:16px}
-.donut{position:relative;width:86px;height:86px;border-radius:50%;flex-shrink:0;
-  background:conic-gradient(var(--accent) var(--donut-pct,0%),var(--card2) 0)}
-.donut::after{content:'';position:absolute;inset:11px;border-radius:50%;background:var(--card)}
-.donut-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
-.donut-v{font-size:14px;font-weight:800;letter-spacing:.3px;color:var(--text)}
-.donut-s{font-size:9px;color:var(--text3)}
-.usage-stats{flex:1;min-width:0}
-.usage-stat{margin-bottom:10px}
-.usage-stat:last-child{margin-bottom:0}
-.u-label{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text3);margin-bottom:5px}
-.ubar{height:6px;border-radius:99px;background:var(--card2);overflow:hidden}
-.ubar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .7s ease;width:0}
-.u-sub{display:flex;gap:12px;margin-top:8px;font-size:10px;color:var(--text3)}
-.u-sub span{display:inline-flex;align-items:center;gap:5px}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.dot.up{background:var(--accent)}.dot.down{background:var(--info)}.dot.used{background:var(--accent2)}
+  /* ========== Main Grid (Chart + Info) ========== */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+  }
+  .panel:hover { border-color: var(--border2); }
+  .panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel-title svg { width: 18px; height: 18px; color: var(--accent); }
 
-/* ------------------------------------------------ misc boxes */
-.announce{background:linear-gradient(135deg,rgba(139,92,246,.10),rgba(236,72,153,.08));border:1px solid var(--border);border-radius:15px;padding:13px 16px;font-size:12px;line-height:1.8;margin-bottom:12px;color:var(--text)}
-.note{background:var(--card);border-inline-start:3px solid var(--accent);border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.8;margin-bottom:12px;color:var(--text2)}
+  /* Donut Chart */
+  .donut-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .donut-svg {
+    width: 180px;
+    height: 180px;
+    transform: rotate(-90deg);
+  }
+  .donut-bg {
+    fill: none;
+    stroke: var(--border2);
+    stroke-width: 14;
+  }
+  .donut-fg {
+    fill: none;
+    stroke: url(#donutGrad);
+    stroke-width: 14;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .donut-center {
+    position: absolute;
+    text-align: center;
+    pointer-events: none;
+  }
+  .donut-center .pct {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .donut-center .lbl {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+  .donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+  }
+  .legend-dot.used { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .legend-dot.remaining { background: var(--border2); }
+  .legend-text {
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .legend-text strong {
+    color: var(--text);
+    display: block;
+    font-variant-numeric: tabular-nums;
+  }
 
-/* ------------------------------------------------ actions */
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.act{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:14px;font-size:12.5px;font-weight:700;text-decoration:none;cursor:pointer;border:1px solid;transition:all .2s;font-family:inherit}
-.act svg{width:16px;height:16px;fill:currentColor}
-.act.primary{background:linear-gradient(135deg,#229ED9,#1e7fc0);color:#fff;border-color:transparent}
-.act.primary:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(34,158,217,.30)}
-.act.ghost{background:var(--card);color:var(--text);border-color:var(--border)}
-.act.ghost:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
-.hidden{display:none!important}
+  /* Info Panel */
+  .info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--card2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  .info-key {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .info-key svg { width: 16px; height: 16px; color: var(--text3); }
+  .info-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
 
-/* ------------------------------------------------ links */
-.links-head{display:flex;align-items:center;justify-content:space-between;margin:16px 0 10px}
-.links-title{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);font-weight:800}
-.links-title svg{width:14px;height:14px;fill:var(--accent)}
-.copyall{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--border);color:var(--text2);font-size:11px;font-weight:700;padding:7px 12px;border-radius:10px;cursor:pointer;transition:all .18s;font-family:inherit}
-.copyall:hover{color:var(--accent);border-color:var(--accent)}
-.copyall svg{width:12px;height:12px;fill:currentColor}
-.link-card{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s}
-.link-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow)}
-.link-badge{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.b-vless{background:rgba(96,165,250,.16)}.b-vless svg{fill:#60a5fa}
-.b-vmess{background:rgba(74,222,128,.16)}.b-vmess svg{fill:#4ade80}
-.b-trojan{background:rgba(248,113,113,.16)}.b-trojan svg{fill:#f87171}
-.b-ss{background:rgba(250,204,21,.15)}.b-ss svg{fill:#facc15}
-.b-hysteria{background:rgba(168,85,247,.18)}.b-hysteria svg{fill:#a855f7}
-.b-wireguard{background:rgba(45,212,191,.15)}.b-wireguard svg{fill:#2dd4bf}
-.b-mtproto{background:rgba(251,191,36,.15)}.b-mtproto svg{fill:#fbbf24}
-.b-other{background:rgba(148,163,184,.14)}.b-other svg{fill:#a5b0c0}
-.link-text{flex:1;min-width:0}
-.link-name{font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
-.link-type{font-size:10px;color:var(--text3);direction:ltr;text-align:right;margin-top:2px}
-.copy-btn{padding:7px 13px;border-radius:10px;background:var(--card2);color:var(--text2);font-size:11px;font-weight:700;border:1px solid var(--border);cursor:pointer;transition:all .18s;font-family:inherit;display:flex;align-items:center;gap:6px;flex-shrink:0}
-.copy-btn:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.copy-btn svg{width:12px;height:12px;fill:currentColor}
+  /* ========== Announcement & Note ========== */
+  .alert-box {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+    border: 1px solid rgba(99,102,241,0.2);
+    border-right: 4px solid var(--accent);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    animation: slideIn 0.5s ease;
+  }
+  .alert-box svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .alert-box .alert-content {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+  .alert-box .alert-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .note-box {
+    background: linear-gradient(135deg, rgba(234,179,8,0.06), rgba(234,179,8,0.03));
+    border: 1px solid rgba(234,179,8,0.18);
+    border-right: 4px solid var(--warn);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    animation: slideIn 0.5s ease;
+  }
+  .note-box svg {
+    width: 20px;
+    height: 20px;
+    color: var(--warn);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .note-box .note-content {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+  .note-box .note-title {
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
 
-/* ------------------------------------------------ footer */
-.footer{text-align:center;margin-top:20px;font-size:10.5px;color:var(--text3)}
-.footer a{color:var(--text2);text-decoration:none;font-weight:700}
-.footer a:hover{color:var(--accent)}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--card2);color:var(--text);padding:9px 22px;border-radius:999px;font-size:12.5px;font-weight:700;border:1px solid var(--border2);opacity:0;transition:all .3s;pointer-events:none;z-index:100;box-shadow:var(--shadow)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast.ok{border-color:rgba(74,222,128,.45);color:var(--ok)}
-@media(max-width:400px){.actions{grid-template-columns:1fr}}
+  /* ========== Action Buttons Row ========== */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    color: inherit;
+  }
+  .action-btn svg { width: 18px; height: 18px; }
+  .action-btn.primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    box-shadow: var(--glow1);
+  }
+  .action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow2);
+  }
+  .action-btn.secondary {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .action-btn.secondary:hover {
+    background: var(--card2);
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+
+  /* ========== Config Cards ========== */
+  .configs-section { margin-bottom: 32px; }
+  .configs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .configs-title {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .configs-title svg { width: 20px; height: 20px; color: var(--accent); }
+  .config-count {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text3);
+    font-weight: 600;
+  }
+  .config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .config-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: fadeInUp 0.4s ease;
+  }
+  .config-card:hover {
+    background: var(--card2);
+    border-color: var(--border2);
+    transform: translateX(-4px);
+    box-shadow: var(--shadow);
+  }
+  .config-card.copied {
+    border-color: var(--ok);
+    background: rgba(34,197,94,0.05);
+  }
+  .protocol-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.3px;
+  }
+  .protocol-vless { background: linear-gradient(135deg, #3b82f6, #1d4ed8); box-shadow: 0 4px 14px rgba(59,130,246,0.3); }
+  .protocol-vmess { background: linear-gradient(135deg, #22c55e, #15803d); box-shadow: 0 4px 14px rgba(34,197,94,0.3); }
+  .protocol-trojan { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 14px rgba(239,68,68,0.3); }
+  .protocol-ss { background: linear-gradient(135deg, #eab308, #a16207); color: #1a1a1a; box-shadow: 0 4px 14px rgba(234,179,8,0.3); }
+  .protocol-hysteria { background: linear-gradient(135deg, #a855f7, #7e22ce); box-shadow: 0 4px 14px rgba(168,85,247,0.3); }
+  .protocol-wireguard { background: linear-gradient(135deg, #06b6d4, #0e7490); box-shadow: 0 4px 14px rgba(6,182,212,0.3); }
+  .protocol-default { background: linear-gradient(135deg, #64748b, #334155); box-shadow: 0 4px 14px rgba(100,116,139,0.3); }
+
+  .config-info { flex: 1; min-width: 0; }
+  .config-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .config-meta {
+    font-size: 12px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .config-meta .dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--text3);
+  }
+  .copy-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card2);
+    color: var(--text2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .copy-btn svg { width: 16px; height: 16px; }
+  .copy-btn.copied {
+    background: var(--ok);
+    color: #fff;
+    border-color: var(--ok);
+  }
+
+  /* ========== QR Modal ========== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; animation: fadeIn 0.25s ease; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .qr-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+  .qr-box svg { display: block; }
+  .modal-close {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .modal-close:hover { background: var(--border); }
+
+  /* ========== Toast ========== */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--card);
+    border: 1px solid var(--ok);
+    color: var(--ok);
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  .toast svg { width: 18px; height: 18px; }
+
+  /* ========== Footer ========== */
+  .footer {
+    text-align: center;
+    padding: 28px 0;
+    border-top: 1px solid var(--border);
+    color: var(--text3);
+    font-size: 13px;
+  }
+  .footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .footer a:hover { text-decoration: underline; }
+
+  /* ========== Animations ========== */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+
+  /* ========== Responsive ========== */
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-card { padding: 14px; }
+    .stat-value { font-size: 18px; }
+    .header-username { font-size: 24px; }
+    .panel { padding: 18px; }
+    .donut-wrap { gap: 20px; }
+    .donut-svg { width: 140px; height: 140px; }
+    .action-btn { padding: 10px 16px; font-size: 13px; }
+    .config-card { padding: 12px 14px; gap: 10px; }
+    .protocol-badge { width: 38px; height: 38px; font-size: 9px; }
+    .topbar { padding: 14px 0; }
+    .brand-name { font-size: 16px; }
+  }
+  @media (max-width: 400px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .action-row { flex-direction: column; }
+    .action-btn { justify-content: center; }
+  }
+
+  /* Language: English (LTR) */
+  html[lang="en"] { direction: ltr; }
+  html[lang="en"] .alert-box { border-right: none; border-left: 4px solid var(--accent); }
+  html[lang="en"] .note-box { border-right: none; border-left: 4px solid var(--warn); }
+  html[lang="en"] .config-card:hover { transform: translateX(4px); }
 </style>
 </head>
 <body>
+
 <div class="container">
 
+  <!-- ========== Topbar ========== -->
   <div class="topbar">
     <div class="brand">
-      <div class="brand-logo"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
-      <div>
-        <div class="brand-name" data-i18n="brand">V2Ray Subscription</div>
-        <div class="brand-sub" data-i18n="slogan">داشبورد اختصاصی سرویس</div>
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
       </div>
+      <span class="brand-name" data-i18n="brand">NUC-SUB</span>
     </div>
-    <div class="top-actions">
-      <button class="tbtn" id="langBtn" title="English" aria-label="Language">
-        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="langBtn" title="Language" aria-label="Toggle language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
       </button>
-      <button class="tbtn" id="themeBtn" title="تغییر تم" aria-label="Theme">
-        <svg viewBox="0 0 24 24" id="iconSun" class="i-sun hidden"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 3a2 2 0 1 1-2 2 2 2 0 0 1 2-2zm9-2h-3a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zM4 11H1a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zm4.5-5.5a1 1 0 0 0-1.41 0l-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zm11 5.41l-1.41-1.41-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zM20.41 21a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29L5.29 7.3a1 1 0 1 1 1.41-1.42l13.7 13.7a1 1 0 0 1 .01 1.42z"/></svg>
-        <svg viewBox="0 0 24 24" id="iconMoon" class="i-moon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      <button class="icon-btn" id="themeBtn" title="Theme" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
       </button>
     </div>
   </div>
 
+  <!-- ========== Header ========== -->
   <div class="header">
-    <div class="id">{{ user.username }}</div>
-    <div class="role" data-i18n="sub">سابسکریپشن اختصاصی</div>
-    <div class="status-chip {% if user.status.value == 'active' %}st-on{% elif user.status.value == 'limited' %}st-lim{% elif user.status.value == 'expired' %}st-exp{% elif user.status.value == 'on_hold' %}st-held{% elif user.status.value == 'disabled' %}st-dis{% else %}st-dis{% endif %}">
-      <span class="pulse"></span>
-      <span data-i18n-status="{{ user.status.value }}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</span>
+    <h1 class="header-username">{{ user.username }}</h1>
+    <p class="header-subtitle" data-i18n="subtitle">پنل کاربری اشتراک VPN</p>
+    <span class="status-chip status-{{ user.status.value }}" id="statusChip">
+      {% if user.status.value == 'active' %}<span data-i18n="status_active">فعال</span>
+      {% elif user.status.value == 'limited' %}<span data-i18n="status_limited">محدود</span>
+      {% elif user.status.value == 'expired' %}<span data-i18n="status_expired">منقضی</span>
+      {% elif user.status.value == 'on_hold' %}<span data-i18n="status_onhold">در انتظار</span>
+      {% elif user.status.value == 'disabled' %}<span data-i18n="status_disabled">غیرفعال</span>
+      {% else %}<span>{{ user.status.value }}</span>
+      {% endif %}
+    </span>
+  </div>
+
+  <!-- ========== Stats Grid ========== -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/>
+          <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+          <path d="M3 12a9 3 0 0 0 18 0"/>
+        </svg>
+      </div>
+      <div class="stat-label" data-i18n="total_volume">حجم کل</div>
+      <div class="stat-value">
+        {% if user.data_limit and user.data_limit > 0 %}
+          {{ user.data_limit | bytesformat }}
+        {% else %}
+          ∞ <small data-i18n="unlimited">نامحدود</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="color: var(--accent2);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="stat-label" data-i18n="used">مصرف شده</div>
+      <div class="stat-value">{{ user.used_traffic | bytesformat }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="color: var(--ok);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="stat-label" data-i18n="remaining">باقیمانده</div>
+      <div class="stat-value">
+        {% if user.data_limit and user.data_limit > 0 %}
+          {% set remaining = user.data_limit - user.used_traffic %}
+          {% if remaining > 0 %}{{ remaining | bytesformat }}{% else %}0 MB{% endif %}
+        {% else %}
+          ∞ <small data-i18n="unlimited">نامحدود</small>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon" style="color: var(--warn);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div class="stat-label" data-i18n="days_left">روزهای مانده</div>
+      <div class="stat-value">
+        {% if user.expire %}
+          {% set now = "now" | date("U") %}
+          {% set expire_ts = user.expire | date("U") %}
+          {% set days_left = ((expire_ts - now) / 86400) | round %}
+          {% if days_left > 0 %}
+            {{ days_left }} <small data-i18n="day">روز</small>
+          {% else %}
+            <small style="color: var(--err)" data-i18n="expired">منقضی</small>
+          {% endif %}
+        {% else %}
+          ∞ <small data-i18n="unlimited">نامحدود</small>
+        {% endif %}
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="grid2">
-      <div class="tile">
-        <div class="tile-l"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm1 15.92V17h2a1 1 0 0 0 0-2h-2v-2h3a1 1 0 0 0 0-2H9a1 1 0 0 0 0 2h2v2H8a1 1 0 0 0 0 2h2v1.92C6.05 17.43 3 14.07 3 10a9 9 0 0 1 18 0c0 4.07-3.05 7.43-7 7.92z"/></svg> <span data-i18n="total">حجم کل</span></div>
-        <div class="tile-v c-purple" id="totalV">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
-      </div>
-      <div class="tile">
-        <div class="tile-l"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 5h2v6h-2zm0 8h2v2h-2z"/></svg> <span data-i18n="used">مصرف‌شده</span></div>
-        <div class="tile-v c-blue" id="usedV">{{ user.used_traffic | bytesformat }}</div>
-      </div>
-      <div class="tile">
-        <div class="tile-l"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm2 16.92V17h-2v-2h3a1 1 0 0 0 0-2H9a1 1 0 0 0 0 2h2v1.92c-3.95-.49-7-3.85-7-7.92a8 8 0 0 1 16 0c0 4.07-3.05 7.43-7 7.92zM12 5.8l6.5 11.2h-13L12 5.8z"/></svg> <span data-i18n="remain">باقیمانده</span></div>
-        <div class="tile-v c-green" id="remainV">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</div>
-      </div>
-      <div class="tile">
-        <div class="tile-l"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 9V7h2v6h-2zm0 5h2v2h-2z"/></svg> <span data-i18n="daysLeft">روز مانده</span></div>
-        <div class="tile-v c-warn" id="daysLeft">—</div>
-      </div>
-    </div>
-  </div>
+  <!-- ========== Main Grid ========== -->
+  <div class="main-grid">
 
-  <div class="card" id="usageCard" style="display:none">
-    <div class="card-title"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg> <span data-i18n="usage">مصرف سهمیه</span></div>
-    <div class="usage-top">
-      <div class="donut" id="donut">
-        <div class="donut-inner"><div class="donut-v" id="donutPct">0٪</div><div class="donut-s" data-i18n="usedX">مصرف</div></div>
+    <!-- Donut Chart -->
+    {% if user.data_limit and user.data_limit > 0 %}
+    <div class="panel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.21 15.89A10 10 0 1 1 8 2.83"/>
+          <path d="M22 12A10 10 0 0 0 12 2v10z"/>
+        </svg>
+        <span data-i18n="usage_chart">نمودار مصرف</span>
       </div>
-      <div class="usage-stats">
-        <div class="usage-stat">
-          <div class="u-label"><span data-i18n="trafficUsed">مصرف از سهمیه</span><span id="usagePct">0٪</span></div>
-          <div class="ubar"><div class="ubar-fill" id="usageFill"></div></div>
+      <div class="donut-wrap">
+        <div style="position:relative;">
+          <svg class="donut-svg" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--accent)"/>
+                <stop offset="100%" style="stop-color:var(--accent2)"/>
+              </linearGradient>
+            </defs>
+            <circle class="donut-bg" cx="50" cy="50" r="42"/>
+            {% set usage_pct = (user.used_traffic / user.data_limit * 100) | round(1) %}
+            {% set circumference = 2 * 3.14159 * 42 %}
+            {% set dash_offset = circumference * (1 - usage_pct / 100) %}
+            <circle class="donut-fg" cx="50" cy="50" r="42"
+                    stroke-dasharray="{{ circumference }}"
+                    stroke-dashoffset="{{ circumference }}"
+                    data-target="{{ dash_offset }}"/>
+          </svg>
+          <div class="donut-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+            <div class="pct">{{ usage_pct }}%</div>
+            <div class="lbl" data-i18n="used_percent">مصرف شده</div>
+          </div>
         </div>
-        <div class="u-sub">
-          <span id="upRow" style="display:none"><span class="dot up"></span><span data-i18n="up">آپلود</span> <b id="upV">0</b></span>
-          <span id="downRow" style="display:none"><span class="dot down"></span><span data-i18n="down">دانلود</span> <b id="downV">0</b></span>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <div class="legend-dot used"></div>
+            <div class="legend-text">
+              <strong>{{ user.used_traffic | bytesformat }}</strong>
+              <span data-i18n="used_traffic">ترافیک مصرفی</span>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot remaining"></div>
+            <div class="legend-text">
+              <strong>{{ (user.data_limit - user.used_traffic) | bytesformat }}</strong>
+              <span data-i18n="remaining_traffic">ترافیک باقیمانده</span>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="row">
-      <span class="lbl"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2a8 8 0 1 1-8 8 8 8 0 0 1 8-8zm-.5 4h1.5v5.5l4 2.4-.8 1.3-4.7-2.8V8z"/></svg> <span data-i18n="expire">تاریخ انقضا</span></span>
-      <span class="val" id="expireV">{% if user.expire %}{{ user.expire | datetime }}{% else %}<span data-i18n="unlim">∞ نامحدود</span>{% endif %}</span>
-    </div>
-    <div class="row">
-      <span class="lbl"><svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm0 4.27 6.5 11.23 1.09 1.5H4.41l1.09-1.5L12 6.27z"/></svg> <span data-i18n="status">وضعیت</span></span>
-      <span class="val"><span class="status-chip {% if user.status.value == 'active' %}st-on{% elif user.status.value == 'limited' %}st-lim{% elif user.status.value == 'expired' %}st-exp{% elif user.status.value == 'on_hold' %}st-held{% else %}st-dis{% endif %}" data-i18n-status="{{ user.status.value }}" style="padding:4px 12px;margin-top:0">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% else %}غیرفعال{% endif %}</span></span>
-    </div>
-    {% if user.hwid_limit is not none %}
-    <div class="row">
-      <span class="lbl"><svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18 7 3.11v4.17c0 3.77-2.62 7.03-7 8.08V3.18z"/></svg> <span data-i18n="device">محدودیت دستگاه</span></span>
-      <span class="val">{% if user.hwid_limit == 0 %}∞ نامحدود{% else %}{{ user.hwid_limit }}{% endif %}</span>
     </div>
     {% endif %}
-    <div class="row">
-      <span class="lbl"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-3.3 0-10 1.67-10 5v1h20v-1c0-3.33-6.7-5-10-5z"/></svg> <span data-i18n="username">نام کاربری</span></span>
-      <span class="val" style="direction:ltr">{{ user.username }}</span>
+
+    <!-- Info Panel -->
+    <div class="panel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span data-i18n="account_info">اطلاعات حساب</span>
+      </div>
+      <div class="info-list">
+        <div class="info-row">
+          <div class="info-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span data-i18n="expire_date">تاریخ انقضا</span>
+          </div>
+          <div class="info-val">
+            {% if user.expire %}{{ user.expire | datetime }}{% else %}<span data-i18n="unlimited">نامحدود</span>{% endif %}
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            <span data-i18n="status">وضعیت</span>
+          </div>
+          <div class="info-val">
+            {% if user.status.value == 'active' %}<span style="color:var(--ok)" data-i18n="status_active">فعال</span>
+            {% elif user.status.value == 'limited' %}<span style="color:var(--err)" data-i18n="status_limited">محدود</span>
+            {% elif user.status.value == 'expired' %}<span style="color:var(--warn)" data-i18n="status_expired">منقضی</span>
+            {% elif user.status.value == 'on_hold' %}<span style="color:var(--accent2)" data-i18n="status_onhold">در انتظار</span>
+            {% elif user.status.value == 'disabled' %}<span style="color:var(--text3)" data-i18n="status_disabled">غیرفعال</span>
+            {% else %}<span>{{ user.status.value }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% if user.hwid_limit is defined %}
+        <div class="info-row">
+          <div class="info-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <span data-i18n="device_limit">محدودیت دستگاه</span>
+          </div>
+          <div class="info-val">
+            {% if user.hwid_limit == 0 %}<span data-i18n="unlimited">نامحدود</span>{% else %}{{ user.hwid_limit }}{% endif %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="info-row">
+          <div class="info-key">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span data-i18n="username">نام کاربری</span>
+          </div>
+          <div class="info-val" style="direction:ltr">{{ user.username }}</div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- ========== Announcement ========== -->
   {% if announce %}
-  <div class="announce">{{ announce | replace('\n', '<br>') }}</div>
-  {% endif %}
-
-  {% if user.note %}
-  <div class="note"><strong data-i18n="note">یادداشت:</strong> {{ user.note }}</div>
-  {% endif %}
-
-  <div class="actions">
-    <a id="tgBtn" class="act primary hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener">
-      <svg viewBox="0 0 24 24"><path d="M9.04 15.43l-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21L9.04 15.43z"/></svg>
-      <span data-i18n="support">کانال و پشتیبانی</span>
-    </a>
-    <button class="act ghost" id="qrBtn" style="display:none">
-      <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v3h2v2h3v2h-3v2h2v-3h3v-2h-2v-2h2" fill="currentColor" stroke="currentColor" stroke-width=".3"/><path d="M13 21h2v2h-2zM17 13h2v2h-2zM6 13h2v2l-2-2z" fill="currentColor" stroke="currentColor" stroke-width=".3"/></svg>
-      <span data-i18n="qr">کد QR</span>
-    </button>
-    <button class="act ghost" id="quickCopy" style="display:none">
-      <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg>
-      <span data-i18n="copyAll">کپی همه</span>
-    </button>
-  </div>
-
-  <div class="links-head">
-    <div class="links-title"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM8 13.5h-1v-3h1v3zm5 0h-1v-3h1v3zm5 0h-1v-3h1v3z"/></svg> <span data-i18n="configs">کانفیگ‌ها</span> <span style="color:var(--text3);font-weight:600" id="linkCount"></span></div>
-    <button class="copyall" id="copyAllBtn">
-      <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-      <span data-i18n="copyAllShort">کپی همه</span>
-    </button>
-  </div>
-
-  <div id="linksList">
-  {% if links %}
-  {% for link in links %}
-  <div class="link-card" data-link="{{ link }}">
-    <div class="link-badge b-other"><svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 0-10z"/></svg></div>
-    <div class="link-text">
-      <div class="link-name"></div>
-      <div class="link-type"></div>
+  <div class="alert-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/>
+      <path d="M16 8a5 5 0 0 1 0 8"/>
+      <path d="M19 5a9 9 0 0 1 0 14"/>
+    </svg>
+    <div class="alert-content">
+      <div class="alert-title" data-i18n="announcement">اعلان</div>
+      {{ announce }}
     </div>
-    <button class="copy-btn"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg> <span data-i18n="copy">کپی</span></button>
   </div>
-  {% endfor %}
-  {% else %}
-  <div class="link-card" style="cursor:default"><div class="link-text"><div class="link-name" style="color:var(--text3)" data-i18n="noConfigs">کانفیگی ثبت نشده است</div></div></div>
   {% endif %}
+
+  <!-- ========== Admin Note ========== -->
+  {% if user.note %}
+  <div class="note-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+    <div class="note-content">
+      <div class="note-title" data-i18n="admin_note">یادداشت ادمین</div>
+      {{ user.note }}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ========== Action Buttons ========== -->
+  <div class="action-row">
+    {% set tg = "@@TG_CHANNEL@@" %}
+    {% if tg and 't.me/' in tg %}
+    <a href="{{ tg }}" target="_blank" class="action-btn secondary">
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9.04 15.47l-.36 5.09c.52 0 .74-.22 1.01-.49l2.45-2.36 5.18 3.79c.95.52 1.63.25 1.88-.88l3.41-16c.32-1.49-.54-2.07-1.53-1.72L1.12 9.29c-1.47.57-1.45 1.39-.26 1.76l5.02 1.56 11.62-7.31c.55-.36 1.05-.16.64.2"/>
+      </svg>
+      <span data-i18n="telegram_channel">کانال تلگرام</span>
+    </a>
+    {% endif %}
+    <button class="action-btn secondary" id="qrBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/>
+        <rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/>
+        <line x1="14" y1="14" x2="14" y2="21"/>
+        <line x1="21" y1="14" x2="21" y2="21"/>
+        <line x1="17" y1="17" x2="18" y2="17"/>
+      </svg>
+      <span data-i18n="show_qr">نمایش کد QR</span>
+    </button>
+    <button class="action-btn primary" id="copyAllBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span data-i18n="copy_all">کپی همه</span>
+    </button>
   </div>
 
+  <!-- ========== Config List ========== -->
+  <div class="configs-section">
+    <div class="configs-header">
+      <div class="configs-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+        </svg>
+        <span data-i18n="configs">کانفیگ‌های اشتراک</span>
+      </div>
+      <span class="config-count">{{ links | length }} <span data-i18n="items">مورد</span></span>
+    </div>
+    <div class="config-list" id="configList">
+      {% for link in links %}
+        {% set proto = link.split('://')[0] | lower %}
+        {% set proto_class = 'protocol-' + proto if proto in ['vless','vmess','trojan','ss','hysteria','wireguard'] else 'protocol-default' %}
+        {% set config_name = link.split('#')[1] | url_decode if '#' in link else (proto | upper) + ' ' + (loop.index | string) %}
+      <div class="config-card" data-link="{{ link }}">
+        <div class="protocol-badge {{ proto_class }}">{{ proto | upper }}</div>
+        <div class="config-info">
+          <div class="config-name">{{ config_name }}</div>
+          <div class="config-meta">
+            <span>{{ proto | upper }}</span>
+            <span class="dot"></span>
+            <span data-i18n="click_to_copy">کلیک برای کپی</span>
+          </div>
+        </div>
+        <button class="copy-btn" title="کپی" aria-label="Copy link">
+          <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          <svg class="icon-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ========== Footer ========== -->
   <div class="footer">
-    <span data-i18n="madeWith">ساخته شده با</span> NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a>
+    <span data-i18n="built_with">ساخته شده با</span> ❤ <a href="https://github.com/" target="_blank">NUC-SUB</a>
+  </div>
+
+</div>
+
+<!-- ========== QR Modal ========== -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal">
+    <div class="modal-title" data-i18n="qr_title">کد QR اشتراک</div>
+    <div class="qr-box" id="qrBox"></div>
+    <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- ========== Toast ========== -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toastMsg" data-i18n="copied">کپی شد!</span>
+</div>
 
 <script>
-var D = {
-  expire: {% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},
-  total: {% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},
-  used:  {% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %},
-  up: null, down: null
-};
-function findEl(id){ var x=document.getElementById(id); return x?x:null; }
-function showToast(msg,ok){ var t=findEl('toast'); if(!t) return; t.textContent=msg; t.className=ok?'toast show ok':'toast show'; setTimeout(function(){t.classList.remove('show')},2000); }
-function rawLink(s){ return (s||'').replace(/&amp;/g,'&'); }
-function protocolOf(link){ var m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
-function nameOf(link,i){ var frag=link.split('#'); if(frag.length>1&&frag[1]){ try{return decodeURIComponent(frag[1]);}catch(e){return frag[1];} } return (i18n.configN||'Config')+' '+(i+1); }
-function fmtBytes(n){ if(n==null||isNaN(n)) return '0 B'; if(n<=0) return '0 B'; var u=['B','KB','MB','GB','TB']; var i=0; while(n>=1024&&i<u.length-1){n/=1024;i++;} return n.toFixed(n>=100?0:1)+' '+u[i]; }
-function copy(text){
-  var done=function(){ showToast(i18n.copied,true); };
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done,function(){ fallbackCopy(text,done); }); }
-  else fallbackCopy(text,done);
-}
-function fallbackCopy(text,done){ var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); done();}catch(e){} document.body.removeChild(ta); }
+(function() {
+  'use strict';
 
-var I18N={
-  brand:{fa:'V2Ray Subscription',en:'V2Ray Subscription'},
-  slogan:{fa:'داشبورد اختصاصی سرویس',en:'Your VPN Dashboard'},
-  sub:{fa:'سابسکریپشن اختصاصی',en:'Subscription'},
-  total:{fa:'حجم کل',en:'Total Data'},
-  used:{fa:'مصرف‌شده',en:'Used'},
-  remain:{fa:'باقیمانده',en:'Remaining'},
-  daysLeft:{fa:'روز مانده',en:'Days Left'},
-  usage:{fa:'مصرف سهمیه',en:'Data Usage'},
-  usedX:{fa:'مصرف',en:'USED'},
-  trafficUsed:{fa:'مصرف از سهمیه',en:'Used of quota'},
-  up:{fa:'آپلود',en:'Upload'},
-  down:{fa:'دانلود',en:'Download'},
-  expire:{fa:'تاریخ انقضا',en:'Expiry'},
-  unlim:{fa:'∞ نامحدود',en:'∞ Unlimited'},
-  status:{fa:'وضعیت',en:'Status'},
-  device:{fa:'محدودیت دستگاه',en:'Device limit'},
-  username:{fa:'نام کاربری',en:'Username'},
-  note:{fa:'یادداشت:',en:'Note:'},
-  support:{fa:'کانال و پشتیبانی',en:'Channel & Support'},
-  qr:{fa:'کد QR',en:'QR Code'},
-  copyAll:{fa:'کپی همه',en:'Copy all'},
-  copyAllShort:{fa:'کپی همه',en:'Copy all'},
-  configs:{fa:'کانفیگ‌ها',en:'Configurations'},
-  copy:{fa:'کپی',en:'Copy'},
-  copied:{fa:'لینک کپی شد!',en:'Copied!'},
-  noConfigs:{fa:'کانفیگی ثبت نشده است',en:'No configs yet'},
-  madeWith:{fa:'ساخته شده با',en:'Made with'},
-  configN:{fa:'کانفیگ',en:'Config'},
-  active:{fa:'فعال',en:'Active'}, limited:{fa:'محدود',en:'Limited'},
-  expired:{fa:'منقضی',en:'Expired'}, on_hold:{fa:'در انتظار',en:'On hold'},
-  disabled:{fa:'غیرفعال',en:'Disabled'}
-};
-var i18n=I18N.fa;
-function applyI18n(){
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n'); if(I18N[k]) el.textContent=I18N[k][i18n];
-  });
-  document.querySelectorAll('[data-i18n-status]').forEach(function(el){
-    var k=el.getAttribute('data-i18n-status'); if(I18N[k]) el.textContent=I18N[k][i18n];
-  });
-}
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme',t);
-  findEl('iconSun').classList.toggle('hidden',t==='dark');
-  findEl('iconMoon').classList.toggle('hidden',t==='light');
-  try{ localStorage.setItem('nuc-theme',t); }catch(e){}
-}
-function setLang(l){
-  i18n=l; document.documentElement.setAttribute('lang',l==='fa'?'fa':'en');
-  document.documentElement.setAttribute('dir',l==='fa'?'rtl':'ltr');
-  applyI18n();
-  try{ localStorage.setItem('nuc-lang',l); }catch(e){}
-}
-(function init(){
-  var savedT='dark', savedL='fa';
-  try{ savedT=localStorage.getItem('nuc-theme')||'dark'; savedL=localStorage.getItem('nuc-lang')||'fa'; }catch(e){}
-  setTheme(savedT); setLang(savedL);
-  findEl('themeBtn').addEventListener('click',function(){ setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'); });
-  findEl('langBtn').addEventListener('click',function(){ setLang(i18n==='fa'?'en':'fa'); });
+  // ========== Translations ==========
+  const translations = {
+    fa: {
+      brand: 'NUC-SUB',
+      subtitle: 'پنل کاربری اشتراک VPN',
+      status_active: 'فعال',
+      status_limited: 'محدود',
+      status_expired: 'منقضی',
+      status_onhold: 'در انتظار',
+      status_disabled: 'غیرفعال',
+      total_volume: 'حجم کل',
+      used: 'مصرف شده',
+      remaining: 'باقیمانده',
+      days_left: 'روزهای مانده',
+      unlimited: 'نامحدود',
+      day: 'روز',
+      expired: 'منقضی',
+      usage_chart: 'نمودار مصرف',
+      used_percent: 'مصرف شده',
+      used_traffic: 'ترافیک مصرفی',
+      remaining_traffic: 'ترافیک باقیمانده',
+      account_info: 'اطلاعات حساب',
+      expire_date: 'تاریخ انقضا',
+      status: 'وضعیت',
+      device_limit: 'محدودیت دستگاه',
+      username: 'نام کاربری',
+      announcement: 'اعلان',
+      admin_note: 'یادداشت ادمین',
+      telegram_channel: 'کانال تلگرام',
+      show_qr: 'نمایش کد QR',
+      copy_all: 'کپی همه',
+      configs: 'کانفیگ‌های اشتراک',
+      items: 'مورد',
+      click_to_copy: 'کلیک برای کپی',
+      built_with: 'ساخته شده با',
+      qr_title: 'کد QR اشتراک',
+      close: 'بستن',
+      copied: 'کپی شد!',
+      all_copied: 'همه کانفیگ‌ها کپی شدند!'
+    },
+    en: {
+      brand: 'NUC-SUB',
+      subtitle: 'VPN Subscription Dashboard',
+      status_active: 'Active',
+      status_limited: 'Limited',
+      status_expired: 'Expired',
+      status_onhold: 'On Hold',
+      status_disabled: 'Disabled',
+      total_volume: 'Total Volume',
+      used: 'Used',
+      remaining: 'Remaining',
+      days_left: 'Days Left',
+      unlimited: 'Unlimited',
+      day: 'days',
+      expired: 'Expired',
+      usage_chart: 'Usage Chart',
+      used_percent: 'Used',
+      used_traffic: 'Used Traffic',
+      remaining_traffic: 'Remaining Traffic',
+      account_info: 'Account Info',
+      expire_date: 'Expiry Date',
+      status: 'Status',
+      device_limit: 'Device Limit',
+      username: 'Username',
+      announcement: 'Announcement',
+      admin_note: 'Admin Note',
+      telegram_channel: 'Telegram Channel',
+      show_qr: 'Show QR Code',
+      copy_all: 'Copy All',
+      configs: 'Subscription Configs',
+      items: 'items',
+      click_to_copy: 'Click to copy',
+      built_with: 'Built with',
+      qr_title: 'Subscription QR Code',
+      close: 'Close',
+      copied: 'Copied!',
+      all_copied: 'All configs copied!'
+    }
+  };
 
-  var tg='@@TG_CHANNEL@@';
-  var tgBtn=findEl('tgBtn');
-  if(tg && tg.match(/t\.me\//) && tgBtn) tgBtn.classList.remove('hidden');
-  else if(tgBtn) tgBtn.classList.add('hidden');
+  let currentLang = localStorage.getItem('nuc_lang') || 'fa';
+  let currentTheme = localStorage.getItem('nuc_theme') || 'dark';
 
-  if(D.expire){
-    var d=new Date(String(D.expire).replace(' ','T'));
-    var days=Math.ceil((d.getTime()-Date.now())/86400000);
-    var dl=findEl('daysLeft');
-    if(dl&&!isNaN(days)) dl.textContent=Math.max(days,0);
-  }
+  // ========== Theme Toggle ==========
+  const html = document.documentElement;
+  html.setAttribute('data-theme', currentTheme);
+  html.setAttribute('lang', currentLang);
+  html.setAttribute('dir', currentLang === 'fa' ? 'rtl' : 'ltr');
 
-  var up=D.up||0, down=D.down||0, used=D.used;
-  var total=D.total;
-  var per=0;
-  if(total>0){
-    per=Math.min(100,used/total*100);
-    var uc=findEl('usageCard'); if(uc) uc.style.display='';
-    ["usageFill","donut"].forEach(function(id){ var el=findEl(id); if(el) el.style.setProperty('--donut-pct',per.toFixed(2)+'%'); });
-    var upct=findEl('usagePct'), dp=findEl('donutPct');
-    if(upct) upct.textContent=per.toFixed(0)+'٪';
-    if(dp) dp.textContent=per.toFixed(0)+'٪';
-    if(up>0||down>0){
-      var ur=findEl('upRow'), dr=findEl('downRow');
-      if(ur){ur.style.display=''; findEl('upV').textContent=fmtBytes(up);}
-      if(dr){dr.style.display=''; findEl('downV').textContent=fmtBytes(down);}
+  const themeBtn = document.getElementById('themeBtn');
+  const iconSun = themeBtn.querySelector('.icon-sun');
+  const iconMoon = themeBtn.querySelector('.icon-moon');
+
+  function updateThemeIcons() {
+    if (currentTheme === 'dark') {
+      iconSun.style.display = 'block';
+      iconMoon.style.display = 'none';
+    } else {
+      iconSun.style.display = 'none';
+      iconMoon.style.display = 'block';
     }
   }
+  updateThemeIcons();
 
-  var cards=document.querySelectorAll('.link-card');
-  findEl('linkCount').textContent='('+cards.length+')';
-  cards.forEach(function(card){
-    var btn=card.querySelector('.copy-btn'), badge=card.querySelector('.link-badge'),
-        nameEl=card.querySelector('.link-name'), typeEl=card.querySelector('.link-type');
-    var link=rawLink(card.getAttribute('data-link'));
-    var proto=protocolOf(link);
-    var cls=['vless','vmess','trojan','ss','hysteria','wireguard','mtproto'].indexOf(proto)>=0?proto:'other';
-    if(badge){ badge.className='link-badge b-'+cls;
-      var m={'vless':'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm7.93 6h-2.03a7.97 7.97 0 0 0-1.44-3.5A8.02 8.02 0 0 1 19.93 8zM12 4a8.22 8.22 0 0 1 2.45 4H9.55A8.22 8.22 0 0 1 12 4zm0 16a8.22 8.22 0 0 1-2.45-4h4.9A8.22 8.22 0 0 1 12 20zm-2.46-6A8.1 8.1 0 0 1 9.5 12a8.1 8.1 0 0 1 .04-2h4.92a8.1 8.1 0 0 1 .04 2 8.1 8.1 0 0 1-.04 2H9.54zm1-8A8.14 8.14 0 0 0 8.54 8H6.07a8.02 8.02 0 0 1 4.5-4zM4.26 14a8 8 0 0 1 0-4h2.5a10 10 0 0 0 0 4h-2.5zm.02 2h2.26a8.2 8.2 0 0 0 1.93 3.5A8.02 8.02 0 0 1 4.28 16zm9.7 5.5A8.14 8.14 0 0 0 15.46 16h2.47a8.02 8.02 0 0 1-3.95 3.5zM15.46 8A8.14 8.14 0 0 0 14 4.5 8.02 8.02 0 0 1 17.93 8h-2.47z','vmess':'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm.84-13.33-2.17 3.6 2.17 2.25 2.16-2.25-2.16-3.6zM10.5 15.5l2 2.83 5.2-2.6-2.28-2.29L10.5 15.5z','trojan':'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm3.5-8.5a3.5 3.5 0 1 1-5-3.15V7h2v1.35a3.5 3.5 0 0 1 3 3.15z','ss':'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4.5 12.5h-1.68l-.42-1.1-5.97 3.47-1.5 1.34-1.16-.68 1.34-1.42 2.1-.92L6.5 8h1.68l2.13 3.5 3-1.74.9 1.55-2.16 1.24 1.55 2.56h1.9zm-9-5h1.68l.42 1.1 5.97-3.47 1.5-1.34 1.16.68-1.34 1.42-2.1.92L16.5 12h-1.68l-2.13-3.5-3 1.74-.9-1.55 2.16-1.24L9.4 5.26h-1.9v4.24z','hysteria':'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c3.87 0 7 3.13 7 7 0 4.9-5 7-7 7a5 5 0 0 1-5-5c0-3.87 3.13-7 7-7z','wireguard':'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 10.5-1 8h2l.5-5 .5.5 2.5 4.5h2l-3.5-6L12 4l-1.5 6.5L12 12.5z','mtproto':'M11.6 11.6l2.2-2.2H7v2h4.6zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4 12.4a8 8 0 1 1-8-8 8 8 0 0 1 8 8z','other':'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-2 15H8v-8h2v8zm0-10H8V5h2v2zm6 10h-2v-8h2v8zm0-10h-2V5h2v2z'};
-      badge.innerHTML='<svg viewBox="0 0 24 24"><path d="'+m[cls]+'"/></svg>';
-    }
-    if(nameEl) nameEl.textContent=nameOf(link,Array.from(cards).indexOf(card));
-    if(typeEl) typeEl.textContent=proto.toUpperCase();
-    if(btn){ var lbl=btn.querySelector('span');
-      btn.addEventListener('click',function(e){ e.stopPropagation(); copy(link); });
-      if(lbl) btn.addEventListener('copy',function(){});
-    }
-    card.addEventListener('click',function(e){ if(btn&&(e.target===btn||btn.contains(e.target))) return; copy(link); });
+  themeBtn.addEventListener('click', function() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('nuc_theme', currentTheme);
+    updateThemeIcons();
   });
-  var ca=findEl('copyAllBtn'), qc=findEl('quickCopy');
-  if(cards.length>1){
-    if(ca) ca.addEventListener('click',function(){ copy(Array.from(cards).map(function(c){ return rawLink(c.getAttribute('data-link')); }).join('\n')); });
-  } else if(ca) ca.classList.add('hidden');
-  if(qc&&cards.length) qc.style.display=''; else if(qc) qc.style.display='none';
-  if(qc) qc.addEventListener('click',function(){ copy(Array.from(cards).map(function(c){ return rawLink(c.getAttribute('data-link')); }).join('\n')); });
+
+  // ========== Language Toggle ==========
+  const langBtn = document.getElementById('langBtn');
+
+  function applyLanguage(lang) {
+    html.setAttribute('lang', lang);
+    html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang] && translations[lang][key]) {
+        el.textContent = translations[lang][key];
+      }
+    });
+  }
+  applyLanguage(currentLang);
+
+  langBtn.addEventListener('click', function() {
+    currentLang = currentLang === 'fa' ? 'en' : 'fa';
+    localStorage.setItem('nuc_lang', currentLang);
+    applyLanguage(currentLang);
+  });
+
+  // ========== Donut Animation ==========
+  const donutFg = document.querySelector('.donut-fg');
+  if (donutFg) {
+    setTimeout(function() {
+      donutFg.style.strokeDashoffset = donutFg.getAttribute('data-target');
+    }, 200);
+  }
+
+  // ========== Toast ==========
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMsg');
+  let toastTimer;
+
+  function showToast(msg) {
+    if (msg) toastMsg.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() {
+      toast.classList.remove('show');
+    }, 2200);
+  }
+
+  // ========== Copy Function ==========
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  // ========== Config Card Click ==========
+  document.querySelectorAll('.config-card').forEach(function(card) {
+    const link = card.getAttribute('data-link');
+    const copyBtn = card.querySelector('.copy-btn');
+    const iconCopy = copyBtn.querySelector('.icon-copy');
+    const iconCheck = copyBtn.querySelector('.icon-check');
+
+    function doCopy() {
+      copyText(link).then(function(ok) {
+        if (ok) {
+          card.classList.add('copied');
+          copyBtn.classList.add('copied');
+          iconCopy.style.display = 'none';
+          iconCheck.style.display = 'block';
+          showToast(translations[currentLang].copied);
+          setTimeout(function() {
+            card.classList.remove('copied');
+            copyBtn.classList.remove('copied');
+            iconCopy.style.display = 'block';
+            iconCheck.style.display = 'none';
+          }, 1800);
+        }
+      });
+    }
+
+    card.addEventListener('click', function(e) {
+      if (!e.target.closest('.copy-btn')) doCopy();
+    });
+    copyBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      doCopy();
+    });
+  });
+
+  // ========== Copy All ==========
+  const copyAllBtn = document.getElementById('copyAllBtn');
+  copyAllBtn.addEventListener('click', function() {
+    const links = [];
+    document.querySelectorAll('.config-card').forEach(function(card) {
+      links.push(card.getAttribute('data-link'));
+    });
+    if (links.length > 0) {
+      copyText(links.join('\n')).then(function(ok) {
+        if (ok) showToast(translations[currentLang].all_copied);
+      });
+    }
+  });
+
+  // ========== QR Code (Simple QR Generator) ==========
+  const qrBtn = document.getElementById('qrBtn');
+  const qrModal = document.getElementById('qrModal');
+  const qrBox = document.getElementById('qrBox');
+  const modalClose = document.getElementById('modalClose');
+
+  // Simple QR using public API - generates SVG
+  function generateQR(text) {
+    const size = 220;
+    const url = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(text) + '&format=svg';
+    qrBox.innerHTML = '<img src="' + url + '" alt="QR Code" style="width:' + size + 'px;height:' + size + 'px;display:block;">';
+  }
+
+  qrBtn.addEventListener('click', function() {
+    const firstCard = document.querySelector('.config-card');
+    if (firstCard) {
+      generateQR(firstCard.getAttribute('data-link'));
+      qrModal.classList.add('active');
+    }
+  });
+
+  modalClose.addEventListener('click', function() {
+    qrModal.classList.remove('active');
+  });
+
+  qrModal.addEventListener('click', function(e) {
+    if (e.target === qrModal) qrModal.classList.remove('active');
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') qrModal.classList.remove('active');
+  });
+
 })();
 </script>
+
 </body>
 </html>
