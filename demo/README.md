@@ -1,47 +1,59 @@
 # NUC-SUB Live Preview
 
-گالری زندهی ۱۶ قالب سابسکریپشن NUC-SUB (۸ قالب PasarGuard + ۸ قالب 3x-ui) روی **GitHub Pages**.
+گالری زندهی ۱۶ قالب سابسکریپشن NUC-SUB (۸ قالب PasarGuard + ۸ قالب 3x-ui).
 
-| | لینک |
-|---|---|
-| **پیشنمایش زنده** | `https://nuctereadev.github.io/NUC-SUB/` |
-| مخزن | `https://github.com/nuctereadev/NUC-SUB` |
+- **محلی:** با یک فرمان رندر و در مرورگر ببین
+- **آنلاین:** روی **Vercel** دیپلوی کن و دامین خودت را وصل کن
 
 ## چطور کار میکند؟
 
 هر قالب با **دادهی ثابت و واقعینما** (یوزر `demo.user`، حجم ۱۰۰GB، مصرف ۴۳.۷۵GB، تا ۱۲ روز مهلت، ۶ لینک از ۶ پروتکل) آفلاین رندر میشود:
 
-- **قالبهای PasarGuard** → با موتور **Jinja2** و فیلترهای واقعی پنل (`bytesformat`, `datetime`, `now`)
-- **قالبهای 3x-ui** → با یک موتور کوچک **Go-template** (پشتیبانی `range`/`if`/`else`/متغیرها و کپی خودکار `css/fa/fonts`)
+- **قالبهای PasarGuard** → موتور **Jinja2** + فیلترهای واقعی پنل (`bytesformat`, `datetime`, `now`)
+- **قالبهای 3x-ui** → یک موتور کوچک **Go-template** (`range`/`if`/`else`/متغیرها) + کپی خودکار `css/fa/fonts`
 
-نتیجه یک سایت کاملاً استاتیک در `demo/site/` است (بدون نیاز به سرور و بدون هیچ خط API).
+خروجی یک سایت کاملاً **استاتیک** در `demo/site/` است — بدون سرور، بدون API.
 
-## ساخت مجدد (توسعهدهنده)
+## اجرای محلی (روی سیستم خودت)
 
 ```bash
 pip install jinja2
-python demo/build.py
+python demo/serve.py          # render + سرو روی http://127.0.0.1:8080 + باز کردن مرورگر
 ```
 
-خروجی در `demo/site/` ساخته میشود. هر قالب جدید/تغییرافته را به `themes/` یا `pasarguard-themes/subscription/` اضافه کنید و اسکریپت را دوباره اجرا کنید.
+یا جداگانه:
 
-## استقرار خودکار
+```bash
+python demo/build.py          # فقط رندر -> demo/site/
+python -m http.server 8080 --directory demo/site
+```
 
-با هر `push` به `main` (مسیرهای `themes/` یا `pasarguard-themes/` یا `demo/`) اکشن `demo/.github/workflows/demo.yml` اجرا میشود و سایت را روی GitHub Pages منتشر میکند.
+هر تغییر در `themes/` یا `pasarguard-themes/subscription/` را بعد از اجرای مجدد اسکریپت میبینی.
 
-### فعالسازی Pages (یک بار)
+## استقرار روی Vercel
 
-1. به **Settings → Pages** مخزن بروید.
-2. در **Source** گزینهی **GitHub Actions** را انتخاب کنید.
-3. تمام — اکشن بعد از هر push بهصورت خودکار رندر و منتشر میکند.
+۱. مخزن `nuctereadev/NUC-SUB` را وارد Vercel کن (**New Project → Import Git Repository**).
+۲. در تنظیمات پروژه:
+   - **Root Directory**: `demo`
+   - **Build Command**: `python3 -m pip install --quiet -r requirements.txt && python3 build.py`
+   - **Output Directory**: `site`
+3. **Deploy**.
+۴. بعد از deploy، از تب **Domains** دامین خودت را اضافه کن.
+
+پیکربندی فوق از قبل در `demo/vercel.json` قرار دارد — فقط باید Root Directory را روی `demo` بگذاری.
+
+> نکته: بعد از هر `push` به `main`، Vercel بهصورت خودکار دوباره بیلد و منتشر میکند.
 
 ## ساختار
 
 ```
 demo/
-  build.py        # موتور رندر (Jinja2 + Go-template) و ساخت خروجی
+  build.py        # موتور رندر (Jinja2 + Go-template) -> demo/site/
+  serve.py        # اجرای محلی (render + سرور + مرورگر)
+  vercel.json     # پیکربندی Vercel
+  requirements.txt  # jinja2
   README.md
-  site/           # سایت خروجی (رندر شده — به GitHub Pages میرود)
+  site/           # خروجی رندر شده (gitignored — خودکار ساخته میشود)
     index.html    # گالری انتخابگر با ۱۶ کارت
     pg/           # قالبهای PasarGuard
     xui/          # قالبهای 3x-ui (با asset های هر قالب)
