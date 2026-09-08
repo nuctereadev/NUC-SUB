@@ -1,413 +1,1198 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <head>
-<!-- skill:chrome -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{{ user.username }} - NUC-SUB</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
 <style>
-/* Credit line — bottom-right */
-.design-ui-credit {
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-elevated: #1f1f1f;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 225, 0, 0.3);
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --text-tertiary: #555555;
+  --accent: #FFE100;
+  --accent-glow: rgba(255, 225, 0, 0.2);
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  
+  --radius: 20px;
+  --font: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+}
+
+html[data-theme="light"] {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --surface-elevated: #f9f9f9;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(212, 184, 0, 0.3);
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --accent: #D4B800;
+  --accent-glow: rgba(212, 184, 0, 0.2);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+  background-image: 
+    radial-gradient(circle at 20% 20%, var(--accent-glow) 0%, transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .dashboard {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .full-width {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Top Bar */
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface);
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--accent), #ffed4e);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: #000;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.brand-text h1 {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.brand-text p {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+}
+
+.ctrl-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ctrl-btn:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.ctrl-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+/* Circular Gauge Widget */
+.gauge-widget {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.gauge-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+}
+
+.gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.gauge-bg {
+  fill: none;
+  stroke: var(--surface-elevated);
+  stroke-width: 12;
+}
+
+.gauge-fill {
+  fill: none;
+  stroke: url(#gaugeGradient);
+  stroke-width: 12;
+  stroke-linecap: round;
+  stroke-dasharray: 565.48;
+  stroke-dashoffset: 565.48;
+  transition: stroke-dashoffset 2s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.gauge-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.gauge-percent {
+  font-size: 42px;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.gauge-percent span {
+  font-size: 20px;
+  color: var(--text-secondary);
+}
+
+.gauge-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.gauge-stats {
+  display: flex;
+  gap: 32px;
+  width: 100%;
+  justify-content: center;
+}
+
+.gauge-stat {
+  text-align: center;
+}
+
+.gauge-stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.gauge-stat-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Countdown Widget */
+.countdown-widget {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 28px;
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.countdown-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-glow);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.countdown-icon svg { width: 20px; height: 20px; fill: var(--accent); }
+
+.countdown-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.countdown-cell {
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  padding: 16px 8px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.countdown-value {
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.countdown-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.countdown-expire {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.countdown-expire-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.countdown-expire-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Protocol Distribution Widget */
+.protocol-widget {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 28px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.widget-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--surface-elevated);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+
+.widget-icon svg { width: 18px; height: 18px; fill: var(--text-secondary); }
+
+.widget-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.protocol-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.protocol-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.protocol-name {
+  width: 70px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.protocol-track {
+  flex: 1;
+  height: 24px;
+  background: var(--surface-elevated);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.protocol-fill {
+  height: 100%;
+  border-radius: 8px;
+  width: 0;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.protocol-fill.vless { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.protocol-fill.vmess { background: linear-gradient(90deg, #10b981, #34d399); }
+.protocol-fill.trojan { background: linear-gradient(90deg, #ef4444, #f87171); }
+.protocol-fill.ss { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.protocol-fill.hysteria { background: linear-gradient(90deg, #a855f7, #c084fc); }
+.protocol-fill.wireguard { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
+.protocol-fill.mtproto { background: linear-gradient(90deg, #eab308, #facc15); }
+
+.protocol-count {
+  width: 30px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+/* Status Card Widget */
+.status-widget {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.status-pulse {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 12px var(--success);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.95); }
+}
+
+.status-pulse.warning { background: var(--warning); box-shadow: 0 0 12px var(--warning); }
+.status-pulse.danger { background: var(--danger); box-shadow: 0 0 12px var(--danger); }
+.status-pulse.inactive { background: var(--text-tertiary); box-shadow: none; animation: none; }
+
+.status-info {
+  flex: 1;
+}
+
+.status-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.status-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.status-badge-inline {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge-inline.active { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.status-badge-inline.limited { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+.status-badge-inline.expired, .status-badge-inline.disabled { background: rgba(85, 85, 85, 0.15); color: var(--text-tertiary); }
+.status-badge-inline.on_hold { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+
+/* Action Buttons */
+.actions-widget {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 140px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.action-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--accent-glow);
+}
+
+.action-btn.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.action-btn.primary:hover {
+  background: #ffed4e;
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+.action-btn svg { width: 20px; height: 20px; fill: currentColor; }
+
+/* Configs List */
+.configs-widget {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+
+.configs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.configs-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.configs-count {
+  background: var(--accent);
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.configs-copy-all {
+  padding: 8px 16px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.configs-copy-all:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.configs-copy-all svg { width: 14px; height: 14px; fill: currentColor; }
+
+.configs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.config-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.config-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+.config-protocol-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.config-protocol-icon.vless { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.config-protocol-icon.vmess { background: linear-gradient(135deg, #10b981, #059669); }
+.config-protocol-icon.trojan { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.config-protocol-icon.ss { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.config-protocol-icon.hysteria { background: linear-gradient(135deg, #a855f7, #9333ea); }
+.config-protocol-icon.wireguard { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+.config-protocol-icon.mtproto { background: linear-gradient(135deg, #eab308, #ca8a04); }
+
+.config-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.config-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  direction: ltr;
+  text-align: left;
+}
+
+.config-protocol-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.config-copy-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.config-card:hover .config-copy-btn {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+.config-copy-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Info Banners */
+.info-banner {
+  grid-column: 1 / -1;
+  background: var(--surface);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+}
+
+html[dir="ltr"] .info-banner {
+  border-left: 1px solid var(--border);
+  border-right-width: 4px;
+  border-radius: 12px;
+}
+
+/* Toast */
+.toast {
   position: fixed;
-  bottom: 12px;
-  right: 12px;
-  font: 11px/1 system-ui, sans-serif;
-  color: rgba(128,128,128,0.5);
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  opacity: 0;
   pointer-events: none;
-  z-index: 2147483647;
-  transition: opacity 0.4s ease;
-  user-select: none;
-  letter-spacing: 0.02em;
+  transition: all 0.3s;
+  z-index: 1000;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
-/* Hide chrome on touch devices */
-@media (hover: none) {
-  .design-ui-credit { display: none; }
-}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.ok { border-color: var(--success); }
 
-/* Print fixes */
-@media print {
-  * {
-    transition: none !important;
-    animation: none !important;
-    box-shadow: none !important;
-  }
-  body {
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-  .design-ui-credit { display: none !important; }
-}
+.hidden { display: none !important; }
 
+@media (max-width: 640px) {
+  body { padding: 12px; }
+  .dashboard { gap: 16px; }
+  .gauge-container { width: 160px; height: 160px; }
+  .gauge-percent { font-size: 36px; }
+  .countdown-grid { gap: 8px; }
+  .countdown-value { font-size: 24px; }
+  .configs-grid { grid-template-columns: 1fr; }
+  .action-btn { min-width: 120px; font-size: 13px; }
+}
 </style>
-<script>
-(function () {
-    // Design-ui pages are single compositions, so the whole body is editable.
-    function markEditable() {
-        document.body.classList.add('artifact-editable');
-    }
-
-    // Credit badge with idle-fade. Hover devices only.
-    function initChromeUI() {
-        if (!matchMedia('(hover: hover)').matches) return;
-
-        var credit = document.createElement('div');
-        credit.className = 'design-ui-credit';
-        credit.setAttribute('aria-hidden', 'true');
-        credit.innerHTML = '\u{1F49C} by ClickUp Brain';
-        document.body.appendChild(credit);
-
-        var timer = null;
-        var fade = function (out) { credit.style.opacity = out ? '0' : ''; };
-        fade(true);
-        var show = function () {
-            fade(false);
-            clearTimeout(timer);
-            timer = setTimeout(function () { fade(true); }, 3000);
-        };
-        document.addEventListener('mousemove', show);
-        show();
-    }
-
-    function init() {
-        markEditable();
-        initChromeUI();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
-    }
-})();
-
-</script>
-<!-- /skill:chrome -->
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ user.username }} - سابسکریپشن</title>
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
-  <style>
-    *{box-sizing:border-box}
-    :root{
-      --bg:oklch(12.5% .014 92);
-      --surface:oklch(16.5% .016 92);
-      --surface-raised:oklch(20% .018 92);
-      --surface-soft:oklch(18% .016 92);
-      --line:oklch(31% .015 92);
-      --line-strong:oklch(43% .014 92);
-      --text:oklch(94% .012 92);
-      --muted:oklch(70% .018 92);
-      --faint:oklch(56% .016 92);
-      --accent:#FFE100;
-      --accent-ink:oklch(16% .02 92);
-      --success:oklch(77% .14 150);
-      --warning:oklch(82% .14 83);
-      --danger:oklch(72% .15 28);
-      --info:oklch(76% .11 230);
-      --radius-lg:24px;
-      --radius-md:16px;
-      --radius-sm:11px;
-      --ease:cubic-bezier(.16,1,.3,1);
-    }
-    html[data-theme="light"]{
-      --bg:oklch(96% .012 92);
-      --surface:oklch(99% .008 92);
-      --surface-raised:oklch(94% .014 92);
-      --surface-soft:oklch(97% .01 92);
-      --line:oklch(84% .014 92);
-      --line-strong:oklch(71% .018 92);
-      --text:oklch(20% .018 92);
-      --muted:oklch(43% .02 92);
-      --faint:oklch(58% .018 92);
-      --accent-ink:oklch(20% .02 92);
-    }
-    body{
-      margin:0;
-      min-height:100vh;
-      color:var(--text);
-      background:
-        radial-gradient(700px 360px at 80% -10%,oklch(32% .045 92 / .22),transparent 65%),
-        radial-gradient(560px 320px at 8% 105%,oklch(27% .024 92 / .18),transparent 66%),
-        var(--bg);
-      font-family:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;
-      font-size:15px;
-      line-height:1.55;
-      -webkit-font-smoothing:antialiased;
-      transition:background .3s var(--ease),color .3s var(--ease);
-    }
-    button,a{font:inherit}
-    button{cursor:pointer}
-    button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-    .page{width:min(100% - 32px,1040px);margin:0 auto;padding:24px 0 36px}
-    .sitebar{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:48px}
-    .wordmark{display:flex;align-items:center;gap:12px;min-width:0}
-    .mark{width:36px;height:36px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);border-radius:10px;flex:none}
-    .mark svg{width:18px;height:18px;fill:currentColor}
-    .wordmark-copy{min-width:0}
-    .wordmark-title{font-size:.85rem;font-weight:800;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .wordmark-meta{font-size:.7rem;color:var(--faint);white-space:nowrap}
-    .tools{display:flex;gap:8px;flex:none}
-    .icon-button{width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:transparent;color:var(--muted);display:grid;place-items:center;transition:transform .2s var(--ease),border-color .2s,color .2s,background .2s}
-    .icon-button:hover{transform:translateY(-2px);border-color:var(--line-strong);color:var(--text);background:var(--surface)}
-    .icon-button svg{width:17px;height:17px;fill:currentColor}
-    .hidden{display:none!important}
-
-    .intro{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:64px;align-items:end;margin-bottom:40px}
-    .eyebrow{display:flex;align-items:center;gap:9px;color:var(--faint);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px}
-    .eyebrow::before{content:"";width:22px;height:2px;background:var(--accent);border-radius:10px}
-    .username{margin:0;max-width:18ch;font-size:clamp(2rem,5vw,3.4rem);line-height:1.08;letter-spacing:-.045em;font-weight:800;overflow-wrap:anywhere}
-    .subline{margin:16px 0 0;color:var(--muted);font-size:.92rem}
-    .status-block{justify-self:end;width:min(100%,300px);padding-bottom:3px}
-    .status-label{font-size:.7rem;color:var(--faint);margin-bottom:10px}
-    .status{display:flex;align-items:center;gap:10px;color:var(--success);font-size:1.25rem;font-weight:800}
-    .status-dot{width:10px;height:10px;border-radius:50%;background:currentColor;box-shadow:0 0 0 5px color-mix(in oklch,currentColor 14%,transparent);flex:none}
-    .status-note{margin:10px 0 0;color:var(--muted);font-size:.78rem;line-height:1.8}
-    .status.st-lim{color:var(--danger)}.status.st-exp{color:var(--warning)}.status.st-held{color:var(--info)}.status.st-dis{color:var(--faint)}
-
-    .dashboard{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(290px,.75fr);gap:24px;align-items:stretch}
-    .primary-panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:28px;min-width:0}
-    .panel-kicker{display:flex;align-items:center;justify-content:space-between;gap:16px;color:var(--faint);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-    .panel-kicker .live{display:inline-flex;align-items:center;gap:7px;color:var(--success);letter-spacing:0;text-transform:none;font-size:.75rem}
-    .live::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-    .remaining{display:flex;align-items:baseline;gap:10px;margin-top:26px;min-width:0}
-    .remaining-number{font-size:clamp(2.6rem,7vw,4.9rem);font-weight:800;line-height:.95;letter-spacing:-.07em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-    .remaining-unit{color:var(--muted);font-size:.95rem;font-weight:600}
-    .usage-track{height:10px;background:var(--surface-raised);border-radius:100px;overflow:hidden;margin-top:26px}
-    .usage-fill{height:100%;width:0;border-radius:inherit;background:var(--accent);transition:width .7s var(--ease)}
-    .usage-copy{display:flex;justify-content:space-between;gap:16px;margin-top:10px;color:var(--muted);font-size:.78rem}
-    .usage-copy strong{color:var(--text);font-variant-numeric:tabular-nums}
-    .data-line{display:flex;gap:20px;flex-wrap:wrap;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
-    .data-stat{display:flex;flex-direction:column;gap:4px;min-width:110px}
-    .data-stat span{font-size:.73rem;color:var(--faint)}
-    .data-stat strong{font-size:1rem;font-variant-numeric:tabular-nums}
-    .c-accent{color:var(--accent)}.c-info{color:var(--info)}.c-success{color:var(--success)}.c-warning{color:var(--warning)}
-
-    .facts{padding:4px 0 0}
-    .fact-list{margin:0;border-top:1px solid var(--line)}
-    .fact{display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;padding:17px 0;border-bottom:1px solid var(--line)}
-    .fact-label{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.8rem}
-    .fact-label svg{width:15px;height:15px;fill:var(--faint);flex:none}
-    .fact-value{font-size:.86rem;font-weight:700;text-align:left;direction:ltr;overflow-wrap:anywhere}
-    .status-inline{color:var(--success)}
-    .status-inline.st-lim{color:var(--danger)}.status-inline.st-exp{color:var(--warning)}.status-inline.st-held{color:var(--info)}.status-inline.st-dis{color:var(--faint)}
-    .fact-caption{margin:20px 0 0;color:var(--faint);font-size:.74rem;line-height:1.8}
-
-    .notice{margin:26px 0 0;padding:16px 18px;background:var(--surface-soft);border:1px solid var(--line);border-radius:var(--radius-md);color:var(--muted);font-size:.82rem;line-height:1.85}
-    .notice strong{display:block;color:var(--text);font-size:.78rem;margin-bottom:4px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
-    .action{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:10px 16px;border-radius:var(--radius-sm);border:1px solid var(--line);text-decoration:none;font-size:.82rem;font-weight:800;transition:transform .2s var(--ease),background .2s,border-color .2s,color .2s}
-    .action:hover{transform:translateY(-2px)}
-    .action svg{width:16px;height:16px;fill:currentColor}
-    .action.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-    .action.primary:hover{background:#f5d500}
-    .action.secondary{background:var(--surface);color:var(--text)}
-    .action.secondary:hover{border-color:var(--line-strong);background:var(--surface-raised)}
-
-    .configs{margin-top:54px}
-    .section-heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:16px}
-    .section-heading h2{margin:0;font-size:1.2rem;letter-spacing:-.025em}
-    .section-heading p{margin:0;color:var(--faint);font-size:.75rem}
-    .copy-all{display:inline-flex;align-items:center;gap:7px;background:transparent;color:var(--muted);border:0;padding:8px 0;font-size:.76rem;font-weight:800;white-space:nowrap}
-    .copy-all:hover{color:var(--accent)}
-    .copy-all svg{width:14px;height:14px;fill:currentColor}
-    .link-list{border-top:1px solid var(--line)}
-    .link-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:17px 0;border-bottom:1px solid var(--line);cursor:pointer;transition:padding .2s var(--ease)}
-    .link-row:hover{padding-inline:10px;background:var(--surface-soft)}
-    .link-main{display:flex;align-items:center;gap:13px;min-width:0}
-    .link-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;color:var(--accent);flex:none}
-    .link-mark svg{width:16px;height:16px;fill:currentColor}
-    .link-copy{min-width:0}
-    .link-name{font-size:.86rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
-    .link-type{margin-top:3px;color:var(--faint);font-size:.7rem;letter-spacing:.08em;direction:ltr;text-align:left}
-    .copy-one{display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:.73rem;font-weight:800;transition:background .2s,color .2s,border-color .2s}
-    .copy-one:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-    .copy-one svg{width:14px;height:14px;fill:currentColor}
-    .empty{padding:20px 0;color:var(--faint);font-size:.83rem}
-
-    .footer{margin-top:48px;color:var(--faint);font-size:.7rem;text-align:center}
-    .footer a{color:var(--muted);font-weight:800;text-decoration:none}
-    .footer a:hover{color:var(--accent)}
-    .toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:var(--surface-raised);border:1px solid var(--line-strong);color:var(--text);padding:10px 18px;border-radius:100px;font-size:.78rem;font-weight:800;transition:opacity .25s var(--ease),transform .25s var(--ease);z-index:5}
-    .toast.show{opacity:1;transform:translate(-50%,0)}
-    .toast.ok{border-color:color-mix(in oklch,var(--success) 55%,var(--line));color:var(--success)}
-
-    @media (max-width:760px){
-      .page{width:min(100% - 28px,560px);padding-top:18px}
-      .sitebar{margin-bottom:38px}
-      .intro,.dashboard{grid-template-columns:1fr;gap:26px}
-      .status-block{justify-self:stretch;width:auto}
-      .status-note{max-width:38ch}
-      .primary-panel{padding:22px}
-      .facts{padding-top:0}
-      .configs{margin-top:42px}
-    }
-    @media (max-width:430px){
-      body{font-size:14px}
-      .page{width:min(100% - 24px,430px)}
-      .sitebar{margin-bottom:32px}
-      .wordmark-meta{display:none}
-      .username{font-size:2.25rem}
-      .remaining{margin-top:22px}
-      .remaining-number{font-size:3.1rem}
-      .data-line{gap:16px}
-      .data-stat{min-width:calc(50% - 16px)}
-      .action{flex:1 1 100%}
-      .section-heading{align-items:start;flex-direction:column;gap:8px}
-      .section-heading .copy-all{padding-top:0}
-      .link-row{gap:10px}
-      .copy-one span{display:none}
-      .copy-one{width:40px;justify-content:center;padding:8px}
-    }
-  </style>
 </head>
 <body>
-  <main class="page">
-    <header class="sitebar">
-      <div class="wordmark">
-        <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
-        <div class="wordmark-copy">
-          <div class="wordmark-title" data-i18n="brand">V2Ray Subscription</div>
-          <div class="wordmark-meta" data-i18n="slogan">داشبورد اختصاصی سرویس</div>
-        </div>
-      </div>
-      <div class="tools">
-        <button class="icon-button" id="langBtn" type="button" title="English" aria-label="Language">
-          <svg viewBox="0 0 24 24"><path d="M12.87 15.07 10.33 12.56l.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56L2.58 17.58 4 19l5-5 3.11 3.11.76-2.04ZM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12Zm-2.62 7 1.62-4.33L19.12 17h-3.24Z"/></svg>
-        </button>
-        <button class="icon-button" id="themeBtn" type="button" title="تغییر تم" aria-label="Theme">
-          <svg viewBox="0 0 24 24" id="iconSun" class="hidden"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5Zm0 3a2 2 0 1 1-2 2 2 2 0 0 1 2-2Zm9-2h-3a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2ZM4 11H1a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2Zm4.5-5.5a1 1 0 0 0-1.41 0l-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41Zm11 5.41-1.41-1.41-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41ZM20.41 21a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29L5.29 7.3a1 1 0 1 1 1.41-1.42l13.7 13.7a1 1 0 0 1 .01 1.42Z"/></svg>
-          <svg viewBox="0 0 24 24" id="iconMoon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1Z"/></svg>
-        </button>
-      </div>
-    </header>
+<div class="dashboard">
 
-    <section class="intro" aria-labelledby="accountTitle">
-      <div>
-        <div class="eyebrow" data-i18n="sub">Subscription</div>
-        <h1 class="username" id="accountTitle">{{ user.username }}</h1>
-        <p class="subline" data-i18n="intro">وضعیت سرویس و دسترسی شما در یک نگاه</p>
+  <!-- Top Bar -->
+  <div class="topbar full-width">
+    <div class="brand">
+      <div class="brand-icon">N</div>
+      <div class="brand-text">
+        <h1>{{ user.username }}</h1>
+        <p>NUC-SUB Dashboard</p>
       </div>
-      <div class="status-block">
-        <div class="status-label" data-i18n="currentStatus">وضعیت فعلی</div>
-        <div class="status {% if user.status.value == 'active' %}st-on{% elif user.status.value == 'limited' %}st-lim{% elif user.status.value == 'expired' %}st-exp{% elif user.status.value == 'on_hold' %}st-held{% else %}st-dis{% endif %}">
-          <span class="status-dot"></span>
-          <span data-i18n-status="{{ user.status.value }}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</span>
-        </div>
-        <p class="status-note" data-i18n="statusHint">دسترسی شما برای استفاده از کانفیگ‌ها آماده است.</p>
-      </div>
-    </section>
-
-    <section class="dashboard" aria-label="Subscription overview">
-      <div class="primary-panel">
-        <div class="panel-kicker">
-          <span data-i18n="remainingData">داده باقی‌مانده</span>
-          <span class="live"><span data-i18n="accountLive">حساب فعال</span></span>
-        </div>
-        <div class="remaining">
-          <strong class="remaining-number" id="remainV">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</strong>
-          <span class="remaining-unit" data-i18n="available">قابل استفاده</span>
-        </div>
-        <div class="usage-track" id="usageTrack" aria-hidden="true"><div class="usage-fill" id="usageFill"></div></div>
-        <div class="usage-copy"><span><span data-i18n="usedLabel">مصرف‌شده</span> <strong id="usedInline">{{ user.used_traffic | bytesformat }}</strong></span><span id="usagePct">0٪</span></div>
-        <div class="data-line">
-          <div class="data-stat"><span data-i18n="total">حجم کل</span><strong class="c-accent" id="totalV">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</strong></div>
-          <div class="data-stat"><span data-i18n="upload">آپلود</span><strong class="c-info" id="upV">—</strong></div>
-          <div class="data-stat"><span data-i18n="download">دانلود</span><strong class="c-success" id="downV">—</strong></div>
-        </div>
-      </div>
-
-      <div class="facts">
-        <div class="fact-list">
-          <div class="fact">
-            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 2a8 8 0 1 1-8 8 8 8 0 0 1 8-8Zm-.5 4h1.5v5.5l4 2.4-.8 1.3-4.7-2.8V8Z"/></svg><span data-i18n="expire">تاریخ انقضا</span></span>
-            <span class="fact-value" id="expireV">{% if user.expire %}{{ user.expire | datetime }}{% else %}<span data-i18n="unlim">∞ نامحدود</span>{% endif %}</span>
-          </div>
-          <div class="fact">
-            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8Zm-1-5h2v2h-2Zm0-8h2v6h-2Z"/></svg><span data-i18n="daysLeft">روز مانده</span></span>
-            <span class="fact-value c-warning" id="daysLeft">—</span>
-          </div>
-          {% if user.hwid_limit is not none %}
-          <div class="fact">
-            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="m12 1 9 4v6c0 5.55-3.84 10.74-9 12-5.16-1.26-9-6.45-9-12V5l9-4Zm0 2.18L5 6.29v4.17c0 3.77 2.62 7.03 7 8.08V3.18Z"/></svg><span data-i18n="device">محدودیت دستگاه</span></span>
-            <span class="fact-value">{% if user.hwid_limit == 0 %}∞{% else %}{{ user.hwid_limit }}{% endif %}</span>
-          </div>
-          {% endif %}
-          <div class="fact">
-            <span class="fact-label"><svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-3.3 0-10 1.67-10 5v1h20v-1c0-3.33-6.7-5-10-5Z"/></svg><span data-i18n="username">نام کاربری</span></span>
-            <span class="fact-value">{{ user.username }}</span>
-          </div>
-        </div>
-        <p class="fact-caption" data-i18n="factsHint">جزئیات حساب شما بدون شلوغی، همیشه در دسترس است.</p>
-      </div>
-    </section>
-
-    {% if announce %}<div class="notice"><strong data-i18n="announcement">اعلان</strong>{{ announce | replace('\\n', '<br>') }}</div>{% endif %}
-    {% if user.note %}<div class="notice"><strong data-i18n="note">یادداشت</strong>{{ user.note }}</div>{% endif %}
-
-    <div class="actions">
-      <a id="tgBtn" class="action primary hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="m9.04 15.43-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21Z"/></svg><span data-i18n="support">کانال و پشتیبانی</span></a>
-      <button class="action secondary" id="quickCopy" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copyAll">کپی همه کانفیگ‌ها</span></button>
-      <button class="action secondary hidden" id="qrBtn" type="button"><span data-i18n="qr">کد QR</span></button>
     </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn" title="Language">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="themeBtn" title="Theme">
+        <svg viewBox="0 0 24 24" id="iconSun" class="hidden"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 3a2 2 0 1 1-2 2 2 2 0 0 1 2-2zm9-2h-3a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zM4 11H1a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zm4.5-5.5a1 1 0 0 0-1.41 0l-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zm11 5.41l-1.41-1.41-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zM20.41 21a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29L5.29 7.3a1 1 0 1 1 1.41-1.42l13.7 13.7a1 1 0 0 1 .01 1.42z"/></svg>
+        <svg viewBox="0 0 24 24" id="iconMoon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      </button>
+    </div>
+  </div>
 
-    <section class="configs" aria-labelledby="configsTitle">
-      <div class="section-heading">
-        <div><h2 id="configsTitle" data-i18n="configs">کانفیگ‌ها</h2><p><span id="linkCount">0</span> <span data-i18n="readyConfigs">اتصال آماده</span></p></div>
-        <button class="copy-all" id="copyAllBtn" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copyAllShort">کپی همه</span></button>
+  <!-- Status Widget -->
+  <div class="status-widget">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm3.5-8.5a3.5 3.5 0 1 1-5-3.15V7h2v1.35a3.5 3.5 0 0 1 3 3.15z"/></svg>
       </div>
-      <div class="link-list" id="linksList">
-        {% if links %}
-        {% for link in links %}
-        <div class="link-row" data-link="{{ link }}">
-          <div class="link-main"><div class="link-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2ZM8 13.5H7v-3h1v3Zm5 0h-1v-3h1v3Zm5 0h-1v-3h1v3Z"/></svg></div><div class="link-copy"><div class="link-name"></div><div class="link-type"></div></div></div>
-          <button class="copy-one" type="button"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"/></svg><span data-i18n="copy">کپی</span></button>
+      <div class="widget-title">وضعیت سرویس</div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-pulse {% if user.status.value == 'active' %}{% elif user.status.value == 'limited' %}warning{% elif user.status.value == 'expired' or user.status.value == 'disabled' %}inactive{% elif user.status.value == 'on_hold' %}warning{% endif %}"></div>
+      <div class="status-info">
+        <div class="status-text" data-i18n-status="{{ user.status.value }}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</div>
+        <div class="status-desc">اشتراک اختصاصی شما</div>
+      </div>
+      <span class="status-badge-inline {% if user.status.value == 'active' %}active{% elif user.status.value == 'limited' %}limited{% elif user.status.value == 'expired' %}expired{% elif user.status.value == 'on_hold' %}on_hold{% elif user.status.value == 'disabled' %}disabled{% endif %}">{% if user.status.value == 'active' %}فعال{% elif user.status.value == 'limited' %}محدود{% elif user.status.value == 'expired' %}منقضی{% elif user.status.value == 'on_hold' %}در انتظار{% elif user.status.value == 'disabled' %}غیرفعال{% else %}{{ user.status.value }}{% endif %}</span>
+    </div>
+  </div>
+
+  <!-- Circular Gauge Widget -->
+  <div class="gauge-widget">
+    <div class="gauge-container">
+      <svg class="gauge-svg" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFE100;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#ffed4e;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <circle class="gauge-bg" cx="100" cy="100" r="90"></circle>
+        <circle class="gauge-fill" id="gaugeFill" cx="100" cy="100" r="90"></circle>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-percent"><span id="gaugePercent">0</span><span>٪</span></div>
+        <div class="gauge-label">مصرف شده</div>
+      </div>
+    </div>
+    <div class="gauge-stats">
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="usedDisplay">{{ user.used_traffic | bytesformat }}</div>
+        <div class="gauge-stat-label">مصرف</div>
+      </div>
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="totalDisplay">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
+        <div class="gauge-stat-label">کل</div>
+      </div>
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="remainDisplay">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</div>
+        <div class="gauge-stat-label">باقی</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown Widget -->
+  <div class="countdown-widget">
+    <div class="countdown-header">
+      <div class="countdown-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 9V7h2v6h-2zm0 5h2v2h-2z"/></svg>
+      </div>
+      <div class="countdown-title">زمان باقی‌مانده</div>
+    </div>
+    <div class="countdown-grid">
+      <div class="countdown-cell">
+        <div class="countdown-value" id="countDays">--</div>
+        <div class="countdown-label">روز</div>
+      </div>
+      <div class="countdown-cell">
+        <div class="countdown-value" id="countHours">--</div>
+        <div class="countdown-label">ساعت</div>
+      </div>
+      <div class="countdown-cell">
+        <div class="countdown-value" id="countMinutes">--</div>
+        <div class="countdown-label">دقیقه</div>
+      </div>
+      <div class="countdown-cell">
+        <div class="countdown-value" id="countSeconds">--</div>
+        <div class="countdown-label">ثانیه</div>
+      </div>
+    </div>
+    <div class="countdown-expire">
+      <span class="countdown-expire-label">تاریخ انقضا:</span>
+      <span class="countdown-expire-date" id="expireDate">{% if user.expire %}{{ user.expire | datetime }}{% else %}∞ نامحدود{% endif %}</span>
+    </div>
+  </div>
+
+  <!-- Protocol Distribution Widget -->
+  <div class="protocol-widget full-width">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM8 13.5h-1v-3h1v3zm5 0h-1v-3h1v3zm5 0h-1v-3h1v3z"/></svg>
+      </div>
+      <div class="widget-title">توزیع پروتکل‌ها</div>
+    </div>
+    <div class="protocol-bars" id="protocolBars"></div>
+  </div>
+
+  {% if announce %}
+  <div class="info-banner full-width">{{ announce | replace('\n', '<br>') }}</div>
+  {% endif %}
+
+  {% if user.note %}
+  <div class="info-banner full-width"><strong data-i18n="note">یادداشت:</strong> {{ user.note }}</div>
+  {% endif %}
+
+  {% if user.hwid_limit is not none %}
+  <div class="status-widget full-width">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18 7 3.11v4.17c0 3.77-2.62 7.03-7 8.08V3.18z"/></svg>
+      </div>
+      <div class="widget-title">محدودیت دستگاه</div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-pulse"></div>
+      <div class="status-info">
+        <div class="status-text">{% if user.hwid_limit == 0 %}نامحدود{% else %}{{ user.hwid_limit }} دستگاه{% endif %}</div>
+        <div class="status-desc">حداکثر تعداد دستگاه‌های مجاز</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Actions Widget -->
+  <div class="actions-widget full-width">
+    <button class="action-btn primary" id="quickCopy" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg>
+      <span data-i18n="copyAll">کپی همه کانفیگ‌ها</span>
+    </button>
+    <a id="tgBtn" class="action-btn hidden" href="@@TG_CHANNEL@@" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M9.04 15.43l-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21L9.04 15.43z"/></svg>
+      <span data-i18n="support">کانال تلگرام</span>
+    </a>
+    <button class="action-btn" id="qrBtn" style="display:none">
+      <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zm8-2v8h8V3h-8zm6 6h-4V5h4v4zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm13-2h-2v3h2v2h3v2h-3v2h2v-3h3v-2h-2v-2h2" fill="currentColor" stroke="currentColor" stroke-width=".3"/><path d="M13 21h2v2h-2zM17 13h2v2h-2zM6 13h2v2l-2-2z" fill="currentColor" stroke="currentColor" stroke-width=".3"/></svg>
+      <span data-i18n="qr">کد QR</span>
+    </button>
+  </div>
+
+  <!-- Configs Widget -->
+  <div class="configs-widget full-width">
+    <div class="configs-header">
+      <div class="configs-title">
+        <div class="widget-icon">
+          <svg viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 0-10z"/></svg>
         </div>
-        {% endfor %}
-        {% else %}<div class="empty" data-i18n="noConfigs">کانفیگی ثبت نشده است</div>{% endif %}
+        <span>کانفیگ‌ها</span>
+        <span class="configs-count" id="linkCount">0</span>
       </div>
-    </section>
+      <button class="configs-copy-all" id="copyAllBtn">
+        <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg>
+        <span data-i18n="copyAllShort">کپی همه</span>
+      </button>
+    </div>
+    <div class="configs-grid" id="linksList">
+    {% if links %}
+    {% for link in links %}
+    <div class="config-card" data-link="{{ link }}">
+      <div class="config-protocol-icon"></div>
+      <div class="config-details">
+        <div class="config-name"></div>
+        <div class="config-protocol-text"></div>
+      </div>
+      <button class="config-copy-btn">
+        <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg>
+      </button>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="config-card" style="cursor: default; justify-content: center; padding: 32px;">
+      <div class="config-details" style="text-align: center;">
+        <div class="config-name" style="color: var(--text-tertiary)" data-i18n="noConfigs">کانفیگی ثبت نشده است</div>
+      </div>
+    </div>
+    {% endif %}
+    </div>
+  </div>
 
-    <footer class="footer"><span data-i18n="madeWith">ساخته شده با</span> NUC-SUB · <a href="https://github.com/nuctereadev" target="_blank" rel="noopener">NUCTEREA</a></footer>
-  </main>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script>
-    var D={
-      expire:{% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},
-      total:{% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},
-      used:{% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %},
-      up:null,down:null
-    };
-    var I18N={
-      brand:{fa:'V2Ray Subscription',en:'V2Ray Subscription'},slogan:{fa:'داشبورد اختصاصی سرویس',en:'Your VPN Dashboard'},sub:{fa:'سابسکریپشن',en:'Subscription'},intro:{fa:'وضعیت سرویس و دسترسی شما در یک نگاه',en:'Your service status and access at a glance'},currentStatus:{fa:'وضعیت فعلی',en:'Current status'},statusHint:{fa:'دسترسی شما برای استفاده از کانفیگ‌ها آماده است.',en:'Your access is ready for configuration use.'},remainingData:{fa:'داده باقی‌مانده',en:'Remaining data'},accountLive:{fa:'حساب فعال',en:'Account live'},available:{fa:'قابل استفاده',en:'available'},usedLabel:{fa:'مصرف‌شده',en:'used'},total:{fa:'حجم کل',en:'Total data'},upload:{fa:'آپلود',en:'Upload'},download:{fa:'دانلود',en:'Download'},expire:{fa:'تاریخ انقضا',en:'Expiry'},unlim:{fa:'∞ نامحدود',en:'∞ Unlimited'},daysLeft:{fa:'روز مانده',en:'Days left'},device:{fa:'محدودیت دستگاه',en:'Device limit'},username:{fa:'نام کاربری',en:'Username'},factsHint:{fa:'جزئیات حساب شما بدون شلوغی، همیشه در دسترس است.',en:'Your account details, kept clear and close.'},announcement:{fa:'اعلان',en:'Announcement'},note:{fa:'یادداشت',en:'Note'},support:{fa:'کانال و پشتیبانی',en:'Channel & Support'},qr:{fa:'کد QR',en:'QR code'},copyAll:{fa:'کپی همه کانفیگ‌ها',en:'Copy all configs'},copyAllShort:{fa:'کپی همه',en:'Copy all'},configs:{fa:'کانفیگ‌ها',en:'Configurations'},readyConfigs:{fa:'اتصال آماده',en:'ready connections'},copy:{fa:'کپی',en:'Copy'},copied:{fa:'کپی شد',en:'Copied'},noConfigs:{fa:'کانفیگی ثبت نشده است',en:'No configs yet'},madeWith:{fa:'ساخته شده با',en:'Made with'},configN:{fa:'کانفیگ',en:'Config'},active:{fa:'فعال',en:'Active'},limited:{fa:'محدود',en:'Limited'},expired:{fa:'منقضی',en:'Expired'},on_hold:{fa:'در انتظار',en:'On hold'},disabled:{fa:'غیرفعال',en:'Disabled'}
-    };
-    var lang='fa';
-    function el(id){return document.getElementById(id)}
-    function toast(message,ok){var t=el('toast');if(!t)return;t.textContent=message;t.className='toast show'+(ok?' ok':'');clearTimeout(window.__toast);window.__toast=setTimeout(function(){t.classList.remove('show')},2200)}
-    function rawLink(value){return(value||'').replace(/&amp;/g,'&')}
-    function protocolOf(link){var match=link.match(/^([a-z0-9]+):\/\//i);return match?match[1].toLowerCase():'unknown'}
-    function nameOf(link,index){var parts=link.split('#');if(parts.length>1&&parts[1]){try{return decodeURIComponent(parts[1])}catch(e){return parts[1]}}return(I18N.configN[lang]||'Config')+' '+(index+1)}
-    function fmtBytes(value){if(value==null||isNaN(value)||value<=0)return'0 B';var units=['B','KB','MB','GB','TB'],i=0,n=Number(value);while(n>=1024&&i<units.length-1){n/=1024;i++}return n.toFixed(n>=100?0:1)+' '+units[i]}
-    function copyText(text){var done=function(){toast(I18N.copied[lang],true)};if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){fallbackCopy(text,done)})}else fallbackCopy(text,done)}
-    function fallbackCopy(text,done){var area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');done()}catch(e){}document.body.removeChild(area)}
-    function applyI18n(){document.querySelectorAll('[data-i18n]').forEach(function(node){var key=node.getAttribute('data-i18n');if(I18N[key])node.textContent=I18N[key][lang]});document.querySelectorAll('[data-i18n-status]').forEach(function(node){var key=node.getAttribute('data-i18n-status');if(I18N[key])node.textContent=I18N[key][lang]})}
-    function setTheme(theme){document.documentElement.setAttribute('data-theme',theme);el('iconSun').classList.toggle('hidden',theme==='dark');el('iconMoon').classList.toggle('hidden',theme==='light');try{localStorage.setItem('nuc-theme',theme)}catch(e){}}
-    function setLang(next){lang=next;document.documentElement.lang=next;document.documentElement.dir=next==='fa'?'rtl':'ltr';applyI18n();try{localStorage.setItem('nuc-lang',next)}catch(e){}}
-    (function init(){
-      var savedTheme='dark',savedLang='fa';try{savedTheme=localStorage.getItem('nuc-theme')||'dark';savedLang=localStorage.getItem('nuc-lang')||'fa'}catch(e){}
-      setTheme(savedTheme);setLang(savedLang);
-      el('themeBtn').addEventListener('click',function(){setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')});
-      el('langBtn').addEventListener('click',function(){setLang(lang==='fa'?'en':'fa')});
-      var telegram='@@TG_CHANNEL@@';if(telegram&&/t\.me\//.test(telegram))el('tgBtn').classList.remove('hidden');
-      if(D.expire){var expiry=new Date(String(D.expire).replace(' ','T'));var days=Math.ceil((expiry.getTime()-Date.now())/86400000);if(!isNaN(days))el('daysLeft').textContent=Math.max(days,0)}
-      var cards=Array.from(document.querySelectorAll('.link-row[data-link]'));
-      var total=Number(D.total)||0,used=Number(D.used)||0,percent=total>0?Math.min(100,used/total*100):0;
-      el('usageFill').style.width=percent.toFixed(2)+'%';el('usagePct').textContent=percent.toFixed(0)+'٪';
-      if(D.up&&Number(D.up)>0)el('upV').textContent=fmtBytes(D.up);if(D.down&&Number(D.down)>0)el('downV').textContent=fmtBytes(D.down);
-      el('linkCount').textContent=cards.length;
-      cards.forEach(function(card,index){var link=rawLink(card.getAttribute('data-link')),proto=protocolOf(link);card.querySelector('.link-name').textContent=nameOf(link,index);card.querySelector('.link-type').textContent=proto.toUpperCase();var button=card.querySelector('.copy-one');button.addEventListener('click',function(event){event.stopPropagation();copyText(link)});card.addEventListener('click',function(event){if(!button.contains(event.target))copyText(link)})});
-      function allLinks(){return cards.map(function(card){return rawLink(card.getAttribute('data-link'))}).join('\n')}
-      el('copyAllBtn').addEventListener('click',function(){if(cards.length)copyText(allLinks())});el('quickCopy').addEventListener('click',function(){if(cards.length)copyText(allLinks())});
-      if(!cards.length){el('copyAllBtn').classList.add('hidden');el('quickCopy').classList.add('hidden')}
-    })();
-  </script>
+  <div class="footer" style="grid-column: 1 / -1; text-align: center; padding: 20px 0; font-size: 12px; color: var(--text-tertiary);">
+    <span data-i18n="madeWith">طراحی شده توسط</span> <a href="https://github.com/nuctereadev" target="_blank" rel="noopener" style="color: var(--text-secondary); text-decoration: none; font-weight: 700;">NUCTEREA</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var D = {
+  expire: {% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},
+  total: {% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},
+  used: {% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %},
+  up: null, down: null
+};
+
+function findEl(id){ return document.getElementById(id); }
+function showToast(msg, ok){ 
+  var t = findEl('toast'); 
+  if(!t) return; 
+  t.textContent = msg; 
+  t.className = ok ? 'toast show ok' : 'toast show'; 
+  setTimeout(function(){ t.classList.remove('show'); }, 2500); 
+}
+function rawLink(s){ return (s||'').replace(/&amp;/g,'&'); }
+function protocolOf(link){ var m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function nameOf(link,i){ var frag=link.split('#'); if(frag.length>1&&frag[1]){ try{return decodeURIComponent(frag[1]);}catch(e){return frag[1];} } return 'Config '+(i+1); }
+function fmtBytes(n){ 
+  if(n==null||isNaN(n)) return '0 B'; 
+  if(n<=0) return '0 B'; 
+  var u=['B','KB','MB','GB','TB']; 
+  var i=0; 
+  while(n>=1024&&i<u.length-1){n/=1024;i++;} 
+  return n.toFixed(n>=100?0:1)+' '+u[i]; 
+}
+function copy(text){
+  var done = function(){ showToast('کپی شد!', true); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ 
+    navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text, done); }); 
+  } else {
+    fallbackCopy(text, done); 
+  }
+}
+function fallbackCopy(text, done){ 
+  var ta = document.createElement('textarea'); 
+  ta.value = text; 
+  ta.style.position = 'fixed'; 
+  ta.style.opacity = '0'; 
+  document.body.appendChild(ta); 
+  ta.select(); 
+  try{ document.execCommand('copy'); done(); }catch(e){} 
+  document.body.removeChild(ta); 
+}
+
+var I18N = {
+  note:{fa:'یادداشت:',en:'Note:'},
+  copyAll:{fa:'کپی همه کانفیگ‌ها',en:'Copy All Configs'},
+  copyAllShort:{fa:'کپی همه',en:'Copy All'},
+  support:{fa:'کانال تلگرام',en:'Telegram Channel'},
+  qr:{fa:'کد QR',en:'QR Code'},
+  noConfigs:{fa:'کانفیگی ثبت نشده است',en:'No configs yet'},
+  madeWith:{fa:'طراحی شده توسط',en:'Designed by'},
+  active:{fa:'فعال',en:'Active'}, 
+  limited:{fa:'محدود',en:'Limited'},
+  expired:{fa:'منقضی',en:'Expired'}, 
+  on_hold:{fa:'در انتظار',en:'On hold'},
+  disabled:{fa:'غیرفعال',en:'Disabled'}
+};
+
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  findEl('iconSun').classList.toggle('hidden', t==='dark');
+  findEl('iconMoon').classList.toggle('hidden', t==='light');
+  try{ localStorage.setItem('nuc-theme', t); }catch(e){}
+}
+
+function setLang(l){
+  document.documentElement.setAttribute('lang', l==='fa'?'fa':'en');
+  document.documentElement.setAttribute('dir', l==='fa'?'rtl':'ltr');
+  try{ localStorage.setItem('nuc-lang', l); }catch(e){}
+}
+
+(function init(){
+  var savedT = 'dark', savedL = 'fa';
+  try{ 
+    savedT = localStorage.getItem('nuc-theme') || 'dark'; 
+    savedL = localStorage.getItem('nuc-lang') || 'fa'; 
+  }catch(e){}
+  setTheme(savedT); 
+  setLang(savedL);
+  
+  findEl('themeBtn').addEventListener('click', function(){ 
+    setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'); 
+  });
+  findEl('langBtn').addEventListener('click', function(){ 
+    setLang(document.documentElement.getAttribute('lang')==='fa'?'en':'fa'); 
+    location.reload();
+  });
+
+  var tg = '@@TG_CHANNEL@@';
+  var tgBtn = findEl('tgBtn');
+  if(tg && tg.match(/t\.me\//) && tgBtn) {
+    tgBtn.classList.remove('hidden');
+  } else if(tgBtn) {
+    tgBtn.classList.add('hidden');
+  }
+
+  // Circular Gauge
+  var total = D.total;
+  var used = D.used;
+  var per = 0;
+  
+  if(total > 0){
+    per = Math.min(100, (used / total) * 100);
+    var gaugeFill = findEl('gaugeFill');
+    var gaugePercent = findEl('gaugePercent');
+    if(gaugeFill && gaugePercent) {
+      var circumference = 2 * Math.PI * 90;
+      var offset = circumference - (per / 100) * circumference;
+      setTimeout(function(){ 
+        gaugeFill.style.strokeDashoffset = offset; 
+        animateCounter(gaugePercent, 0, per, 1500);
+      }, 200);
+    }
+  }
+
+  function animateCounter(el, start, end, duration) {
+    var range = end - start;
+    var current = start;
+    var increment = end > start ? 1 : -1;
+    var stepTime = Math.abs(Math.floor(duration / range));
+    var timer = setInterval(function() {
+      current += increment;
+      el.textContent = Math.round(current);
+      if (current == end) {
+        clearInterval(timer);
+      }
+    }, stepTime);
+  }
+
+  // Countdown Timer
+  if(D.expire){
+    var expireDate = new Date(String(D.expire).replace(' ','T'));
+    function updateCountdown() {
+      var now = new Date().getTime();
+      var distance = expireDate.getTime() - now;
+      
+      if(distance > 0) {
+        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        findEl('countDays').textContent = days.toString().padStart(2, '0');
+        findEl('countHours').textContent = hours.toString().padStart(2, '0');
+        findEl('countMinutes').textContent = minutes.toString().padStart(2, '0');
+        findEl('countSeconds').textContent = seconds.toString().padStart(2, '0');
+      } else {
+        findEl('countDays').textContent = '00';
+        findEl('countHours').textContent = '00';
+        findEl('countMinutes').textContent = '00';
+        findEl('countSeconds').textContent = '00';
+      }
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  }
+
+  // Protocol Distribution
+  var cards = document.querySelectorAll('.config-card');
+  var linkCountEl = findEl('linkCount');
+  if(linkCountEl) linkCountEl.textContent = cards.length;
+  
+  var protocolCounts = {};
+  cards.forEach(function(card, index){
+    var link = rawLink(card.getAttribute('data-link'));
+    var proto = protocolOf(link);
+    protocolCounts[proto] = (protocolCounts[proto] || 0) + 1;
+    
+    var icon = card.querySelector('.config-protocol-icon');
+    var nameEl = card.querySelector('.config-name');
+    var protoEl = card.querySelector('.config-protocol-text');
+    var btn = card.querySelector('.config-copy-btn');
+    
+    if(icon) {
+      icon.className = 'config-protocol-icon ' + proto;
+      icon.textContent = proto.substring(0, 2).toUpperCase();
+    }
+    
+    if(nameEl) nameEl.textContent = nameOf(link, index);
+    if(protoEl) protoEl.textContent = proto.toUpperCase();
+    
+    if(btn){
+      btn.addEventListener('click', function(e){ 
+        e.stopPropagation(); 
+        copy(link); 
+      });
+    }
+    card.addEventListener('click', function(e){ 
+      if(btn && (e.target === btn || btn.contains(e.target))) return; 
+      copy(link); 
+    });
+  });
+
+  // Render Protocol Bars
+  var protocolBars = findEl('protocolBars');
+  if(protocolBars && Object.keys(protocolCounts).length > 0) {
+    var maxCount = Math.max(...Object.values(protocolCounts));
+    var html = '';
+    for(var proto in protocolCounts) {
+      var count = protocolCounts[proto];
+      var percent = (count / maxCount) * 100;
+      html += '<div class="protocol-bar">';
+      html += '<div class="protocol-name">' + proto.toUpperCase() + '</div>';
+      html += '<div class="protocol-track"><div class="protocol-fill ' + proto + '" style="width: ' + percent + '%">' + count + '</div></div>';
+      html += '<div class="protocol-count">' + count + '</div>';
+      html += '</div>';
+    }
+    protocolBars.innerHTML = html;
+  }
+  
+  var qc = findEl('quickCopy');
+  var ca = findEl('copyAllBtn');
+  
+  if(qc){
+    if(cards.length > 0){
+      qc.style.display = 'flex';
+      qc.addEventListener('click', function(){ 
+        var allLinks = Array.from(cards).map(function(c){ return rawLink(c.getAttribute('data-link')); }).join('\n');
+        copy(allLinks); 
+      });
+    } else {
+      qc.style.display = 'none';
+    }
+  }
+  
+  if(ca){
+    if(cards.length > 1){
+      ca.addEventListener('click', function(){ 
+        var allLinks = Array.from(cards).map(function(c){ return rawLink(c.getAttribute('data-link')); }).join('\n');
+        copy(allLinks); 
+      });
+    } else {
+      ca.classList.add('hidden');
+    }
+  }
+})();
+</script>
 </body>
 </html>
