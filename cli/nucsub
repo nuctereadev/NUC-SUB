@@ -430,10 +430,10 @@ cmd_pg_diagnose() {  # print the whole Pasarguard template resolution chain so a
     [[ -n "$cur_raw" ]] && echo -e "  .env value   : SUBSCRIPTION_PAGE_TEMPLATE=${cur_raw}"
     echo -e "  .env custom  : CUSTOM_TEMPLATES_DIRECTORY=$(pg_env_value CUSTOM_TEMPLATES_DIRECTORY)"
     sep
-    if [[ -f "$(pg_loader_base)subscription/index.html" ]]; then
-        echo -e "  ${GREEN}✓${NC} custom base dir exists: $(pg_loader_base)subscription/"
+    if [[ -d "$(pg_loader_base)subscription" ]]; then
+        echo -e "  ${GREEN}✓${NC} custom base dir exists: ${pg_loader_base%/}/subscription/"
     else
-        echo -e "  ${DIM}→ custom base dir not on host yet: $(pg_loader_base)subscription/ (fine until a theme is applied)${NC}"
+        echo -e "  ${DIM}→ custom base dir not on host yet: ${pg_loader_base%/}/subscription/ (fine until a theme is applied)${NC}"
     fi
     if [[ -n "$cur" ]]; then
         c="$(pg_app_container)"
