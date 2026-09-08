@@ -23,7 +23,7 @@ WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
 PANEL_CONF="$INSTALL_DIR/panel.conf"
-NUC_SUB_VERSION="2.0.1"
+NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(minimal gradient matrix glass neon sunset arctic cyberpunk)
@@ -61,6 +61,15 @@ if [[ -z "$PG_ENV_FILE" ]]; then
     done
 fi
 unset _pgd
+
+# Directory prefix under which the Pasarguard loader resolves subscription
+# templates. The panel's jinja loader searches:
+#   [CUSTOM_TEMPLATES_DIRECTORY, "app/templates"]
+# so a custom theme must live at  <base>/subscription/<name>.html  (and the
+# built-in page at app/templates/subscription/index.html). PG_TEMPLATES_DIR is
+# "<base>/subscription", hence the parent of it is the loader base.
+PG_TEMPLATE_BASE="$(dirname "$PG_TEMPLATES_DIR")/"
+[[ "$PG_TEMPLATE_BASE" == "//" || "$PG_TEMPLATE_BASE" == "/subscription/" ]] && PG_TEMPLATE_BASE="/var/lib/pasarguard/templates/"
 
 # ------------------------------------------------------------------ helpers ---
 die() { echo -e "${RED}✗ $*${NC}" >&2; exit 1; }
@@ -264,6 +273,27 @@ pg_app_container() {
     echo "$c"
 }
 
+pg_env_effective() {  # pg_env_effective <name|__builtin__|""> — is the running panel's
+    # env already equal to what we just wrote to the .env (BOTH template keys)?
+    # Restarting only when needed avoids pointless downtime on repeated applies.
+    local name="${1:-}" want wantdir c cur="" curdir="" raw=""
+    if [[ "$name" == "__builtin__" ]]; then want="subscription/index.html"
+    elif [[ -n "$name" ]]; then want="subscription/$name.html"
+    else want=""; fi
+    wantdir="$(pg_loader_base)"
+    c="$(pg_app_container)"
+    if [[ -n "$c" ]]; then
+        cur="$(docker exec "$c" sh -c 'printenv SUBSCRIPTION_PAGE_TEMPLATE' 2>/dev/null || true)"
+        curdir="$(docker exec "$c" sh -c 'printenv CUSTOM_TEMPLATES_DIRECTORY' 2>/dev/null || true)"
+    elif command -v systemctl >/dev/null 2>&1; then
+        raw="$(systemctl show pasarguard -p Environment 2>/dev/null | tr ' ' '\n')"
+        cur="$(printf '%s\n' "$raw" | sed -n 's/^SUBSCRIPTION_PAGE_TEMPLATE=//p' | head -n 1)"
+        curdir="$(printf '%s\n' "$raw" | sed -n 's/^CUSTOM_TEMPLATES_DIRECTORY=//p' | head -n 1)"
+    fi
+    [[ -z "$cur" && -z "$curdir" && -z "$wantdir" && -z "$want" ]] && return 0
+    [[ "$cur" == "$want" && "$curdir" == "$wantdir" ]]
+}
+
 pg_restart_panel() {
     # Applies .env changes reliably: try compose first (recreates the app
     # container with the new env), then force a container restart so every
@@ -273,8 +303,11 @@ pg_restart_panel() {
         [[ -f "$_pgd/docker-compose.yml" || -f "$_pgd/docker-compose.yaml" ]] && { dir="$_pgd"; break; }
     done
     if [[ -n "$dir" ]] && command -v docker >/dev/null 2>&1; then
-        ( cd "$dir" && docker compose up -d ) >/dev/null 2>&1 \
-            || ( cd "$dir" && docker-compose up -d ) >/dev/null 2>&1 \
+        # --force-recreate: `docker compose up -d` alone does NOT re-apply the
+        # env_file when the container config hash is unchanged, leaving the .env
+        # default out of sync with the running panel.
+        ( cd "$dir" && docker compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
+            || ( cd "$dir" && docker-compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
             || true
     fi
     if command -v docker >/dev/null 2>&1; then
@@ -304,9 +337,10 @@ pg_env_apply() {  # pg_env_apply <theme-name | __builtin__ | "">
     else
         tmpl="SUBSCRIPTION_PAGE_TEMPLATE=\"\""
     fi
-    python3 - "$PG_ENV_FILE" "$tmpl" <<'PY'
+    python3 - "$PG_ENV_FILE" "$tmpl" "$PG_TEMPLATE_BASE" <<'PY'
 import sys
-p, val = sys.argv[1], sys.argv[2]
+p, val, base = sys.argv[1], sys.argv[2], sys.argv[3]
+dirval = 'CUSTOM_TEMPLATES_DIRECTORY="%s"' % base.rstrip('/') + '/'
 lines = open(p, encoding='utf-8').read().splitlines()
 out = []
 done_tpl = done_dir = False
@@ -317,14 +351,127 @@ for l in lines:
         out.append(val); done_tpl = True; continue
     if (s.startswith('CUSTOM_TEMPLATES_DIRECTORY')
             or (l.lstrip().startswith('#') and l.lstrip('#').strip().startswith('CUSTOM_TEMPLATES_DIRECTORY'))):
-        out.append('CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"'); done_dir = True; continue
+        out.append(dirval); done_dir = True; continue
     out.append(l)
 if not done_tpl:
     out.append(val)
 if not done_dir:
-    out.append('CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates/"')
+    out.append(dirval)
 open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
 PY
+}
+
+pg_loader_base() {
+    printf '%s' "${PG_TEMPLATE_BASE:-/var/lib/pasarguard/templates/}"
+}
+
+pg_theme_host_file() {  # pg_theme_host_file <name> — exact path the loader resolves on the host
+    printf '%s' "$(pg_loader_base)subscription/${1}.html"
+}
+
+pg_theme_visible_inside() {  # pg_theme_visible_inside <name> <container>
+    local name="${1:-}" c="${2:-}"
+    [[ -n "$c" ]] || return 1
+    docker exec "$c" sh -c "test -f '$(pg_theme_host_file "$name")'" >/dev/null 2>&1
+}
+
+pg_verify_deploy() {  # pg_verify_deploy <name> — 0 = the loader can resolve the theme
+    local name="${1:-}" f c err=""
+    f="$(pg_theme_host_file "$name")"
+    [[ -f "$f" ]] || err="missing on host: $f"
+    c="$(pg_app_container)"
+    if [[ -n "$c" ]] && ! pg_theme_visible_inside "$name" "$c"; then
+        err="${err:+$err; }not visible inside container '$c' — the CUSTOM_TEMPLATES_DIRECTORY mount is probably missing"
+    fi
+    [[ -n "$err" ]] && { warn "Theme not resolvable by the panel: $err"; return 1; }
+    return 0
+}
+
+pg_repair_builtin_copy() {  # pg_repair_builtin_copy <name> — copy the theme into the panel's
+    # own app/templates/subscription dir. The loader searches
+    # [CUSTOM_TEMPLATES_DIRECTORY, "app/templates"], so a copy under app/templates
+    # guarantees the page renders even when CUSTOM_TEMPLATES_DIRECTORY is not
+    # honored (older panel image) or a container lacks the bind mount.
+    local name="${1:-}" src="$PG_TEMPLATES_DIR/$name.html" c
+    [[ -f "$src" ]] || return 1
+    c="$(pg_app_container)"
+    if [[ -n "$c" ]]; then
+        local base=""
+        base="$(docker exec "$c" sh -c '
+            for d in app/templates /app/templates /app/app/templates /src/app/templates /code/app/templates /srv/app/templates; do
+                [ -d "$d/subscription" ] && { printf "%s" "$d"; exit 0; }
+            done
+            exit 1' 2>/dev/null || true)"
+        [[ -z "$base" ]] && { warn "Could not locate the panel's app/templates/subscription inside '$c'."; return 1; }
+        if ! docker exec -i "$c" sh -c "cat > '$base/subscription/$name.html'" < "$src" 2>/dev/null; then
+            warn "Failed to copy theme into container path $base/subscription/$name.html."
+            return 1
+        fi
+        return 0
+    fi
+    local hp
+    for hp in /opt/pasarguard/app/templates/subscription /var/lib/pasarguard/app/templates/subscription; do
+        if [[ -d "$hp" ]]; then cp -f "$src" "$hp/$name.html" && return 0; fi
+    done
+    return 1
+}
+
+cmd_pg_diagnose() {  # print the whole Pasarguard template resolution chain so a
+    # 500 can be pinned down in one shot: which .env is read, the active value,
+    # and whether the resolved file exists where the panel (container or host)
+    # can actually read it.
+    local cur cur_raw c f up=0 err=0 mounts pe1 pe2
+    title "Pasarguard template diagnosis"; sep
+    cur="$(pg_current_theme)"
+    cur_raw="$(sed -n 's/^[[:space:]]*SUBSCRIPTION_PAGE_TEMPLATE="\([^"]*\)".*/\1/p' "${PG_ENV_FILE:-}" 2>/dev/null | tail -n 1)"
+    echo -e "  Panel .env   : ${PG_ENV_FILE:-not found}"
+    echo -e "  Template base: $(pg_loader_base)"
+    echo -e "  Active theme : ${cur:-<built-in>}"
+    [[ -n "$cur_raw" ]] && echo -e "  .env value   : SUBSCRIPTION_PAGE_TEMPLATE=${cur_raw}"
+    echo -e "  .env custom  : CUSTOM_TEMPLATES_DIRECTORY=$(pg_env_value CUSTOM_TEMPLATES_DIRECTORY)"
+    sep
+    if [[ -f "$(pg_loader_base)subscription/index.html" ]]; then
+        echo -e "  ${GREEN}✓${NC} custom base dir exists: $(pg_loader_base)subscription/"
+    else
+        echo -e "  ${DIM}→ custom base dir not on host yet: $(pg_loader_base)subscription/ (fine until a theme is applied)${NC}"
+    fi
+    if [[ -n "$cur" ]]; then
+        c="$(pg_app_container)"
+        [[ -n "$c" ]] && { up=1; echo "  Container   : $c"; }
+        f="$(pg_theme_host_file "$cur")"
+        if [[ -f "$f" ]]; then
+            echo -e "  ${GREEN}✓${NC} host file: $f"
+        else
+            echo -e "  ${RED}✗${NC} missing on host: $f"; err=1
+        fi
+        if [[ "$up" -eq 1 ]]; then
+            mounts="$(docker inspect -f '{{range .Mounts}}{{printf "%s -> %s\n" .Source .Destination}}{{end}}' "$c" 2>/dev/null | grep -E "$(pg_loader_base)|pasarguard" || true)"
+            echo -e "  Mounts relevant to templates:${NC}"
+            if [[ -n "$mounts" ]]; then
+                while IFS= read -r m; do echo "    $m"; done <<< "$mounts"
+            else
+                echo "    ${RED}none${NC}"
+            fi
+            pe1="$(docker exec "$c" sh -c 'printenv SUBSCRIPTION_PAGE_TEMPLATE' 2>/dev/null || true)"
+            pe2="$(docker exec "$c" sh -c 'printenv CUSTOM_TEMPLATES_DIRECTORY' 2>/dev/null || true)"
+            echo -e "  In-container env:"
+            echo -e "    SUBSCRIPTION_PAGE_TEMPLATE=${pe1:-<unset>}"
+            echo -e "    CUSTOM_TEMPLATES_DIRECTORY=${pe2:-<unset>}"
+            if pg_theme_visible_inside "$cur" "$c"; then
+                echo -e "  ${GREEN}✓${NC} theme visible inside the container"
+            else
+                echo -e "  ${RED}✗${NC} theme NOT visible inside the container (fix the mount, or run: nucsub apply ${cur})"
+                err=1
+            fi
+        fi
+    fi
+    sep
+    if [[ "$err" -eq 1 ]]; then
+        echo -e "${YELLOW}→ The panel will return 500 until the template file is reachable at:${NC}"
+        echo -e "${DIM}   $(pg_loader_base)subscription/<name>.html (host + container)${NC}"
+    else
+        echo -e "${GREEN}✓ Template resolution chain looks reachable.${NC}"
+    fi
 }
 
 # --- Pasarguard panel template sync (no interactive credentials needed) -------
@@ -578,20 +725,36 @@ cmd_apply() {
         # The panel shows the admin's own sub_template live (no restart needed
         # when the DB/API is reachable). Restart only as a fallback so the .env
         # default is picked up.
-        local env_ok=0 sync_ok=0
+        local env_ok=0 sync_ok=0 restarted=0
         pg_env_apply "$name" && env_ok=1 || true
         pg_sync "$name" && sync_ok=1 || true
+        # Restart the panel ONLY when its live SUBSCRIPTION_PAGE_TEMPLATE doesn't
+        # already match the .env we just wrote (avoids downtime on every apply).
+        if [[ $env_ok -eq 1 ]] && ! pg_env_effective "$name"; then
+            pg_restart_panel && restarted=1 || true
+        fi
         if [[ $sync_ok -eq 1 ]]; then
             ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
         elif [[ $env_ok -eq 1 ]]; then
-            if pg_restart_panel; then
-                ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
-            else
-                warn "Theme '$name' set in the panel .env but the panel could not be restarted — restart Pasarguard manually."
+            ok "Theme '$name' deployed and activated via .env ($PG_TEMPLATES_DIR/$name.html)"
+            if [[ $restarted -eq 0 ]]; then
+                warn "Panel env not synced — restart Pasarguard manually to apply the .env default."
             fi
         else
             warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
             warn "Activation needs the panel .env (PASARGUARD_ENV) or working DB access."
+        fi
+        # The loader only resolves <CUSTOM_TEMPLATES_DIRECTORY>/subscription/<name>.html
+        # and app/templates/subscription/<name>.html — if the file does not land where
+        # the running panel can read it, the subscription page will 500. Verify now.
+        if ! pg_verify_deploy "$name"; then
+            warn "Trying a built-in copy repair so the theme still renders..."
+            if pg_repair_builtin_copy "$name" && pg_verify_deploy "$name"; then
+                ok "Theme '$name' now renders from the panel's own template dir."
+            else
+                warn "The theme may still return 500 until this is fixed on the box. Run: nucsub pg-diagnose"
+                warn "The file must be readable by the panel at: $(pg_theme_host_file "$name")"
+            fi
         fi
         return
     fi
@@ -718,6 +881,7 @@ cmd_status() {
     echo -e "  Install dir : $INSTALL_DIR"
     if [[ "$PANEL" == "pasarguard" ]]; then
         echo -e "  Templates   : $PG_TEMPLATES_DIR"
+        echo -e "  Loader base : $(pg_loader_base)"
         echo -e "  Theme source: $PG_THEMES_DIR"
         echo -e "  Panel .env  : ${PG_ENV_FILE:-not found}"
         echo ""
@@ -837,7 +1001,7 @@ cmd_webpanel() {
                 info "Web panel files missing — installing from GitHub..."
                 mkdir -p "$WEB_BASE"
                 local _wf
-                for _wf in "webpanel/server.py" "webpanel/index.html" "webpanel/css/icons.css" "webpanel/css/fonts.css" "webpanel/fonts/IRANSansX-Bold.woff2" "webpanel/fonts/IRANSansX-Regular.woff2" "webpanel/fa/fa-solid-900.woff2"; do
+                for _wf in "webpanel/server.py" "webpanel/index.html" "webpanel/css/icons.css" "webpanel/css/fonts.css" "webpanel/css/panel.css" "webpanel/fonts/IRANSansX-Bold.woff2" "webpanel/fonts/IRANSansX-Regular.woff2" "webpanel/fa/fa-solid-900.woff2"; do
                     mkdir -p "$INSTALL_DIR/$(dirname "$_wf")"
                     curl -fsSL -m 40 "$REPO_URL/$_wf" -o "$INSTALL_DIR/$_wf" || warn "Failed to fetch $_wf"
                 done
@@ -1164,6 +1328,7 @@ case "$cmd" in
     webpanel)       cmd_webpanel "$@" ;;
     telegram)       cmd_telegram "$@" ;;
     pglogin)        cmd_pglogin ;;
+    pg-diagnose|diagnose) cmd_pg_diagnose ;;
     update)         cmd_update "$@" ;;
     uninstall)      cmd_uninstall ;;
     menu)           cmd_menu ;;
@@ -1190,6 +1355,7 @@ Commands:
   telegram {get|set <url>|clear}
                       View or configure the Telegram channel shown in themes
   pglogin             Store Pasarguard panel API credentials (for theme switching)
+  pg-diagnose         Print the Pasarguard template resolution chain (fixes a 500)
   update              Pull latest from GitHub and reinstall
   uninstall           Remove everything (themes, CLI, web panel, DB entry)
   menu                Interactive menu (default when no args given)

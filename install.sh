@@ -42,6 +42,7 @@ SRC_WEB=(
   "webpanel/index.html"
   "webpanel/css/icons.css"
   "webpanel/css/fonts.css"
+  "webpanel/css/panel.css"
   "webpanel/fonts/IRANSansX-Bold.woff2"
   "webpanel/fonts/IRANSansX-Regular.woff2"
   "webpanel/fa/fa-solid-900.woff2"
