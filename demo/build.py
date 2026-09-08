@@ -264,15 +264,6 @@ def main():
 
 
 def gallery_page():
-    cards = []
-    for name in THEME_NAMES:
-        cards.append(
-            f"""<button class="card" onclick="pick('pg','{name}',this)" data-p="pg" data-n="{name}"><span class="p">PasarGuard</span><span class="t">{name}</span></button>"""
-        )
-    for name in THEME_NAMES:
-        cards.append(
-            f"""<button class="card" onclick="pick('xui','{name}',this)" data-p="xui" data-n="{name}"><span class="p">3x-ui</span><span class="t">{name}</span></button>"""
-        )
     return f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -281,75 +272,97 @@ def gallery_page():
 <title>NUC-SUB Live Preview — ۱۶ تم سابسکریپشن</title>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
-body{{font-family:Vazirmatn,'Segoe UI',Tahoma,sans-serif;background:radial-gradient(1100px 620px at 18% -10%,rgba(139,92,246,.16),transparent 60%),radial-gradient(900px 560px at 88% 12%,rgba(245,158,11,.10),transparent 55%),linear-gradient(160deg,#0d0b1e,#16132e);min-height:100vh;color:#f5f2ff;padding:26px 18px 40px}}
-.wrap{{max-width:1080px;margin:0 auto}}
-.head{{display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap}}
-.logo{{width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#facc15,#f59e0b);display:flex;align-items:center;justify-content:center;font-weight:900;color:#1a1a1a;font-size:20px;box-shadow:0 8px 22px rgba(245,158,11,.30)}}
-h1{{font-size:22px;font-weight:800}}
+html,body{{height:100%}}
+body{{font-family:Vazirmatn,'Segoe UI',Tahoma,sans-serif;background:#0f0d1d;color:#f5f2ff;display:flex;flex-direction:column;overflow:hidden}}
+.topbar{{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(13,11,30,.9);z-index:5}}
+.logo{{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#facc15,#f59e0b);display:flex;align-items:center;justify-content:center;font-weight:900;color:#1a1a1a;font-size:17px}}
+h1{{font-size:17px;font-weight:800;white-space:nowrap}}
 h1 b{{background:linear-gradient(135deg,#facc15,#f59e0b);-webkit-background-clip:text;background-clip:text;color:transparent}}
-.sub{{color:rgba(245,242,255,.55);font-size:13px;margin:2px 0 22px}}
-.layout{{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}}
-.side{{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:14px;position:sticky;top:20px}}
-.tab{{display:flex;gap:8px;margin-bottom:12px}}
-.tab button{{flex:1;padding:9px 0;border-radius:10px;border:1px solid rgba(255,255,255,.10);background:transparent;color:rgba(245,242,255,.7);cursor:pointer;font-family:inherit;font-size:12px;font-weight:700}}
-.tab button.on{{background:linear-gradient(135deg,#facc15,#f59e0b);color:#1a1a1a;border-color:transparent}}
-.cards{{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
-.card{{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.03);border-radius:12px;padding:11px;cursor:pointer;text-align:right;font-family:inherit;transition:all .18s;color:#f5f2ff}}
-.card:hover{{border-color:#facc15;transform:translateY(-1px)}}
-.card.on{{border-color:#f59e0b;background:rgba(245,158,11,.10)}}
-.card .p{{display:block;font-size:9px;letter-spacing:.5px;color:rgba(245,242,255,.45);margin-bottom:5px}}
-.card .t{{font-size:13px;font-weight:800}}
-.stage{{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:18px;min-height:640px}}
-.phone{{max-width:375px;margin:0 auto;border:10px solid #191826;border-radius:36px;box-shadow:0 24px 60px rgba(0,0,0,.5);overflow:hidden;height:700px;position:relative}}
-.phone iframe{{width:100%;height:100%;border:0;display:block}}
-.cur{{display:flex;align-items:center;justify-content:space-between;max-width:375px;margin:14px auto 0;font-size:12px;color:rgba(245,242,255,.6)}}
-.cur a{{color:#facc15;text-decoration:none;font-weight:700}}
-.footer{{text-align:center;margin-top:26px;font-size:11px;color:rgba(245,242,255,.4)}}
-.footer a{{color:rgba(245,242,255,.7);text-decoration:none}}
-@media(max-width:820px){{.layout{{grid-template-columns:1fr}}.side{{position:static}}}}
+.tabs{{display:flex;gap:6px}}
+
+.tabs button{{padding:7px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.10);background:transparent;color:rgba(245,242,255,.7);cursor:pointer;font-family:inherit;font-size:12px;font-weight:700}}
+.tabs button.on{{background:linear-gradient(135deg,#facc15,#f59e0b);color:#1a1a1a;border-color:transparent}}
+.selwrap{{position:relative}}
+.selfirst{{position:absolute;right:0;top:100%;margin-top:8px;z-index:20;min-width:190px}}
+.selfirst select{{width:100%;padding:9px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#1b1830;color:#f5f2ff;font-family:inherit;font-size:13px;cursor:pointer}}
+.head-right{{flex:1;display:flex;justify-content:flex-end;align-items:center;gap:10px}}
+.head-right a{{color:#facc15;text-decoration:none;font-size:12px;font-weight:700;white-space:nowrap}}
+.stage{{flex:1;display:flex;min-height:0}}
+{{/* full-screen theme render */}}
+.stage iframe{{flex:1;width:100%;height:100%;border:0;background:#fff}}
+.hidden{{display:none!important}}
+@media(max-width:700px){{
+  h1{{font-size:14px}}
+  .tabs button{{padding:6px 9px;font-size:11px}}
+}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="head">
+  <div class="topbar">
     <div class="logo">N</div>
     <h1>NUC-SUB <b>Live Preview</b></h1>
-  </div>
-  <div class="sub">۸ تم PasarGuard + ۸ تم 3x-ui — پیش‌نمایش با داده‌ی ثابت (بدون نیاز به سرور)</div>
-  <div class="layout">
-    <div class="side">
-      <div class="tab">
-        <button id="tab-pg" class="on" onclick="setTab('pg')">PasarGuard</button>
-        <button id="tab-xui" onclick="setTab('xui')">3x-ui</button>
+    <div class="tabs">
+      <button id="tab-pg" class="on" onclick="setTab('pg')">PasarGuard</button>
+      <button id="tab-xui" onclick="setTab('xui')">3x-ui</button>
+    </div>
+    <div class="selwrap">
+      <div class="selfirst">
+        <select id="themeSel" onchange="pickSel(this.value)">
+          <!-- pages are filled by build.py -->
+        </select>
       </div>
-      <div class="cards" id="cards">{''.join(cards)}</div>
     </div>
-    <div class="stage">
-      <div class="phone"><iframe id="frame" title="preview"></iframe></div>
-      <div class="cur"><span id="cur">یک قالب را از سمت راست انتخاب کنید</span></div>
+    <div class="head-right">
+      <a id="openLink" href="#" target="_blank" rel="noopener">باز در تب جدید ↗</a>
     </div>
   </div>
-  <div class="footer">NUC-SUB Live Preview — پروژه‌ی متن‌باز | <a href="https://github.com/nuctereadev/NUC-SUB" target="_blank" rel="noopener">GitHub</a></div>
-</div>
+  <div class="stage">
+    <iframe id="frame" title="theme preview"></iframe>
+  </div>
+<select id="optTpl" class="hidden"></select>
 <script>
+var THEMES = {{
+  pg: {json.dumps(THEME_NAMES, ensure_ascii=False)},
+  xui: {json.dumps(THEME_NAMES, ensure_ascii=False)}
+}};
 var state={{}};
-function pick(p,n,el){{
-  document.querySelectorAll('.card').forEach(function(c){{c.classList.remove('on')}});
-  el.classList.add('on');
+function p2label(p){{ return p==='pg' ? 'PasarGuard' : '3x-ui'; }}
+function buildSel(p){{
+  var sel=document.getElementById('themeSel');
+  var cur = sel.value;
+  sel.options.length=0;
+  THEMES[p].forEach(function(n){{
+    var o=document.createElement('option');
+    o.value=p+':'+n; o.textContent=n;
+    sel.appendChild(o);
+  }});
+  if(cur && cur.split(':')[0]===p) sel.value=cur;
+  else sel.value=sel.options[0] ? sel.options[0].value : '';
+}}
+function setHref(){{
+  var s=(state.p||'pg')+(state.n ? '/'+(state.p==='pg'?state.n+'.html':state.n+'/index.html') : '');
+  var a=document.getElementById('openLink');
+  a.href=s;
+}}
+function pickSel(v){{
+  if(!v) return;
+  var parts=v.split(':'); var p=parts[0], n=parts[1];
+  state.p=p; state.n=n;
   var f=document.getElementById('frame');
-  f.src=(p==='pg'?'pg/':'xui/')+n+(p==='pg'?'.html':'/index.html');
-  document.getElementById('cur').innerHTML='<span>'+ (p==='pg'?'PasarGuard':'3x-ui') +' / <b>'+n+'</b></span><a href="'+f.src+'" target="_blank" rel="noopener">باز در تب جدید ↗</a>';
-  state.p=p; state.n=n; state.autoPick=0;
+  f.src = p==='pg' ? 'pg/'+n+'.html' : 'xui/'+n+'/index.html';
+  document.getElementById('openLink').href = f.src;
+  document.querySelectorAll('.tabs button').forEach(function(b){{
+    b.className = b.id==='tab-'+p ? 'on' : '';
+  }});
+  var sel=document.getElementById('themeSel');
+  if(sel.value!==v) sel.value=v;
 }}
 function setTab(p){{
   document.getElementById('tab-pg').className=p==='pg'?'on':'';
   document.getElementById('tab-xui').className=p==='xui'?'on':'';
-  document.querySelectorAll('.card').forEach(function(c){{
-    c.style.display=(c.getAttribute('data-p')===p)?'':'none';
-  }});
-  var first=document.querySelector('.card[data-p="'+p+'"]');
-  if(first && state.autoPick!==0){{ first.click(); }}
-  state.autoPick=1;
+  state.p=p;
+  buildSel(p);
+  pickSel(document.getElementById('themeSel').value || (p+':'+THEMES[p][0]));
 }}
 setTab('pg');
 </script>
