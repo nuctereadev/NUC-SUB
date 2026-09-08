@@ -367,6 +367,7 @@ body{
 
 /* Theme color presets */
 .theme-card[data-theme="arctic"] .bg{background:linear-gradient(135deg,#60a5fa 0%,#0ea5e9 50%,#0284c7 100%)}
+.theme-card[data-theme="aurora"] .bg{background:linear-gradient(135deg,#67e8f9 0%,#a78bfa 50%,#f472b6 100%)}
 .theme-card[data-theme="cyberpunk"] .bg{background:linear-gradient(135deg,#a855f7 0%,#ec4899 50%,#8b5cf6 100%)}
 .theme-card[data-theme="glass"] .bg{background:linear-gradient(135deg,#cbd5e1 0%,#94a3b8 50%,#64748b 100%)}
 .theme-card[data-theme="gradient"] .bg{background:linear-gradient(135deg,#f472b6 0%,#facc15 33%,#34d399 66%,#60a5fa 100%)}
@@ -630,9 +631,9 @@ body{
   </div>
 
 <script>
-var THEMES = {
-  pg: ["arctic", "cyberpunk", "glass", "gradient", "matrix", "minimal", "neon", "sunset"],
-  xui: ["arctic", "cyberpunk", "glass", "gradient", "matrix", "minimal", "neon", "sunset"]
+var THEMES = { 
+  pg: __THEMES_PG__, 
+  xui: __THEMES_XUI__ 
 };
 var state={p:'pg',n:null,dev:'desktop'};
 

@@ -30,7 +30,21 @@ PG_THEMES = os.path.join(REPO, "pasarguard-themes", "subscription")
 XUI_THEMES = os.path.join(REPO, "themes")
 OUT = os.path.join(DEMO_DIR, "site")
 
-THEME_NAMES = ["arctic", "cyberpunk", "glass", "gradient", "matrix", "minimal", "neon", "sunset"]
+
+def _discover_theme_names():
+    """The two panels no longer always share names — auto-discover instead of a
+    hard-coded list so replacing/adding a theme is zero-touch."""
+    pg = sorted(
+        f[: -len(".html")]
+        for f in os.listdir(PG_THEMES)
+        if f.endswith(".html")
+    )
+    xui = sorted(
+        d
+        for d in os.listdir(XUI_THEMES)
+        if os.path.isdir(os.path.join(XUI_THEMES, d))
+    )
+    return pg, xui
 
 """-------------------------------------------- sample data --------------------------------------------"""
 SAMPLE_LINKS = [
@@ -226,8 +240,12 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "pg"), exist_ok=True)
 
+    pg_names, xui_names = _discover_theme_names()
+    json_pg = json.dumps(pg_names, ensure_ascii=False)
+    json_xui = json.dumps(xui_names, ensure_ascii=False)
+
     ok, fail = {}, {}
-    for name in THEME_NAMES:
+    for name in pg_names:
         try:
             html = render_pasarguard(name, PG_CONTEXT)
             with open(os.path.join(OUT, "pg", f"{name}.html"), "w", encoding="utf-8") as f:
@@ -236,7 +254,7 @@ def main():
         except Exception as e:
             fail[f"pg {name}"] = str(e)
 
-    for name in THEME_NAMES:
+    for name in xui_names:
         try:
             html = render_xui(name, XUI_CONTEXT)
             d = os.path.join(OUT, "xui", name)
@@ -259,13 +277,16 @@ def main():
         print(f"  FAIL {k}: {v}")
 
     # Copy the hand-edited gallery (source of truth) instead of regenerating it,
-    # so the user's customizations survive every build.
+    # so the user's customizations survive every build. Two placeholders get the
+    # live theme lists injected so adding/renaming a theme is zero-touch.
     gallery_src = os.path.join(DEMO_DIR, "gallery.html")
     if os.path.isfile(gallery_src):
         with open(gallery_src, encoding="utf-8") as f:
             gallery_html = f.read()
     else:
         gallery_html = gallery_page()  # fallback template
+    gallery_html = gallery_html.replace("__THEMES_PG__", json_pg)
+    gallery_html = gallery_html.replace("__THEMES_XUI__", json_xui)
     with open(os.path.join(OUT, "index.html"), "w", encoding="utf-8") as f:
         f.write(gallery_html)
     print(f"\nwritten to {OUT}")
@@ -330,8 +351,8 @@ h1 b{{background:linear-gradient(135deg,#facc15,#f59e0b);-webkit-background-clip
 <select id="optTpl" class="hidden"></select>
 <script>
 var THEMES = {{
-  pg: {json.dumps(THEME_NAMES, ensure_ascii=False)},
-  xui: {json.dumps(THEME_NAMES, ensure_ascii=False)}
+  pg: __THEMES_PG__,
+  xui: __THEMES_XUI__
 }};
 var state={{}};
 function p2label(p){{ return p==='pg' ? 'PasarGuard' : '3x-ui'; }}

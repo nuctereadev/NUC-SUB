@@ -27,7 +27,7 @@ NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(minimal gradient matrix glass neon sunset arctic cyberpunk)
-PG_THEMES=(gradient minimal glass sunset matrix neon arctic cyberpunk)
+PG_THEMES=(gradient minimal glass sunset matrix neon aurora cyberpunk)
 
 # ------------------------------------------------------- panel detection -------
 # nucsub supports two panels: 3x-ui (sqlite subThemeDir) and Pasarguard

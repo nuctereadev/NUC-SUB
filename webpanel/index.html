@@ -856,7 +856,7 @@ function logout(){token='';localStorage.removeItem(TOKEN_KEY);showLogin()}
 $('token-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()}); 
 $('token-input').addEventListener('input',clearLoginError); 
 
-const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'}; 
+const THEME_ICONS={minimal:'fa-solid fa-border-all',gradient:'fa-solid fa-wand-magic-sparkles',matrix:'fa-solid fa-terminal',glass:'fa-solid fa-cube',neon:'fa-solid fa-bolt-lightning',sunset:'fa-solid fa-sun',arctic:'fa-solid fa-snowflake',aurora:'fa-solid fa-wand-magic-sparkles',cyberpunk:'fa-solid fa-microchip',default:'fa-solid fa-palette'}; 
 function getIcon(name){return THEME_ICONS[name]||THEME_ICONS.default} 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')} 
 
