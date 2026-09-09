@@ -208,25 +208,23 @@ body{
 .stage{
   flex:1;
   display:flex;
-  align-items:center;
-  justify-content:center;
   min-height:0;
   background:
     radial-gradient(circle at 50% 0%,rgba(250,204,21,.04) 0%,transparent 50%),
     var(--bg);
   padding:20px;
-  overflow:hidden;
+  overflow-y:auto;
+  overflow-x:hidden;
   position:relative;
 }
 
 /* ===== Empty State (Gallery) ===== */
 .empty-state{
   width:100%;
-  height:100%;
+  min-height:100%;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
   gap:28px;
   animation:fadeIn .5s ease;
   padding:20px;
@@ -674,12 +672,26 @@ function buildGrid(p){
         '<span>'+n.charAt(0).toUpperCase()+n.slice(1)+'</span>'+
         '<span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>'+
       '</div>';
+    var bg=card.querySelector('.bg');
+    // give every theme a rich gradient — use a preset when available in CSS,
+    // otherwise derive one deterministically from the theme name (so new themes
+    // never show an empty/blank card).
+    var preset=['arctic','aurora','cyberpunk','glass','gradient','volt','matrix','minimal','neon','sunset'];
+    if(preset.indexOf(n)===-1){
+      var hsv=nameHue(n);
+      bg.style.background='linear-gradient(135deg,hsl('+hsv+' 70% 55%) 0%,hsl('+((hsv+40)%360)+' 75% 45%) 50%,hsl('+((hsv+80)%360)+' 70% 35%) 100%)';
+    }
     card.onclick=function(){
       document.getElementById('themeSel').value=p+':'+n;
       pickSel(p+':'+n);
     };
     grid.appendChild(card);
   });
+}
+function nameHue(s){
+  var h=0;
+  for(var i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))>>>0;}
+  return h%360;
 }
 
 function pickSel(v){
