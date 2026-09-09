@@ -1,0 +1,155 @@
+/* nuc-features: shared QR + VPN-apps injection styles */
+.nucqr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  background: rgba(128, 128, 128, 0.12);
+  color: currentColor;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  margin-right: 4px;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.2s;
+}
+.nucqr-btn svg { width: 16px; height: 16px; fill: currentColor; }
+.nucqr-btn:hover {
+  background: var(--accent, #f3b400);
+  border-color: var(--accent, #f3b400);
+  color: #000;
+}
+#nucOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s;
+}
+#nucOverlay.open { opacity: 1; visibility: visible; }
+.nuc-modal {
+  background: var(--surface, #1a1a1e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 16px;
+  padding: 22px;
+  max-width: 92vw;
+  width: 340px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  position: relative;
+  max-height: 88vh;
+  overflow: auto;
+}
+.nuc-modal h3 {
+  margin: 0 16px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+.nuc-modal .nuc-link {
+  font-size: 11px;
+  color: var(--text-tertiary, #888);
+  direction: ltr;
+  display: block;
+  margin: 10px 0 0;
+  word-break: break-all;
+  max-height: 60px;
+  overflow: auto;
+  text-align: left;
+}
+#nucQrImg {
+  width: 240px;
+  height: 240px;
+  margin: 0 auto;
+  display: block;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+.nuc-close {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 10px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary, #888);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+.nuc-apps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+.nuc-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  background: var(--surface-elevated, rgba(255, 255, 255, 0.05));
+  text-decoration: none;
+  color: var(--text-primary, #fff);
+}
+.nuc-app:hover { outline: 1px solid var(--accent, #f3b400); }
+.nuc-app b { font-size: 11px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nuc-app small { font-size: 10px; color: var(--text-tertiary, #888); }
+.nuc-app-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+.nuc-apps-note {
+  font-size: 11px;
+  color: var(--text-tertiary, #888);
+  margin: 14px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  line-height: 1.8;
+}
+.nuc-fab {
+  position: fixed;
+  bottom: 18px;
+  inset-inline-end: 18px;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  height: 48px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, var(--accent, #f3b400), #ffd500);
+  color: #000;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  font-family: inherit;
+}
+.nuc-fab svg { width: 18px; height: 18px; fill: currentColor; }
+@media (max-width: 480px) {
+  .nuc-apps { grid-template-columns: repeat(2, 1fr); }
+  .nuc-fab { padding: 0 14px; }
+}

@@ -25,6 +25,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)          # <repo root>/demo/.. 
 DEST = os.path.join(REPO, "pasarguard-themes", "subscription")
 
+QR_LIB = os.path.join(HERE, "qrcode-lib.js")
+FEATURES_CSS = os.path.join(HERE, "features.css")
+FEATURES_JS = os.path.join(HERE, "features.js")
+
 # name -> source file. 'orbit' duplicates amber (same source) — we keep amber and
 # drop my earlier orbit version; both map to pasarguard_orbit_theme.html.
 BATCH = [
@@ -310,6 +314,50 @@ def ensure_charset(html):
     return meta + "\n" + html
 
 
+def _wrap_qr_lib():
+    """Bundle the standalone qrcode-generator so it exposes only window.NucQR
+    (the theme may already define its own qrcode global)."""
+    lib = open(QR_LIB, encoding="utf-8").read()
+    return (
+        "(function(){\n"
+        + lib
+        + "\n;if(typeof window!=='undefined'){window.NucQR=qrcode;}\n})();\n"
+    )
+
+
+def inject_features(html):
+    """Add per-config QR codes + a floating VPN-apps launcher to the theme.
+    Self-contained: the QR library, styles and JS are inlined so the template
+    keeps working offline and as a single file."""
+    if 'id="nucOverlay"' in html or "nuc-features" in html:
+        return html
+    css = open(FEATURES_CSS, encoding="utf-8").read()
+    js = open(FEATURES_JS, encoding="utf-8").read()
+    block = (
+        "\n<!-- nuc-features -->\n<style>\n"
+        + css
+        + "\n</style>\n<script>\n"
+        + _wrap_qr_lib()
+        + "</script>\n<script>\n"
+        + js
+        + "\n</script>\n"
+    )
+    if "</body>" in html:
+        return html.replace("</body>", block + "</body>")
+    return html + block
+
+
+def strip_tide_hero(html):
+    """tide shows a generic 'Everything is ready' hero block under the topbar.
+    That text is useless for the demo, so drop the whole hero section."""
+    return re.sub(
+        r"\s*<!-- Hero -->.*?(?=<!-- Usage Module -->)",
+        "",
+        html,
+        flags=re.S,
+    )
+
+
 def main():
     dry = "--dry-run" in sys.argv
     os.makedirs(DEST, exist_ok=True)
@@ -326,6 +374,9 @@ def main():
         out = rewrite_statics(out)
         out, found = rewrite_link_blocks(out)
         out = add_dynamic_js(out)
+        if name == "tide":
+            out = strip_tide_hero(out)
+        out = inject_features(out)
         dest = os.path.join(DEST, f"{name}.html")
         if dry:
             print(f"  [dry] {name:<10} <- {src:<45} links_loop={found} {len(html)}->{len(out)}b")
@@ -333,6 +384,21 @@ def main():
             with open(dest, "w", encoding="utf-8") as f:
                 f.write(out)
             print(f"  wrote {name}.html  links_loop={found}  {len(out)}b")
+
+    # volt.html is a hand-made premier theme that lives outside BATCH; give it
+    # the exact same per-config QR + apps launcher injection.
+    vp = os.path.join(DEST, "volt.html")
+    if os.path.isfile(vp):
+        with open(vp, encoding="utf-8") as f:
+            v = f.read()
+        nv = inject_features(v)
+        if dry:
+            print(f"  [dry] volt.html   features={'yes' if nv != v else 'no'}")
+        else:
+            if nv != v:
+                with open(vp, "w", encoding="utf-8") as f:
+                    f.write(nv)
+            print(f"  features -> volt.html  {len(v)}->{len(nv)}b")
 
 
 if __name__ == "__main__":
