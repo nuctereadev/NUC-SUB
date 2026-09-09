@@ -51,9 +51,7 @@ body {
   display: flex;
   justify-content: center;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(circle at 20% 20%, var(--accent-glow) 0%, transparent 40%),
-    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 40%);
+  background-image: linear-gradient(180deg, #0c0c0c 0%, var(--bg) 35%, var(--surface) 100%);
   background-attachment: fixed;
 }
 
@@ -1075,15 +1073,16 @@ function setLang(l){
   function animateCounter(el, start, end, duration) {
     var range = end - start;
     var current = start;
-    var increment = end > start ? 1 : -1;
-    var stepTime = Math.abs(Math.floor(duration / range));
+    var target = Math.round(end);
+    var increment = target > current ? 1 : -1;
+    var calls = Math.max(1, Math.round(duration / Math.max(1, Math.abs(target - current))));
     var timer = setInterval(function() {
       current += increment;
-      el.textContent = Math.round(current);
-      if (current == end) {
+      el.textContent = current > target ? target : current;
+      if (current >= target) {
         clearInterval(timer);
       }
-    }, stepTime);
+    }, calls);
   }
 
   // Countdown Timer
