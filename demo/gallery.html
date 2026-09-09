@@ -208,32 +208,46 @@ body{
 .stage{
   flex:1;
   display:flex;
+  flex-direction:column;
   min-height:0;
   background:
     radial-gradient(circle at 50% 0%,rgba(250,204,21,.04) 0%,transparent 50%),
     var(--bg);
-  padding:20px;
-  overflow-y:auto;
+  padding:16px 20px 20px;
   overflow-x:hidden;
+  overflow-y:auto;
   position:relative;
 }
 
-/* ===== Empty State (Gallery) ===== */
-.empty-state{
+/* ===== Theme Rail (always visible) ===== */
+.rail{
+  flex:none;
   width:100%;
-  min-height:100%;
   display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:28px;
-  animation:fadeIn .5s ease;
-  padding:20px;
+  animation:fadeIn .4s ease;
 }
-.empty-state.hidden{display:none}
+.strip-wrap{
+  width:100%;
+  max-width:100%;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
 
-.empty-hero{
+/* ===== Preview area ===== */
+.preview{
+  flex:1;
+  min-height:0;
+  position:relative;
+  display:flex;
+  justify-content:center;
+}
+.preview .empty-hero{
+  margin:auto;
+  align-self:center;
   text-align:center;
   max-width:520px;
+  animation:fadeIn .5s ease;
 }
 .empty-icon{
   width:64px;height:64px;
@@ -281,13 +295,6 @@ body{
 }
 
 /* Theme strip — horizontal carousel */
-.strip-wrap{
-  width:100%;
-  max-width:1000px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-}
 .theme-strip{
   flex:1;
   display:flex;
@@ -624,7 +631,7 @@ body{
       <button id="tab-xui" onclick="setTab('xui')">3x-ui</button>
     </div>
     <div class="selwrap">
-      <select id="themeSel" onchange="pickSel(this.value)">
+      <select id="themeSel" onchange="preview(this.value)">
         <option value="">— انتخاب قالب —</option>
       </select>
     </div>
@@ -670,20 +677,8 @@ body{
   </div>
 
   <div class="stage">
-    <!-- Empty State / Gallery -->
-    <div class="empty-state" id="emptyState">
-      <div class="empty-hero">
-        <div class="empty-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1"/>
-            <rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/>
-            <rect x="14" y="14" width="7" height="7" rx="1"/>
-          </svg>
-        </div>
-        <h2 class="empty-title">یه <b>قالب</b> برای پیش‌نمایش انتخاب کن</h2>
-        <p class="empty-desc">موس رو روی کارت‌ها ببر (هاور) تا قالب زنده نشون داده بشه، یا از دکمه‌های کنار پیش‌نمایش / کلیدهای جهت‌نما (← →) بین قالب‌ها بچرخ.</p>
-      </div>
+    <!-- Always-visible theme rail -->
+    <div class="rail" id="rail">
       <div class="strip-wrap">
         <button class="strip-arrow" id="stripPrev" onclick="navStrip(-1)" aria-label="قبلی">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
@@ -695,26 +690,41 @@ body{
       </div>
     </div>
 
-    <!-- Browser Frame -->
-    <div class="browser hidden" id="browser" data-device="desktop">
-      <div class="browser-bar">
-        <div class="dots"><span></span><span></span><span></span></div>
-        <div class="browser-url" id="browserUrl">pg/arctic.html</div>
-        <button class="nav-btn" id="navPrev" onclick="navTheme(-1)" aria-label="قبلی">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-        </button>
-        <span class="nav-count" id="navCount">1/41</span>
-        <button class="nav-btn" id="navNext" onclick="navTheme(1)" aria-label="بعدی">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
-        </button>
-        <button class="back-btn" onclick="showGallery()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
+    <!-- Preview -->
+    <div class="preview" id="preview">
+      <div class="empty-hero" id="emptyHero">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/>
           </svg>
-          گالری
-        </button>
+        </div>
+        <h2 class="empty-title">یه <b>قالب</b> برای پیش‌نمایش انتخاب کن</h2>
+        <p class="empty-desc">موس رو روی کارت‌های بالا ببر تا قالب زنده نشون داده بشه — یا با کلیدهای جهت‌نما (← →) و دکمه‌های پایین بچرخ.</p>
       </div>
-      <iframe id="frame" title="theme preview"></iframe>
+
+      <div class="browser hidden" id="browser" data-device="desktop">
+        <div class="browser-bar">
+          <div class="dots"><span></span><span></span><span></span></div>
+          <div class="browser-url" id="browserUrl">pg/arctic.html</div>
+          <button class="nav-btn" id="navPrev" onclick="navTheme(-1)" aria-label="قبلی">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <span class="nav-count" id="navCount">1/41</span>
+          <button class="nav-btn" id="navNext" onclick="navTheme(1)" aria-label="بعدی">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button class="back-btn" onclick="showGallery()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            پاک‌کردن
+          </button>
+        </div>
+        <iframe id="frame" title="theme preview"></iframe>
+      </div>
     </div>
   </div>
 
@@ -723,7 +733,7 @@ var THEMES = {
   pg: __THEMES_PG__, 
   xui: __THEMES_XUI__ 
 };
-var state={p:'pg',n:null,dev:'desktop',hover:null};
+var state={p:'pg',n:null,dev:'desktop'};
 
 function buildSel(p){
   var sel=document.getElementById('themeSel');
@@ -745,10 +755,7 @@ function nameHue(s){
   return h%360;
 }
 function cardGradient(n){
-  // secondary colour per theme: deterministic hue + a gold glint for contrast
   var h=nameHue(n);
-  var trendy=[['#60a5fa','#0ea5e9'],['#a855f7','#ec4899'],['#22c55e','#16a34a'],
-              ['#f59e0b','#ef4444'],['#facc15','#f472b6'],['#14b8a6','#2dd4bf']];
   return 'linear-gradient(135deg,hsl('+h+' 72% 55%) 0%,hsl('+((h+42)%360)+' 75% 45%) 55%,hsl('+((h+84)%360)+' 72% 34%) 100%)';
 }
 function themePath(p,n){return p==='pg'?'pg/'+n+'.html':'xui/'+n+'/index.html';}
@@ -762,31 +769,22 @@ function buildStrip(p){
     card.setAttribute('data-theme',n);
     card.setAttribute('data-idx',idx);
     card.innerHTML='<div class="bg" style="background:'+cardGradient(n)+'"></div>'+
-      '<div class="glint"></div><div class="bar"></div><div class="chip"></div>'+
+      '<div class="glint"></div><div class="bar"></div>'+
       '<div class="label"><span>'+n.charAt(0).toUpperCase()+n.slice(1)+'</span>'+
         '<span class="idx">'+(idx+1)+'/'+THEMES[p].length+'</span>'+
-        '<span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>'+
       '</div>';
-    // hover = instant live preview (debounced), click = pin it
-    card.addEventListener('mouseenter',function(){
-      state.hover=p+':'+n;
-      document.getElementById('themeSel').value=p+':'+n;
-      pickSel(p+':'+n);
-    });
-    card.addEventListener('click',function(){
-      document.getElementById('themeSel').value=p+':'+n;
-      pickSel(p+':'+n);
-    });
+    // hover = live preview; click = preview too (strip always stays visible)
+    card.addEventListener('mouseenter',function(){preview(p+':'+n);});
+    card.addEventListener('click',function(){preview(p+':'+n);});
     strip.appendChild(card);
   });
 }
 function navStrip(dir){
   var strip=document.getElementById('themeStrip');
-  strip.scrollBy({left:dir*340,behavior:'smooth'});
+  strip.scrollBy({left:dir*330,behavior:'smooth'});
 }
 function scrollToActive(){
-  var p=state.p;
-  var idx=THEMES[p].indexOf(state.n);
+  var idx=THEMES[state.p].indexOf(state.n);
   if(idx<0)return;
   var strip=document.getElementById('themeStrip');
   var card=strip.querySelector('.theme-card[data-idx="'+idx+'"]');
@@ -794,21 +792,16 @@ function scrollToActive(){
     var left=card.offsetLeft - strip.clientWidth/2 + card.clientWidth/2;
     strip.scrollTo({left:left,behavior:'smooth'});
   }
-  document.querySelectorAll('#themeStrip .theme-card').forEach(function(c){
-    c.classList.toggle('on',c.getAttribute('data-idx')==String(idx));
-  });
 }
 
-function pickSel(v){
-  if(!v){
-    showGallery();
-    return;
-  }
+function preview(v){
+  if(!v){ showGallery(); return; }
   var parts=v.split(':');
   var p=parts[0], n=parts[1];
   state.p=p; state.n=n;
   var path = themePath(p,n);
-  document.getElementById('frame').src = path;
+  var frame=document.getElementById('frame');
+  if(frame.getAttribute('src')!==path) frame.src = path;
   document.getElementById('openLink').href = path;
   document.getElementById('openLink').style.display='flex';
   document.getElementById('addrPath').textContent = path;
@@ -816,42 +809,44 @@ function pickSel(v){
   document.getElementById('badgeName').textContent = n;
   document.getElementById('badge').style.display='flex';
   var idx=THEMES[p].indexOf(n)+1;
-  document.getElementById('navCount').textContent=p==='pg'
-    ? idx+'/'+THEMES.pg.length
-    : idx+'/'+THEMES.xui.length;
+  document.getElementById('navCount').textContent=idx+'/'+THEMES[p].length;
   document.querySelectorAll('.tabs button').forEach(function(b){
     b.className = b.id==='tab-'+p ? 'on' : '';
   });
   var sel=document.getElementById('themeSel');
   if(sel.value!==v) sel.value=v;
 
-  document.getElementById('emptyState').classList.add('hidden');
+  // show browser, hide hero hint — rail stays visible
   document.getElementById('browser').classList.remove('hidden');
+  document.getElementById('emptyHero').style.display='none';
+
+  // highlight the active card (strip never hides)
+  document.querySelectorAll('#themeStrip .theme-card').forEach(function(c){
+    c.classList.toggle('on',c.getAttribute('data-theme')===n);
+  });
   scrollToActive();
 }
 
 function showGallery(){
   state.n=null;
-  document.getElementById('emptyState').classList.remove('hidden');
   document.getElementById('browser').classList.add('hidden');
+  document.getElementById('emptyHero').style.display='';
   document.getElementById('themeSel').value='';
   document.getElementById('openLink').style.display='none';
   document.getElementById('addrPath').textContent='آماده انتخاب قالب...';
   document.getElementById('badge').style.display='none';
-  buildStrip(state.p);
 }
 function navTheme(dir){
   var list=THEMES[state.p];
-  if(!state.n||state.hover){ state.n=list[0]; }
-  var i=list.indexOf(state.n);
+  var i = state.n ? list.indexOf(state.n) : -1;
   i=(i+dir+list.length)%list.length;
-  document.getElementById('themeSel').value=state.p+':'+list[i];
-  pickSel(state.p+':'+list[i]);
+  preview(state.p+':'+list[i]);
 }
 function setTab(p){
   state.p=p;
   buildSel(p);
   showGallery();
+  buildStrip(p);
   document.getElementById('tab-pg').className=p==='pg'?'on':'';
   document.getElementById('tab-xui').className=p==='xui'?'on':'';
 }
@@ -864,7 +859,7 @@ function setDevice(dev){
   });
 }
 
-// keyboard arrows while in preview: navigate themes; Escape -> back to gallery
+// keyboard arrows while in preview: navigate themes; Escape -> reset preview
 document.addEventListener('keydown',function(e){
   var inPreview=!document.getElementById('browser').classList.contains('hidden');
   if(inPreview && (e.key==='ArrowLeft'||e.key==='ArrowRight')){
