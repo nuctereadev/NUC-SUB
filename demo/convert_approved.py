@@ -59,7 +59,6 @@ BATCH = [
     ("dusk",    "html lang=fa dir=rtl style=margin0.html"),
     ("prisma",  "pasarguard_subscription_rebuilt.html"), # "Subscription rebuilt"
     ("coal",    "Qwen_html_20260909_ik5a4p1jr.html"),    # Qwen graphite a
-    ("chrome",  "Qwen_html_20260909_miyicnbdv.html"),    # Qwen graphite b
     ("steel",   "Qwen_html_20260909_opy5hz04b.html"),    # Qwen graphite c
     ("comet",   "Qwen_html_20260909_x0hgdbmwm.html"),    # "Nova Template" (green)
 ]

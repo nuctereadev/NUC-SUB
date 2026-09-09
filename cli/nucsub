@@ -26,8 +26,8 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
-XUI_THEMES=(minimal volt matrix glass neon sunset arctic cyberpunk amber-dark amethyst azure copper cyber-lime emerald forge graphite indigo-dark jade lagoon linen magenta navy neon-emerald nova onyx pearl royal sapphire slate terracotta violet)
-PG_THEMES=(volt minimal glass sunset matrix neon aurora cyberpunk amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal chrome steel comet)
+XUI_THEMES=(volt arctic amber-dark amethyst azure copper cyber-lime emerald forge graphite indigo-dark jade lagoon linen magenta navy neon-emerald nova onyx pearl royal sapphire slate terracotta violet)
+PG_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
 
 # ------------------------------------------------------- panel detection -------
 # nucsub supports two panels: 3x-ui (sqlite subThemeDir) and Pasarguard
@@ -524,7 +524,7 @@ pg_db_conn() {
     return 0
 }
 
-pg_db_set_subtemplate() {  # pg_db_set_subtemplate <value, e.g. subscription/glass.html or "">
+pg_db_set_subtemplate() {  # pg_db_set_subtemplate <value, e.g. subscription/amber.html or "">
     local val="${1:-}" out
     pg_db_conn || return 1
     # value is validated/sanitized by callers (theme names are [A-Za-z0-9_-].html)
@@ -570,7 +570,7 @@ except Exception:
     print("")'
 }
 
-pg_admin_set_all() {  # pg_admin_set_all <JSON value, e.g. "\"subscription/glass.html\"" or "\"\"">
+pg_admin_set_all() {  # pg_admin_set_all <JSON value, e.g. "\"subscription/amber.html\"" or "\"\"">
     local val="${1:-}" base token admins admin r ok=0
     base="$(pg_api_base)"
     token="$(pg_api_token)"

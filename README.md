@@ -4,16 +4,18 @@
 
 NUC-SUB installs modern, switchable subscription page themes onto your existing
 panel. It ships a lightweight Bash CLI (`nucsub`), an optional web management
-panel (3x-ui only), and eight self-contained themes per panel. The install
-preloads a single default theme; every other theme is fetched from GitHub on
-demand the first time you apply it, keeping the installer fast and small.
+panel (3x-ui only), and a library of self-contained themes per panel. The
+install preloads a single default theme; every other theme is fetched from
+GitHub on demand the first time you apply it, keeping the installer fast and
+small.
 
 ---
 
 ## Features
 
-- Eight ready-made themes: `gradient`, `minimal`, `glass`, `matrix`, `neon`,
-  `sunset`, `arctic`, `cyberpunk`.
+- Ready-made themes: 33 for Pasarguard (Jinja2) and 23 for 3x-ui (Go), from
+  the classic `gradient` / `volt` / `arctic` designs to dozens of modern ones
+  (`indigo`, `zenith`, `ocean`, `command`, ...).
 - Two rendering engines: Go `html/template` for 3x-ui (via `subThemeDir`) and
   Jinja2 for Pasarguard (`SUBSCRIPTION_PAGE_TEMPLATE`).
 - Lightweight web panel for 3x-ui — pure HTML/CSS/JS frontend with a small
@@ -109,14 +111,9 @@ Example output of `nucsub list`:
 ```
 Installed Themes
 ──────────────────────────────────────────────
-     minimal           not downloaded
- ★  gradient          downloaded
-     matrix            not downloaded
-     glass             not downloaded
-     neon              downloaded
-     sunset            downloaded
      arctic            not downloaded
-     cyberpunk         not downloaded
+ ★  gradient          downloaded
+     volt              not downloaded
 
 ✓ Active: gradient
   Running 'nucsub apply' downloads a theme automatically.
