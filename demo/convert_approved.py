@@ -79,10 +79,109 @@ LINK_BLOCK = re.compile(
 )
 # Any element that carries data-link: config-item / c-row / cfg / config-card / etc.
 LINK_BLOCK_ANY = re.compile(
-    r'(?P<pre><(?:div|button|a)\s[^>]*data-link="[^"]*"[^>]*>)'
-    r"(?P<body>.*?)</(?:div|button|a)>",
-    re.DOTALL,
+    r'(?P<pre><(?:div|button|a)\s[^>]*data-link="[^"]*"[^>]*>)',
 )
+
+
+def _find_block_end(html, start):
+    """Find the index just after the matching closing tag for the block opened at
+    `start`. Handles nested div/button/a tags so we never cut a config card early."""
+    depth = 1  # we start right AFTER the already-opened outer tag
+    i = start
+    while i < len(html):
+        lt = html.find("<", i)
+        if lt < 0:
+            return len(html)
+        # end tag?
+        if html.startswith("</", lt):
+            gt = html.find(">", lt)
+            name = html[lt + 2: gt].strip().split()[0]
+            if name in ("div", "button", "a"):
+                depth -= 1
+                if depth == 0:
+                    return gt + 1
+            i = gt + 1
+            continue
+        # comment?
+        if html.startswith("<!--", lt):
+            gt = html.find("-->", lt)
+            i = (gt + 3) if gt >= 0 else len(html)
+            continue
+        # opening tag
+        gt = html.find(">", lt)
+        tag = html[lt + 1: gt]
+        name = tag.split()[0].lstrip("!") if tag.split() else ""
+        if name.strip("/") in ("div", "button", "a") and not name.startswith("/"):
+            depth += 1
+        i = gt + 1
+    return len(html)
+
+
+def rewrite_link_blocks(html):
+    """Replace every hard-coded per-link block (data-link="...") with a single
+    {% for link in links %} iteration. The loop body mirrors the FIRST block's
+    full markup. Badge/name/meta text is cleared (the theme fills it via a small
+    injected JS that derives protocol + decoded fragment straight from data-link),
+    so the cards render correctly with any set of links."""
+    blocks = []
+    for m in LINK_BLOCK_ANY.finditer(html):
+        end = _find_block_end(html, m.end())
+        if end > m.end():
+            blocks.append((m, end))
+    if not blocks:
+        return html, False
+
+    m0, _ = blocks[0]
+    body = html[m0.end():blocks[0][1]]
+    # build a clean opening tag: keep all attributes before the final ">",
+    # strip the old data-link and re-insert the Jinja variable before ">".
+    opener = re.sub(r'\s+data-link="[^"]*"', "", m0.group("pre")).rstrip(">")
+    opener = opener.rstrip() + ' data-link="{{ link }}">'
+
+    # blank every text node that holds the hard-coded protocol label/name so JS
+    # can rewrite it from the link; keep the HTML skeleton and classes intact.
+    body = re.sub(r">(?:[^<>{}]|{{[^{}]*}})+<", "><", body)
+
+    loop = (
+        "{% for link in links %}\n"
+        + opener + body.rstrip() + "\n"
+        "{% endfor %}\n"
+    )
+    start = blocks[0][0].start()
+    end = blocks[-1][1]
+    html = html[:start] + loop + html[end:]
+
+    # inject one small script that fills badge + name + protocol from data-link,
+    # appended right before </body> (works with every markup variant).
+    js = """
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\\/\\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+"""
+    if "</body>" in html:
+        html = html.replace("</body>", js + "</body>")
+    else:
+        html += "\n" + js
+    return html, True
 
 
 def rewrite_statics(html):
@@ -96,31 +195,6 @@ def rewrite_statics(html):
     html = re.sub(r'class="(mod-count|configs-count|count|badge-count)"[^>]*>\d+',
                   r'class="\1" >{{ links | length }}', html)
     return html
-
-
-def rewrite_link_blocks(html):
-    """Replace every hard-coded per-link <div class="X" data-link="...">...</div>
-    with a single {% for link in links %} iteration. Since the JS of each draft
-    reads data-link (for copy/QR), we can fill the visible name/protocol via a
-    small JS snippet appended before </body> if the template does not already."""
-    it = LINK_BLOCK_ANY.finditer(html)
-    blocks = list(it)
-    if not blocks:
-        return html, False
-    # Use the FIRST block's inner structure as the loop body (strip its own data-link attr).
-    first = blocks[0]
-    body = first.group("body")
-    # blank the static name/protocol text so JS fills them
-    body = re.sub(r'([-]><)?[^<>]*</div>', lambda m: m.group(0), body)
-    loop = ("{% for link in links %}\n"
-            f"<div class=\"{re.search(r'class=\"([^\"]+)\"', first.group('pre')).group(1)}\" data-link=\"{{{{ link }}}}\">"
-            f"{body}</div>\n"
-            "{% endfor %}\n")
-    # replace from first block start to last block end
-    start = blocks[0].start()
-    end = blocks[-1].end()
-    html = html[:start] + loop + html[end:]
-    return html, True
 
 
 def add_dynamic_js(html):
