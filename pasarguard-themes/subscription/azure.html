@@ -1174,7 +1174,25 @@
         <div class="config-list">
             {% for link in links %}
 <div class="config-item animate-in delay-4" data-link="{{ link }}">
-                <div class="proto-badge proto-vless"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><button class="config-copy" title="Copy" aria-label="Copy link"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button></div>
+                <div class="proto-badge proto-vless"></div>
+                <div class="config-main">
+                    <div class="config-name"></div>
+                    <div class="config-meta">
+                        <span></span>
+                        <span class="sep"></span>
+                        <span data-i18n="tap_to_copy">کلیک برای کپی</span>
+                    </div>
+                </div>
+                <button class="config-copy" title="Copy" aria-label="Copy link">
+                    <svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                    <svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </button>
+            </div>
 {% endfor %}
 
         </div>
@@ -1448,13 +1466,13 @@
     var m=link.match(/^([a-z0-9]+):\/\//i);
     var proto=m?m[1].toLowerCase():'unknown';
     var frag=link.split('#');
-    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
-    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):'Config '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge,.proto-chip,.config-proto');
     if(badge){
       badge.className=badge.className.split(' ')[0]+' proto-'+proto;
       if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
     }
-    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.cfg-nm,.config-title');
     if(nameEl) nameEl.textContent=name;
     var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
     if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();

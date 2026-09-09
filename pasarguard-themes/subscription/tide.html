@@ -813,7 +813,16 @@
     <div class="config-list" id="configList">
       {% for link in links %}
 <div class="config-item" data-link="{{ link }}">
-        <span class="config-index"></span><div class="config-main"><div class="config-name"></div><div class="config-meta"><span class="proto-tag vless"></span><span data-i18n="tap_copy"></span></div></div><svg class="svg-icon sm config-arrow" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <span class="config-index"></span>
+        <div class="config-main">
+          <div class="config-name"></div>
+          <div class="config-meta">
+            <span class="proto-tag vless"></span>
+            <span data-i18n="tap_copy">کلیک برای کپی</span>
+          </div>
+        </div>
+        <svg class="svg-icon sm config-arrow" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </div>
 {% endfor %}
 
     </div>
@@ -1041,13 +1050,13 @@
     var m=link.match(/^([a-z0-9]+):\/\//i);
     var proto=m?m[1].toLowerCase():'unknown';
     var frag=link.split('#');
-    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
-    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):'Config '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge,.proto-chip,.config-proto');
     if(badge){
       badge.className=badge.className.split(' ')[0]+' proto-'+proto;
       if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
     }
-    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.cfg-nm,.config-title');
     if(nameEl) nameEl.textContent=name;
     var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
     if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();

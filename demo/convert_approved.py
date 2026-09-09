@@ -101,73 +101,141 @@ LINK_BLOCK_ANY = re.compile(
 )
 
 
-def _find_block_end(html, start):
-    """Find the index just after the matching closing tag for the block opened at
-    `start`. Handles nested div/button/a tags so we never cut a config card early."""
-    depth = 1  # we start right AFTER the already-opened outer tag
+def _walk_close(html, start):
+    """Return index just after the closing tag of the item opened *immediately
+    before* `start`. We only need to consume ONE sibling (div/button/a), because
+    after the last link item the source usually closes each item's own wrapper
+    (proto-badge / main / meta) and one stray closing tag for the item itself.
+    A naive depth counter breaks on these half-balanced sources, so we simply
+    walk until the depth drops below 0 (the item's own closing tag)."""
+    d = 0
     i = start
     while i < len(html):
         lt = html.find("<", i)
         if lt < 0:
             return len(html)
-        # end tag?
-        if html.startswith("</", lt):
-            gt = html.find(">", lt)
-            name = html[lt + 2: gt].strip().split()[0]
+        gt = html.find(">", lt)
+        if gt < 0:
+            return len(html)
+        raw = html[lt + 1:gt].strip()
+        if raw.startswith("!--"):
+            gt = html.find("-->", gt)
+            i = (gt + 3) if gt >= 0 else len(html)
+            continue
+        if raw.startswith("/"):
+            name = raw[1:].split()[0]
             if name in ("div", "button", "a"):
-                depth -= 1
-                if depth == 0:
+                d -= 1
+                if d < 0:
                     return gt + 1
             i = gt + 1
             continue
-        # comment?
-        if html.startswith("<!--", lt):
-            gt = html.find("-->", lt)
-            i = (gt + 3) if gt >= 0 else len(html)
-            continue
-        # opening tag
-        gt = html.find(">", lt)
-        tag = html[lt + 1: gt]
-        name = tag.split()[0].lstrip("!") if tag.split() else ""
-        if name.strip("/") in ("div", "button", "a") and not name.startswith("/"):
-            depth += 1
+        name = raw.split()[0]
+        if name.lstrip("!") in ("div", "button", "a") and not name.endswith("/"):
+            d += 1
         i = gt + 1
     return len(html)
+
+
+def clean_body(body):
+    """Keep the HTML skeleton of the first link item but blank the hard-coded
+    label/name/protocol/index text so the injected JS can re-derive them from
+    the live {{ link }}. i18n spans and svg icons are preserved."""
+    hold = []
+
+    def _h(m):
+        hold.append(m.group(0))
+        return "@@G%d@@" % (len(hold) - 1)
+
+    body = re.sub(r'<span data-i18n="[^"]*">[^<>]*</span>', _h, body)
+    # clear literal text inside badge/proto/chip/name/index elements
+    body = re.sub(
+        r'(<[^>]+class="[^"]*(?:badge|proto|chip|name|idx|index|count|tag)[^"]*"[^>]*>)\s*[^<>]+(?=</)',
+        r"\1", body, flags=re.S)
+    # clear the first protocol label under any *meta element (span/em/b)
+    body = re.sub(
+        r'(<[^>]+class="[^"]*meta[^"]*"[^>]*>\s*)<(span|em|b|strong)>[^<>]*</\2>',
+        r"\1<\2></\2>", body, flags=re.S)
+    # command-style block: plain text directly inside cfgmain
+    body = re.sub(
+        r'(<[^>]+class="[^"]*cfgmain[^"]*"[^>]*>)\s*([^<>{}]+?)\s*(?=<)',
+        r"\1", body, flags=re.S)
+    for i, frag in enumerate(hold):
+        body = body.replace("@@G%d@@" % i, frag)
+    return body
+
+
+def _net_depth(snippet):
+    """Net open/close depth of div/button/a inside `snippet` (comments and
+    self-closing tags ignored). 0 => balanced inner markup where the item's own
+    closing tag is still missing (half-balanced Approved sources); -1 => the
+    snippet already contains the item's own closing tag."""
+    d = 0
+    i = 0
+    while True:
+        lt = snippet.find("<", i)
+        if lt < 0:
+            break
+        gt = snippet.find(">", lt)
+        if gt < 0:
+            break
+        raw = snippet[lt + 1:gt].strip()
+        i = gt + 1
+        if raw.startswith("!--"):
+            gt2 = snippet.find("-->", gt)
+            i = (gt2 + 3) if gt2 >= 0 else len(snippet)
+            continue
+        if raw.startswith("/"):
+            if raw[1:].split()[0] in ("div", "button", "a"):
+                d -= 1
+            continue
+        name = raw.split()[0].lstrip("!")
+        if name in ("div", "button", "a") and not name.endswith("/"):
+            d += 1
+    return d
 
 
 def rewrite_link_blocks(html):
     """Replace every hard-coded per-link block (data-link="...") with a single
     {% for link in links %} iteration. The loop body mirrors the FIRST block's
-    full markup. Badge/name/meta text is cleared (the theme fills it via a small
-    injected JS that derives protocol + decoded fragment straight from data-link),
-    so the cards render correctly with any set of links."""
-    blocks = []
-    for m in LINK_BLOCK_ANY.finditer(html):
-        end = _find_block_end(html, m.end())
-        if end > m.end():
-            blocks.append((m, end))
-    if not blocks:
+    full markup. Badge/name/protocol text is cleared (the theme fills it via a
+    small injected JS that derives protocol + decoded fragment straight from
+    data-link), so the cards render correctly with any set of links.
+
+    Approved sources come in two shapes:
+      * half-balanced: every config item is opened but only the LAST one carries
+        real closing </div>s, so we derive the item boundary from the NEXT
+        data-link opener and append the item's own closing tag ourselves;
+      * single-item placeholders (markup collapsed "for brevity"), where the
+        single block is used as the template for all live links."""
+    matches = list(LINK_BLOCK_ANY.finditer(html))
+    if not matches:
         return html, False
 
-    m0, _ = blocks[0]
-    body = html[m0.end():blocks[0][1]]
-    # build a clean opening tag: keep all attributes before the final ">",
-    # strip the old data-link and re-insert the Jinja variable before ">".
-    opener = re.sub(r'\s+data-link="[^"]*"', "", m0.group("pre")).rstrip(">")
-    opener = opener.rstrip() + ' data-link="{{ link }}">'
+    m0 = matches[0]
+    if len(matches) >= 2:
+        raw_body = html[m0.end():matches[1].start()]
+    else:
+        raw_body = html[m0.end():_walk_close(html, m0.end())]
 
-    # blank every text node that holds the hard-coded protocol label/name so JS
-    # can rewrite it from the link; keep the HTML skeleton and classes intact.
-    body = re.sub(r">(?:[^<>{}]|{{[^{}]*}})+<", "><", body)
+    net = _net_depth(raw_body)
+    body = clean_body(raw_body)
+
+    opener = re.sub(r'\s+data-link="[^"]*"', "", m0.group("pre"))
+    opener = opener.rstrip(">").rstrip()
+    opener = opener + ' data-link="{{ link }}">'
+
+    tag = re.match(r"<(\w+)", m0.group("pre")).group(1)
+    close_tag = "" if net == -1 else ("</" + tag + ">\n")
 
     loop = (
         "{% for link in links %}\n"
         + opener + body.rstrip() + "\n"
-        "{% endfor %}\n"
+        + close_tag
+        + "{% endfor %}\n"
     )
-    start = blocks[0][0].start()
-    end = blocks[-1][1]
-    html = html[:start] + loop + html[end:]
+    end = _walk_close(html, matches[-1].end())
+    html = html[:m0.start()] + loop + html[end:]
 
     # inject one small script that fills badge + name + protocol from data-link,
     # appended right before </body> (works with every markup variant).
@@ -181,13 +249,13 @@ def rewrite_link_blocks(html):
     var m=link.match(/^([a-z0-9]+):\\/\\//i);
     var proto=m?m[1].toLowerCase():'unknown';
     var frag=link.split('#');
-    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
-    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):'Config '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge,.proto-chip,.config-proto');
     if(badge){
       badge.className=badge.className.split(' ')[0]+' proto-'+proto;
       if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
     }
-    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.cfg-nm,.config-title');
     if(nameEl) nameEl.textContent=name;
     var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
     if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();

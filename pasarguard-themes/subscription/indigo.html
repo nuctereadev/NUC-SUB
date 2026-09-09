@@ -75,59 +75,16 @@
     <div class="section-head"><h2 data-i18n="configurations">کانفیگ‌ها</h2><span class="count" >{{ links | length }}</span></div>
     <div class="config-list">{% for link in links %}
 <div class="config-item" data-link="{{ link }}">
-      <div class="proto-badge proto-vless"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><div class="config-item" data-link="vmess://eyJ2IjoiMiIsInBzIjoiVk1FU1MtTG9jYXRpb24iLCJhZGQiOiJkZW1vLW1haW4uZXhhbXBsZS5jb20iLCJwb3J0IjoiNDQzIiwiaWQiOiJjOWM0Zjc4Zi00NTY3LTg5YWItYzBkZWYxMjM0NTY3IiwiYWlkIjoiMCIsIm5ldCI6IndzIiwicGF0aCI6Ii9zbWMiLCJob3N0IjoiY2RuLmV4YW1wbGUuY29tIiwidGxzIjoiIn0="><div class="proto-badge proto-vmess"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><div class="config-item" data-link="trojan://demo-token-a1b2c3@demo-main.example.com:443?security=tls&type=ws&path=%2Ftrojan-ws&sni=cdn.example.com#Trojan-WebSocket"><div class="proto-badge proto-trojan"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><div class="config-item" data-link="ss://YWVzLTI1Ni1nY206ZGVtb3Bhc3N3b3Jk@demo-main.example.com:8388#SS-2022"><div class="proto-badge proto-shadowsocks"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><div class="config-item" data-link="hysteria2://demo-hy2-password@demo-main.example.com:443?sni=cdn.example.com&insecure=1#Hysteria2"><div class="proto-badge proto-default"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><div class="config-item" data-link="wireguard://demo-wg-key@demo-main.example.com:51820?ip=10.0.0.2%2F32#WireGuard"><div class="proto-badge proto-wireguard"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div></div></section></aside></main></div><div class="modal-backdrop" id="qrModal"><div class="modal-sheet"><h3 data-i18n="qr_title"></h3><div class="qr-container"><img id="qrImg" alt="QR Code"></div><button class="close-btn" id="modalClose" data-i18n="close"></button></div></div><div class="toast" id="toast"><span id="toastText" data-i18n="copied"></span></div><script>
-(function(){
-'use strict';
-const i18n={
-fa:{subscription:'اشتراک',st_active:'فعال',st_limited:'محدود',st_expired:'منقضی',st_hold:'در انتظار',st_disabled:'غیرفعال',account_subtitle:'حساب کاربری شما',traffic_usage:'مصرف ترافیک',used:'مصرف شده',remaining:'باقیمانده',total:'حجم کل',subscription_details:'جزئیات اشتراک',expiry:'تاریخ انقضا',unlimited:'نامحدود',status:'وضعیت',device_limit:'محدودیت دستگاه',username:'نام کاربری',announcement:'اعلان',admin_note:'یادداشت',telegram:'تلگرام',qr_code:'کد QR',copy_all:'کپی همه',configurations:'کانفیگ‌ها',tap_to_copy:'کلیک برای کپی',qr_title:'کد QR اشتراک',close:'بستن',copied:'کپی شد',all_copied:'همه کپی شدند'},
-en:{subscription:'Subscription',st_active:'Active',st_limited:'Limited',st_expired:'Expired',st_hold:'On Hold',st_disabled:'Disabled',account_subtitle:'Your account',traffic_usage:'Traffic Usage',used:'Used',remaining:'Remaining',total:'Total',subscription_details:'Subscription Details',expiry:'Expiry Date',unlimited:'Unlimited',status:'Status',device_limit:'Device Limit',username:'Username',announcement:'Announcement',admin_note:'Note',telegram:'Telegram',qr_code:'QR Code',copy_all:'Copy All',configurations:'Configurations',tap_to_copy:'Tap to copy',qr_title:'Subscription QR',close:'Close',copied:'Copied',all_copied:'All copied'}
-};
-const htmlEl=document.documentElement;
-let lang=localStorage.getItem('nuc_lang')||'fa';
-let theme=localStorage.getItem('nuc_theme')||'dark';
-htmlEl.setAttribute('data-theme',theme);
-const themeBtn=document.getElementById('themeBtn');
-function syncThemeIcons(){const dark=theme==='dark';themeBtn.querySelector('.i-sun').style.display=dark?'':'none';themeBtn.querySelector('.i-moon').style.display=dark?'none':''}
-syncThemeIcons();
-themeBtn.addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';htmlEl.setAttribute('data-theme',theme);localStorage.setItem('nuc_theme',theme);syncThemeIcons()});
-function applyLanguage(l){htmlEl.setAttribute('lang',l);htmlEl.setAttribute('dir',l==='fa'?'rtl':'ltr');document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(i18n[l]&&i18n[l][k])el.textContent=i18n[l][k]})}
-applyLanguage(lang);
-document.getElementById('langBtn').addEventListener('click',()=>{lang=lang==='fa'?'en':'fa';localStorage.setItem('nuc_lang',lang);applyLanguage(lang)});
-requestAnimationFrame(()=>{const bar=document.querySelector('.progress>span');if(bar){const w=parseFloat(bar.getAttribute('data-width'))||0;bar.style.width=Math.max(0,Math.min(100,w))+'%'}});
-const toast=document.getElementById('toast'),toastText=document.getElementById('toastText');let toastTimer;
-function showToast(msg){toastText.textContent=msg;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1800)}
-async function copyText(text){try{await navigator.clipboard.writeText(text);return true}catch(e){const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0;pointer-events:none';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');document.body.removeChild(ta);return ok}}
-function flash(item,btn){const c=btn.querySelector('.i-copy'),k=btn.querySelector('.i-check');item.classList.add('copied');btn.classList.add('copied');if(c)c.style.display='none';if(k)k.style.display='';setTimeout(()=>{item.classList.remove('copied');btn.classList.remove('copied');if(c)c.style.display='';if(k)k.style.display='none'},1300)}
-document.querySelectorAll('.config-item').forEach(item=>{const link=item.getAttribute('data-link'),btn=item.querySelector('.config-copy'),name=item.querySelector('.config-name');if(name&&name.textContent.includes('%')){try{name.textContent=decodeURIComponent(name.textContent)}catch(e){}}const doCopy=()=>copyText(link).then(ok=>{if(ok){flash(item,btn);showToast(i18n[lang].copied)}});item.addEventListener('click',e=>{if(!e.target.closest('.config-copy'))doCopy()});if(btn)btn.addEventListener('click',e=>{e.stopPropagation();doCopy()})});
-document.getElementById('copyAllBtn').addEventListener('click',()=>{const links=[...document.querySelectorAll('.config-item')].map(it=>it.getAttribute('data-link')).filter(Boolean);if(links.length)copyText(links.join('\n')).then(ok=>{if(ok)showToast(i18n[lang].all_copied)})});
-const modal=document.getElementById('qrModal'),qr=document.getElementById('qrImg');
-document.getElementById('qrBtn').addEventListener('click',()=>{const first=document.querySelector('.config-item');if(!first)return;qr.src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data='+encodeURIComponent(first.getAttribute('data-link'));modal.classList.add('active')});
-document.getElementById('modalClose').addEventListener('click',()=>modal.classList.remove('active'));modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('active')});document.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('active')});
-})();
-</script>
-<script>
-(function(){
-  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
-  var cards=document.querySelectorAll('[data-link]');
-  cards.forEach(function(card,i){
-    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
-    var m=link.match(/^([a-z0-9]+):\/\//i);
-    var proto=m?m[1].toLowerCase():'unknown';
-    var frag=link.split('#');
-    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
-    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
-    if(badge){
-      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
-      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
-    }
-    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
-    if(nameEl) nameEl.textContent=name;
-    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
-    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
-  });
-})();
-</script>
-</body></html>
+      <div class="proto-badge proto-vless"></div>
+      <div class="config-main">
+        <div class="config-name"></div>
+        <div class="config-meta">
+          <span></span>
+          <span class="sep"></span>
+          <span data-i18n="tap_to_copy">کلیک برای کپی</span>
+        </div>
+      </div>
+</div>
 {% endfor %}
 
   </section>
@@ -178,13 +135,13 @@ document.getElementById('modalClose').addEventListener('click',()=>modal.classLi
     var m=link.match(/^([a-z0-9]+):\/\//i);
     var proto=m?m[1].toLowerCase():'unknown';
     var frag=link.split('#');
-    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
-    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):'Config '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge,.proto-chip,.config-proto');
     if(badge){
       badge.className=badge.className.split(' ')[0]+' proto-'+proto;
       if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
     }
-    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.cfg-nm,.config-title');
     if(nameEl) nameEl.textContent=name;
     var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
     if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
