@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e14">
+<title>Ember — Subscription</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   EMBER DESIGN SYSTEM - DARK EMERALD PALETTE
+   ============================================================ */
+:root[data-theme="dark"] {
+  --bg: #0a0e14;
+  --bg-elevated: #0f1419;
+  --surface: #151b23;
+  --surface-2: #1c2430;
+  --surface-3: #242d3a;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --text-faint: #484f58;
+  
+  --accent: #2ea043;
+  --accent-hover: #3fb950;
+  --accent-soft: rgba(46, 160, 67, 0.12);
+  --accent-glow: rgba(46, 160, 67, 0.25);
+  
+  --emerald: #2ea043;
+  --emerald-soft: rgba(46, 160, 67, 0.12);
+  --teal: #1f8a9a;
+  --teal-soft: rgba(31, 138, 154, 0.12);
+  --amber: #d29922;
+  --amber-soft: rgba(210, 153, 34, 0.12);
+  --red: #f85149;
+  --red-soft: rgba(248, 81, 73, 0.12);
+  --blue: #58a6ff;
+  --blue-soft: rgba(88, 166, 255, 0.12);
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #e5e7eb;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --text-primary: #1f2328;
+  --text-secondary: #57606a;
+  --text-muted: #8b949e;
+  --text-faint: #afb8c1;
+  
+  --accent: #1a7f37;
+  --accent-hover: #116329;
+  --accent-soft: rgba(26, 127, 55, 0.1);
+  --accent-glow: rgba(26, 127, 55, 0.15);
+  
+  --emerald: #1a7f37;
+  --emerald-soft: rgba(26, 127, 55, 0.1);
+  --teal: #1b7c8a;
+  --teal-soft: rgba(27, 124, 138, 0.1);
+  --amber: #9a6700;
+  --amber-soft: rgba(154, 103, 0, 0.1);
+  --red: #cf222e;
+  --red-soft: rgba(207, 34, 46, 0.1);
+  --blue: #0969da;
+  --blue-soft: rgba(9, 105, 218, 0.1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   SPLIT LAYOUT
+   ============================================================ */
+.layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 48px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   SIDEBAR (Sticky)
+   ============================================================ */
+.sidebar {
+  position: sticky;
+  top: 32px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+/* Brand */
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 20px;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), transparent 60%);
+}
+
+.brand-icon svg { width: 22px; height: 22px; stroke: white; stroke-width: 2.2; position: relative; z-index: 1; }
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.brand-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.brand-controls { display: flex; gap: 6px; }
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.icon-btn svg { width: 16px; height: 16px; stroke-width: 1.8; }
+
+/* Status Card - IMPROVED */
+.status-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, var(--accent-glow), transparent 70%);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.status-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.status-pill.active { background: var(--emerald-soft); color: var(--emerald); }
+.status-pill.limited { background: var(--red-soft); color: var(--red); }
+.status-pill.expired { background: var(--amber-soft); color: var(--amber); }
+.status-pill.hold { background: var(--blue-soft); color: var(--blue); }
+.status-pill.disabled { background: var(--surface-2); color: var(--text-muted); }
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Hero Number - IMPROVED */
+.hero-stat {
+  margin-bottom: 20px;
+}
+
+.hero-number {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.hero-big {
+  font-size: 48px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+}
+
+.hero-unit {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}
+
+.hero-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Sparkline - MUCH IMPROVED */
+.sparkline-wrap {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.sparkline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.sparkline-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.sparkline-trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--emerald);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--emerald-soft);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.sparkline-svg {
+  width: 100%;
+  height: 80px;
+  display: block;
+}
+
+/* Progress Section - Enhanced */
+.progress-section {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.progress-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.progress-value {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-bar {
+  height: 10px;
+  background: var(--surface);
+  border-radius: 5px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 5px;
+  width: 0%;
+  transition: width 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
+}
+
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.progress-stat {
+  text-align: center;
+}
+
+.progress-stat-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+
+.progress-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* Action Buttons */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: inherit;
+  width: 100%;
+}
+
+.action-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  transform: translateX(-2px);
+}
+
+html[dir="ltr"] .action-btn:hover { transform: translateX(2px); }
+
+.action-btn:active { transform: translateX(0) scale(0.98); }
+
+.action-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.action-btn.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-btn.primary .action-icon {
+  background: rgba(255,255,255,0.15);
+}
+
+.action-icon svg { width: 16px; height: 16px; stroke-width: 2; }
+
+.action-text { flex: 1; }
+
+.action-hint {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: 'SF Mono', Monaco, monospace;
+  letter-spacing: 0.3px;
+}
+
+.action-btn.primary .action-hint {
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Timeline Sections */
+.timeline-section {
+  position: relative;
+  padding-right: 32px;
+}
+
+html[dir="ltr"] .timeline-section { padding-right: 0; padding-left: 32px; }
+
+.timeline-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 8px;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--border-strong), transparent);
+}
+
+html[dir="ltr"] .timeline-section::before { right: auto; left: 8px; }
+
+.timeline-section::after {
+  content: '';
+  position: absolute;
+  top: 24px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--accent-soft);
+}
+
+html[dir="ltr"] .timeline-section::after { right: auto; left: 4px; }
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.section-title-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+
+.section-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Details Card */
+.details-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  transition: background 0.15s ease;
+}
+
+.detail-row:hover { background: var(--surface-2); }
+
+.detail-row + .detail-row { border-top: 1px solid var(--border); }
+
+.detail-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.detail-icon svg { width: 14px; height: 14px; stroke-width: 2; }
+.detail-icon.warn { background: var(--amber-soft); color: var(--amber); }
+.detail-icon.success { background: var(--emerald-soft); color: var(--emerald); }
+.detail-icon.info { background: var(--blue-soft); color: var(--blue); }
+.detail-icon.neutral { background: var(--teal-soft); color: var(--teal); }
+
+.detail-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.detail-value.muted { color: var(--text-muted); font-weight: 500; }
+.detail-value.success { color: var(--emerald); }
+
+/* Callouts */
+.callout {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+}
+
+.callout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 3px;
+}
+
+html[dir="ltr"] .callout::before { right: auto; left: 0; }
+
+.callout.announce::before { background: var(--accent); }
+.callout.note::before { background: var(--amber); }
+
+.callout-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.callout-icon svg { width: 17px; height: 17px; stroke-width: 2; }
+.callout.announce .callout-icon { background: var(--accent-soft); color: var(--accent); }
+.callout.note .callout-icon { background: var(--amber-soft); color: var(--amber); }
+
+.callout-body { flex: 1; min-width: 0; }
+
+.callout-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.callout-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Configs Grid */
+.configs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.config-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.config-item:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+
+.config-item:active { transform: translateY(0) scale(0.98); }
+
+.config-item.copied {
+  border-color: var(--emerald);
+  background: var(--emerald-soft);
+}
+
+.proto-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.5px;
+}
+
+.proto-vless { background: var(--blue); }
+.proto-vmess { background: var(--emerald); }
+.proto-trojan { background: var(--red); }
+.proto-shadowsocks { background: var(--amber); }
+.proto-hysteria { background: #8b6bb8; }
+.proto-wireguard { background: var(--teal); }
+.proto-default { background: var(--text-muted); }
+
+.config-info { flex: 1; min-width: 0; }
+
+.config-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.config-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-meta .sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.config-copy {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.config-copy:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.config-copy.copied {
+  background: var(--emerald);
+  color: white;
+  border-color: var(--emerald);
+}
+
+.config-copy svg { width: 13px; height: 13px; stroke-width: 2; }
+
+/* ============================================================
+   MODAL & TOAST
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 20, 0.8);
+  backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-backdrop.active { display: flex; animation: fadeIn 0.2s ease; }
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  animation: modalUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-card h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+}
+
+.qr-wrapper {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.qr-wrapper img { display: block; width: 200px; height: 200px; }
+
+.modal-close {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover { background: var(--surface-3); }
+
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast svg { width: 16px; height: 16px; color: var(--emerald); stroke-width: 2.5; }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.status-card, .progress-section, .actions,
+.timeline-section, .callout {
+  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.progress-section { animation-delay: 0.05s; }
+.actions { animation-delay: 0.1s; }
+.timeline-section:nth-child(2) { animation-delay: 0.15s; }
+.timeline-section:nth-child(3) { animation-delay: 0.2s; }
+.timeline-section:nth-child(4) { animation-delay: 0.25s; }
+
+/* ============================================================
+   LTR / RESPONSIVE
+   ============================================================ */
+html[lang="en"] { direction: ltr; }
+html[lang="en"] .detail-value { text-align: right; }
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 24px;
+  }
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+  .timeline-section { padding-right: 0; }
+  html[dir="ltr"] .timeline-section { padding-left: 0; }
+  .timeline-section::before, .timeline-section::after { display: none; }
+  .configs-grid { grid-template-columns: 1fr; }
+  .hero-big { font-size: 42px; }
+}
+
+@media (max-width: 480px) {
+  .layout { padding: 16px; }
+  .status-card { padding: 18px; }
+  .hero-big { font-size: 38px; letter-spacing: -1px; }
+  .hero-unit { font-size: 16px; }
+  .progress-section { padding: 14px; }
+  .progress-stat-value { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+
+    <!-- Brand -->
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2C8 6 6 10 6 14a6 6 0 0 0 12 0c0-4-2-8-6-12z"/>
+            <path d="M12 22v-4"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">Ember</div>
+          <div class="brand-tag">v2.0</div>
+        </div>
+      </div>
+      <div class="brand-controls">
+        <button class="icon-btn" id="langBtn" aria-label="Language">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="themeBtn" aria-label="Theme">
+          <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <svg class="i-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Status Card - IMPROVED -->
+    <div class="status-card">
+      <div class="status-header">
+        <span class="status-label" data-i18n="subscription_status">وضعیت اشتراک</span>
+        <div class="status-pill active">
+          <span class="status-dot"></span>
+          <span data-i18n="st_active">فعال</span>
+        </div>
+      </div>
+
+      <!-- Hero Number - IMPROVED -->
+      <div class="hero-stat">
+        <div class="hero-number">
+          <span class="hero-big">43.75</span>
+          <span class="hero-unit">GB</span>
+        </div>
+        <div class="hero-subtitle" data-i18n="used">مصرف شده</div>
+      </div>
+
+      <!-- Sparkline - MUCH IMPROVED -->
+      <div class="sparkline-wrap">
+        <div class="sparkline-header">
+          <span class="sparkline-title" data-i18n="trend_7d">روند ۷ روز</span>
+          <span class="sparkline-trend">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            +12%
+          </span>
+        </div>
+        <svg class="sparkline-svg" viewBox="0 0 200 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,60 L28,55 L57,58 L85,45 L114,50 L142,35 L171,40 L200,25 L200,80 L0,80 Z" fill="url(#sparkGrad)"/>
+          <path d="M0,60 L28,55 L57,58 L85,45 L114,50 L142,35 L171,40 L200,25" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Progress Section - Enhanced -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <span class="progress-label" data-i18n="usage_progress">پیشرفت مصرف</span>
+        <span class="progress-value">{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div>
+      </div>
+      <div class="progress-stats">
+        <div class="progress-stat">
+          <div class="progress-stat-value">43.75</div>
+          <div class="progress-stat-label" data-i18n="used">مصرف</div>
+        </div>
+        <div class="progress-stat">
+          <div class="progress-stat-value">56.25</div>
+          <div class="progress-stat-label" data-i18n="remaining">باقیمانده</div>
+        </div>
+        <div class="progress-stat">
+          <div class="progress-stat-value">100</div>
+          <div class="progress-stat-label" data-i18n="total">کل</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="action-btn primary" id="copyAllBtn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </div>
+        <span class="action-text" data-i18n="copy_all">کپی همه</span>
+        <span class="action-hint">⌘A</span>
+      </button>
+      <button class="action-btn" id="qrBtn">
+        <div class="action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/>
+          </svg>
+        </div>
+        <span class="action-text" data-i18n="qr_code">کد QR</span>
+        <span class="action-hint">⌘Q</span>
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <!-- Subscription Details -->
+    <div class="timeline-section">
+      <div class="section-heading">
+        <div class="section-title">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <span data-i18n="subscription_details">جزئیات اشتراک</span>
+        </div>
+      </div>
+
+      <div class="details-card">
+        <div class="detail-row">
+          <div class="detail-left">
+            <div class="detail-icon warn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <span class="detail-label" data-i18n="expiry">تاریخ انقضا</span>
+          </div>
+          <span class="detail-value">{{ user.expire | datetime }}</span>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-left">
+            <div class="detail-icon success">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>
+              </svg>
+            </div>
+            <span class="detail-label" data-i18n="status">وضعیت</span>
+          </div>
+          <span class="detail-value success" data-i18n="st_active">فعال</span>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-left">
+            <div class="detail-icon info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
+          </div>
+          <span class="detail-value">3</span>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-left">
+            <div class="detail-icon neutral">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <span class="detail-label" data-i18n="username">نام کاربری</span>
+          </div>
+          <span class="detail-value muted" style="direction:ltr">{{ user.username }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Announcement -->
+    <div class="timeline-section">
+      <div class="section-heading">
+        <div class="section-title">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/>
+              <path d="M16 8a5 5 0 0 1 0 8"/>
+            </svg>
+          </div>
+          <span data-i18n="announcements">اعلانات</span>
+        </div>
+      </div>
+
+      <div class="callout announce">
+        <div class="callout-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="callout-body">
+          <div class="callout-title" data-i18n="announcement">اعلان</div>
+          <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Note -->
+    <div class="timeline-section">
+      <div class="section-heading">
+        <div class="section-title">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <span data-i18n="admin_note">یادداشت</span>
+        </div>
+      </div>
+
+      <div class="callout note">
+        <div class="callout-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="callout-body">
+          <div class="callout-title" data-i18n="note_title">توجه</div>
+          <div class="callout-text" data-i18n="note_text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configurations -->
+    <div class="timeline-section">
+      <div class="section-heading">
+        <div class="section-title">
+          <div class="section-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <span data-i18n="configurations">کانفیگ‌ها</span>
+        </div>
+        <span class="section-badge">6</span>
+      </div>
+
+      <div class="configs-grid">
+        {% for link in links %}
+<div class="config-item" data-link="{{ link }}">
+          <div class="proto-badge proto-vless">VLES</div>
+{% endfor %}
+
+          <div class="config-info">
+            <div class="config-name">WireGuard</div>
+            <div class="config-meta"><span>WIREGUARD</span><span class="sep"></span><span data-i18n="tap_to_copy">کلیک برای کپی</span></div>
+          </div>
+          <button class="config-copy" aria-label="Copy">
+            <svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-backdrop" id="qrModal">
+  <div class="modal-card">
+    <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+    <div class="qr-wrapper">
+      <img id="qrImg" alt="QR Code">
+    </div>
+    <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toastText" data-i18n="copied">کپی شد</span>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const i18n = {
+    fa: {
+      subscription_status: 'وضعیت اشتراک',
+      st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+      used: 'مصرف شده', remaining: 'باقیمانده', total: 'کل',
+      trend_7d: 'روند ۷ روز', usage_progress: 'پیشرفت مصرف',
+      subscription_details: 'جزئیات اشتراک', expiry: 'تاریخ انقضا', status: 'وضعیت',
+      device_limit: 'محدودیت دستگاه', username: 'نام کاربری',
+      announcements: 'اعلانات', announcement: 'اعلان',
+      admin_note: 'یادداشت', note_title: 'توجه', note_text: 'سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.',
+      qr_code: 'کد QR', copy_all: 'کپی همه',
+      configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی',
+      qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
+    },
+    en: {
+      subscription_status: 'Subscription Status',
+      st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+      used: 'Used', remaining: 'Remaining', total: 'Total',
+      trend_7d: '7-day trend', usage_progress: 'Usage Progress',
+      subscription_details: 'Subscription Details', expiry: 'Expiry Date', status: 'Status',
+      device_limit: 'Device Limit', username: 'Username',
+      announcements: 'Announcements', announcement: 'Announcement',
+      admin_note: 'Note', note_title: 'Notice', note_text: 'Hello! This is a demo account — traffic, expiry and links are static samples.',
+      qr_code: 'QR Code', copy_all: 'Copy All',
+      configurations: 'Configurations', tap_to_copy: 'Tap to copy',
+      qr_title: 'Subscription QR', close: 'Close', copied: 'Copied', all_copied: 'All copied'
+    }
+  };
+
+  const html = document.documentElement;
+  let lang = localStorage.getItem('ember_lang') || 'fa';
+  let theme = localStorage.getItem('ember_theme') || 'dark';
+
+  html.setAttribute('data-theme', theme);
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+
+  const themeBtn = document.getElementById('themeBtn');
+  const iSun = themeBtn.querySelector('.i-sun');
+  const iMoon = themeBtn.querySelector('.i-moon');
+
+  function syncThemeIcons() {
+    if (theme === 'dark') { iSun.style.display = ''; iMoon.style.display = 'none'; }
+    else { iSun.style.display = 'none'; iMoon.style.display = ''; }
+  }
+  syncThemeIcons();
+
+  themeBtn.addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('ember_theme', theme);
+    syncThemeIcons();
+  });
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    lang = lang === 'fa' ? 'en' : 'fa';
+    localStorage.setItem('ember_lang', lang);
+    html.setAttribute('lang', lang);
+    html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (i18n[lang] && i18n[lang][k]) el.textContent = i18n[lang][k];
+    });
+  });
+
+  // Apply initial language
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][k]) el.textContent = i18n[lang][k];
+  });
+
+  // Animate progress bar
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const fill = document.querySelector('.progress-fill');
+      if (fill) fill.style.width = fill.getAttribute('data-width') + '%';
+    }, 200);
+  });
+
+  // Copy Logic
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  let toastTimer;
+
+  function showToast(msg) {
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  function flashCopy(item, btn) {
+    item.classList.add('copied');
+    btn.classList.add('copied');
+    btn.querySelector('.i-copy').style.display = 'none';
+    btn.querySelector('.i-check').style.display = '';
+    setTimeout(() => {
+      item.classList.remove('copied');
+      btn.classList.remove('copied');
+      btn.querySelector('.i-copy').style.display = '';
+      btn.querySelector('.i-check').style.display = 'none';
+    }, 1500);
+  }
+
+  document.querySelectorAll('.config-item').forEach(item => {
+    const link = item.getAttribute('data-link');
+    const btn = item.querySelector('.config-copy');
+    const nameEl = item.querySelector('.config-name');
+    
+    if (nameEl && nameEl.textContent.indexOf('%') !== -1) {
+      try { nameEl.textContent = decodeURIComponent(nameEl.textContent); } catch (e) {}
+    }
+
+    function doCopy() {
+      copyText(link).then(ok => {
+        if (ok) { flashCopy(item, btn); showToast(i18n[lang].copied); }
+      });
+    }
+
+    item.addEventListener('click', e => { if (!e.target.closest('.config-copy')) doCopy(); });
+    btn.addEventListener('click', e => { e.stopPropagation(); doCopy(); });
+  });
+
+  document.getElementById('copyAllBtn').addEventListener('click', () => {
+    const links = Array.from(document.querySelectorAll('.config-item')).map(it => it.getAttribute('data-link'));
+    if (links.length) copyText(links.join('\n')).then(ok => { if (ok) showToast(i18n[lang].all_copied); });
+  });
+
+  // QR Modal
+  const qrModal = document.getElementById('qrModal');
+  document.getElementById('qrBtn').addEventListener('click', () => {
+    const first = document.querySelector('.config-item');
+    if (first) {
+      document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + encodeURIComponent(first.getAttribute('data-link'));
+      qrModal.classList.add('active');
+    }
+  });
+
+  document.getElementById('modalClose').addEventListener('click', () => qrModal.classList.remove('active'));
+  qrModal.addEventListener('click', e => { if (e.target === qrModal) qrModal.classList.remove('active'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') qrModal.classList.remove('active'); });
+
+})();
+</script>
+</body>
+</html>

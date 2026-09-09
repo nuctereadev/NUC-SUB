@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
+<title>Onyx Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ONYX DESIGN SYSTEM - CYBER MINIMALISM
+   ============================================================ */
+:root[data-theme="dark"] {
+  --bg: #09090b;
+  --surface: #18181b;
+  --surface-elevated: #27272a;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #52525b;
+  
+  /* Cyber Lime & Electric Violet */
+  --accent: #a3e635;
+  --accent-dim: rgba(163, 230, 53, 0.1);
+  --accent-glow: rgba(163, 230, 53, 0.25);
+  --secondary: #8b5cf6;
+  --secondary-dim: rgba(139, 92, 246, 0.1);
+  
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --info: #3b82f6;
+}
+
+:root[data-theme="light"] {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-elevated: #f4f4f5;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --text-muted: #a1a1aa;
+  
+  --accent: #65a30d;
+  --accent-dim: rgba(101, 163, 13, 0.1);
+  --accent-glow: rgba(101, 163, 13, 0.15);
+  --secondary: #7c3aed;
+  --secondary-dim: rgba(124, 58, 237, 0.1);
+  
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --danger: #dc2626;
+  --info: #2563eb;
+}
+
+/* ============================================================
+   BASE & LAYOUT
+   ============================================================ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px 48px;
+  position: relative;
+}
+
+/* Ambient Background Glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  width: 100%;
+  max-width: 520px; /* Compact, widget-like feel */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.brand-icon svg { width: 18px; height: 18px; stroke: #09090b; stroke-width: 2.5; }
+
+.brand-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.controls { display: flex; gap: 8px; }
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--surface-elevated);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.icon-btn svg { width: 16px; height: 16px; stroke-width: 2; }
+
+/* ============================================================
+   HERO CARD (Merged Status & Traffic)
+   ============================================================ */
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--accent-dim);
+  border: 1px solid rgba(163, 230, 53, 0.2);
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.status-orb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* HUD Radial Chart */
+.hud-chart {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  flex-shrink: 0;
+}
+
+.hud-chart svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.hud-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 6;
+}
+
+.hud-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px var(--accent-glow));
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hud-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hud-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.hud-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hero-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+}
+
+.stat-dot.used { background: var(--accent); }
+.stat-dot.left { background: var(--text-muted); }
+
+.stat-val {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   INFO GRID
+   ============================================================ */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.2s;
+}
+
+.info-card:hover { border-color: var(--border-hover); }
+
+.info-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-label svg { width: 14px; height: 14px; stroke-width: 2; }
+
+.info-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  word-break: break-all;
+}
+
+.info-value.muted { color: var(--text-secondary); font-weight: 500; font-size: 14px; }
+.info-value.success { color: var(--success); }
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn svg { width: 16px; height: 16px; stroke-width: 2; }
+
+.btn-ghost {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-elevated);
+  border-color: var(--border-hover);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #09090b;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn:active { transform: translateY(0) scale(0.98); }
+
+/* ============================================================
+   CONFIGS LIST
+   ============================================================ */
+.configs-section {
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.section-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--surface);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.config-list { display: flex; flex-direction: column; gap: 8px; }
+
+.config-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.config-item:hover {
+  background: var(--surface-elevated);
+  border-color: var(--border-hover);
+  transform: translateX(-2px);
+}
+
+html[dir="ltr"] .config-item:hover { transform: translateX(2px); }
+
+.config-item:active { transform: scale(0.98); }
+
+.config-item.copied {
+  border-color: var(--success);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.proto-tag {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.proto-vless { background: var(--info); }
+.proto-vmess { background: var(--success); }
+.proto-trojan { background: var(--danger); }
+.proto-shadowsocks { background: var(--warning); }
+.proto-hysteria { background: var(--secondary); }
+.proto-wireguard { background: #06b6d4; }
+.proto-default { background: var(--text-muted); }
+
+.config-info { flex: 1; min-width: 0; }
+
+.config-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.config-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.config-meta .sep {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.copy-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.copy-btn:hover {
+  background: var(--accent);
+  color: #09090b;
+  border-color: var(--accent);
+}
+
+.copy-btn.copied {
+  background: var(--success);
+  color: white;
+  border-color: var(--success);
+}
+
+.copy-btn svg { width: 14px; height: 14px; stroke-width: 2.5; }
+
+/* ============================================================
+   MODAL & TOAST
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 9, 11, 0.8);
+  backdrop-filter: blur(8px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal-backdrop.active { display: flex; animation: fadeIn 0.2s ease; }
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 300px;
+  width: 100%;
+  text-align: center;
+  animation: modalUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+
+.qr-box {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: inline-block;
+}
+
+.qr-box img { display: block; width: 180px; height: 180px; }
+
+.modal-close {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover { background: var(--border-hover); }
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--surface);
+  border: 1px solid var(--border-hover);
+  color: var(--text-primary);
+  padding: 12px 20px;
+  border-radius: 99px;
+  font-size: 13px;
+  font-weight: 700;
+  z-index: 2000;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast svg { width: 16px; height: 16px; color: var(--accent); stroke-width: 2.5; }
+
+/* ============================================================
+   ANIMATIONS & RESPONSIVE
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+html[lang="en"] { direction: ltr; }
+html[lang="en"] .config-item:hover { transform: translateX(2px); }
+
+@media (max-width: 480px) {
+  .app { padding: 0 4px; }
+  .hero-content { flex-direction: column; align-items: flex-start; gap: 20px; }
+  .hud-chart { align-self: center; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      </div>
+      <span class="brand-name">Onyx</span>
+    </div>
+    <div class="controls">
+      <button class="icon-btn" id="langBtn" aria-label="Language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Theme">
+        <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <svg class="i-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- HERO CARD -->
+  <div class="hero-card">
+    <div class="hero-top">
+      <div class="status-badge">
+        <span class="status-orb"></span>
+        <span data-i18n="st_active">فعال</span>
+      </div>
+      <span style="font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums;">{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span>
+    </div>
+
+    <div class="hero-content">
+      <div class="hud-chart">
+        <svg viewBox="0 0 120 120">
+          <!-- r=56 -> circumference ≈ 351.86 -->
+          <circle class="hud-track" cx="60" cy="60" r="56"/>
+          <circle class="hud-fill" cx="60" cy="60" r="56"
+                  stroke-dasharray="351.86"
+                  stroke-dashoffset="351.86"
+                  data-target="197.74"/>
+        </svg>
+        <div class="hud-center">
+          <span class="hud-value">43.75</span>
+          <span class="hud-unit">GB</span>
+        </div>
+      </div>
+      
+      <div class="hero-stats">
+        <div class="stat-row">
+          <span class="stat-label"><span class="stat-dot used"></span><span data-i18n="used">مصرف شده</span></span>
+          <span class="stat-val">{{ user.used_traffic | bytesformat }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label"><span class="stat-dot left"></span><span data-i18n="remaining">باقیمانده</span></span>
+          <span class="stat-val">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label" style="color: var(--text-muted); font-size: 11px;" data-i18n="total">حجم کل</span>
+          <span class="stat-val" style="color: var(--text-muted);">{{ user.data_limit | bytesformat }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO GRID -->
+  <div class="info-grid">
+    <div class="info-card">
+      <span class="info-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span data-i18n="expiry">انقضا</span>
+      </span>
+      <span class="info-value">{{ user.expire | datetime }}</span>
+    </div>
+    <div class="info-card">
+      <span class="info-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span data-i18n="device_limit">دستگاه</span>
+      </span>
+      <span class="info-value">3</span>
+    </div>
+    <div class="info-card">
+      <span class="info-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span data-i18n="username">کاربری</span>
+      </span>
+      <span class="info-value muted" style="direction:ltr">{{ user.username }}</span>
+    </div>
+    <div class="info-card">
+      <span class="info-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+        <span data-i18n="status">وضعیت</span>
+      </span>
+      <span class="info-value success" data-i18n="st_active">فعال</span>
+    </div>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="action-row">
+    <button class="btn btn-ghost" id="qrBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        <path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/>
+      </svg>
+      <span data-i18n="qr_code">QR Code</span>
+    </button>
+    <button class="btn btn-primary" id="copyAllBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span data-i18n="copy_all">کپی همه</span>
+    </button>
+  </div>
+
+  <!-- CONFIGS -->
+  <div class="configs-section">
+    <div class="section-head">
+      <span class="section-title" data-i18n="configurations">کانفیگ‌ها</span>
+      <span class="section-count">6</span>
+    </div>
+
+    <div class="config-list">
+      {% for link in links %}
+<div class="config-item" data-link="{{ link }}">
+        <div class="proto-tag proto-vless">VLES</div>
+{% endfor %}
+
+        <div class="config-info">
+          <div class="config-name">WireGuard</div>
+          <div class="config-meta"><span>WIREGUARD</span><span class="sep"></span><span data-i18n="tap_to_copy">کلیک برای کپی</span></div>
+        </div>
+        <button class="copy-btn" aria-label="Copy">
+          <svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-backdrop" id="qrModal">
+  <div class="modal-card">
+    <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+    <div class="qr-box">
+      <img id="qrImg" alt="QR Code">
+    </div>
+    <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  <span id="toastText" data-i18n="copied">کپی شد</span>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const i18n = {
+    fa: {
+      st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+      traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل',
+      expiry: 'تاریخ انقضا', status: 'وضعیت', device_limit: 'محدودیت دستگاه', username: 'نام کاربری',
+      qr_code: 'کد QR', copy_all: 'کپی همه',
+      configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی',
+      qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
+    },
+    en: {
+      st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+      traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total',
+      expiry: 'Expiry Date', status: 'Status', device_limit: 'Device Limit', username: 'Username',
+      qr_code: 'QR Code', copy_all: 'Copy All',
+      configurations: 'Configurations', tap_to_copy: 'Tap to copy',
+      qr_title: 'Subscription QR', close: 'Close', copied: 'Copied', all_copied: 'All copied'
+    }
+  };
+
+  const html = document.documentElement;
+  let lang = localStorage.getItem('onyx_lang') || 'fa';
+  let theme = localStorage.getItem('onyx_theme') || 'dark';
+
+  html.setAttribute('data-theme', theme);
+  html.setAttribute('lang', lang);
+  html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+
+  const themeBtn = document.getElementById('themeBtn');
+  const iSun = themeBtn.querySelector('.i-sun');
+  const iMoon = themeBtn.querySelector('.i-moon');
+
+  function syncThemeIcons() {
+    if (theme === 'dark') { iSun.style.display = ''; iMoon.style.display = 'none'; }
+    else { iSun.style.display = 'none'; iMoon.style.display = ''; }
+  }
+  syncThemeIcons();
+
+  themeBtn.addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('onyx_theme', theme);
+    syncThemeIcons();
+  });
+
+  document.getElementById('langBtn').addEventListener('click', () => {
+    lang = lang === 'fa' ? 'en' : 'fa';
+    localStorage.setItem('onyx_lang', lang);
+    html.setAttribute('lang', lang);
+    html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (i18n[lang] && i18n[lang][k]) el.textContent = i18n[lang][k];
+    });
+  });
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (i18n[lang] && i18n[lang][k]) el.textContent = i18n[lang][k];
+  });
+
+  // Animate Chart
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const ring = document.querySelector('.hud-fill');
+      if (ring) ring.style.strokeDashoffset = ring.getAttribute('data-target');
+    }, 100);
+  });
+
+  // Copy Logic
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  let toastTimer;
+
+  function showToast(msg) {
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  function flashCopy(item, btn) {
+    item.classList.add('copied');
+    btn.classList.add('copied');
+    btn.querySelector('.i-copy').style.display = 'none';
+    btn.querySelector('.i-check').style.display = '';
+    setTimeout(() => {
+      item.classList.remove('copied');
+      btn.classList.remove('copied');
+      btn.querySelector('.i-copy').style.display = '';
+      btn.querySelector('.i-check').style.display = 'none';
+    }, 1500);
+  }
+
+  document.querySelectorAll('.config-item').forEach(item => {
+    const link = item.getAttribute('data-link');
+    const btn = item.querySelector('.copy-btn');
+    const nameEl = item.querySelector('.config-name');
+    
+    if (nameEl && nameEl.textContent.indexOf('%') !== -1) {
+      try { nameEl.textContent = decodeURIComponent(nameEl.textContent); } catch (e) {}
+    }
+
+    function doCopy() {
+      copyText(link).then(ok => {
+        if (ok) { flashCopy(item, btn); showToast(i18n[lang].copied); }
+      });
+    }
+
+    item.addEventListener('click', e => { if (!e.target.closest('.copy-btn')) doCopy(); });
+    btn.addEventListener('click', e => { e.stopPropagation(); doCopy(); });
+  });
+
+  document.getElementById('copyAllBtn').addEventListener('click', () => {
+    const links = Array.from(document.querySelectorAll('.config-item')).map(it => it.getAttribute('data-link'));
+    if (links.length) copyText(links.join('\n')).then(ok => { if (ok) showToast(i18n[lang].all_copied); });
+  });
+
+  // QR Modal
+  const qrModal = document.getElementById('qrModal');
+  document.getElementById('qrBtn').addEventListener('click', () => {
+    const first = document.querySelector('.config-item');
+    if (first) {
+      document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + encodeURIComponent(first.getAttribute('data-link'));
+      qrModal.classList.add('active');
+    }
+  });
+
+  document.getElementById('modalClose').addEventListener('click', () => qrModal.classList.remove('active'));
+  qrModal.addEventListener('click', e => { if (e.target === qrModal) qrModal.classList.remove('active'); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') qrModal.classList.remove('active'); });
+
+})();
+</script>
+</body>
+</html>
