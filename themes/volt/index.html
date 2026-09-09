@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ .subTitle }} - اکانت</title>
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/*PALETTE-BEGIN*/
+:root {
+  --bg:#0a0a0a;
+  --surface:#141414;
+  --surface-elevated:#1f1f1f;
+  --border:rgba(255,255,255,.08);
+  --border-hover:rgba(255,225,0,.3);
+  --text-primary:#ffffff;
+  --text-secondary:#888888;
+  --text-tertiary:#555555;
+  --accent:#FFE100;
+  --accent-glow:rgba(255,225,0,.2);
+  --success:#10b981;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+  --info:#3b82f6;
+
+  --radius:20px;
+  --font:'Vazirmatn',system-ui,-apple-system,sans-serif;
+}
+
+html[data-theme="light"] {
+  --bg:#f5f5f5;
+  --surface:#ffffff;
+  --surface-elevated:#f9f9f9;
+  --border:rgba(0,0,0,.1);
+  --border-hover:rgba(212,184,0,.3);
+  --text-primary:#1a1a1a;
+  --text-secondary:#666666;
+  --text-tertiary:#999999;
+  --accent:#D4B800;
+  --accent-glow:rgba(212,184,0,.2);
+}
+/*PALETTE-END*/
+/*EXTRA-BEGIN*/
+/*EXTRA-END*/
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  background-image:linear-gradient(180deg,#0c0c0c 0%,var(--bg) 35%,var(--surface) 100%);
+  background-attachment:fixed;
+  color:var(--text-primary);
+  min-height:100vh;
+  padding:20px;
+  display:flex;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased;
+}
+
+.dashboard{width:100%;max-width:900px;display:grid;grid-template-columns:1fr;gap:20px}
+
+@media(min-width:768px){
+  .dashboard{grid-template-columns:1fr 1fr;gap:24px}
+  .full-width{grid-column:1/-1}
+}
+
+/* -------------------------------- top bar -------------------------------- */
+.topbar{
+  grid-column:1/-1;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--surface);
+  padding:16px 20px;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{
+  width:40px;height:40px;
+  background:linear-gradient(135deg,var(--accent),#ffed4e);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;color:#000;
+  box-shadow:0 4px 20px var(--accent-glow);
+}
+.brand-text h1{font-size:18px;font-weight:800;margin-bottom:2px}
+.brand-text p{font-size:12px;color:var(--text-secondary)}
+.controls{display:flex;gap:8px}
+.ctrl-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--surface-elevated);border:1px solid var(--border);
+  color:var(--text-secondary);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.ctrl-btn:hover{background:var(--accent);color:#000;border-color:var(--accent);transform:translateY(-2px)}
+.ctrl-btn svg{width:18px;height:18px;fill:currentColor}
+
+/* -------------------------------- gauge -------------------------------- */
+.gauge-widget{
+  background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);
+  padding:32px 24px;display:flex;flex-direction:column;align-items:center;gap:24px;
+}
+.gauge-container{position:relative;width:200px;height:200px}
+.gauge-svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge-bg{fill:none;stroke:var(--surface-elevated);stroke-width:12}
+.gauge-fill{
+  fill:none;stroke:url(#gaugeGradient);stroke-width:12;stroke-linecap:round;
+  stroke-dasharray:565.48;stroke-dashoffset:565.48;
+  transition:stroke-dashoffset 2s cubic-bezier(.4,0,.2,1);
+  filter:drop-shadow(0 0 8px var(--accent-glow));
+}
+.gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.gauge-percent{font-size:42px;font-weight:900;color:var(--text-primary);line-height:1;margin-bottom:4px}
+.gauge-percent span{font-size:20px;color:var(--text-secondary)}
+.gauge-label{font-size:13px;color:var(--text-secondary);font-weight:600}
+.gauge-stats{display:flex;gap:32px;width:100%;justify-content:center}
+.gauge-stat{text-align:center}
+.gauge-stat-value{font-size:18px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.gauge-stat-label{font-size:11px;color:var(--text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+/* -------------------------------- countdown -------------------------------- */
+.countdown-widget{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px}
+.countdown-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.countdown-icon{width:36px;height:36px;background:var(--accent-glow);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.countdown-icon svg{width:20px;height:20px;fill:var(--accent)}
+.countdown-title{font-size:15px;font-weight:700;color:var(--text-primary)}
+.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.countdown-cell{background:var(--surface-elevated);border-radius:12px;padding:16px 8px;text-align:center;border:1px solid var(--border)}
+.countdown-value{font-size:28px;font-weight:900;color:var(--accent);line-height:1;margin-bottom:6px}
+.countdown-label{font-size:10px;color:var(--text-tertiary);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.countdown-expire{padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.countdown-expire-label{font-size:12px;color:var(--text-secondary)}
+.countdown-expire-date{font-size:13px;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums}
+
+/* -------------------------------- protocol distribution -------------------------------- */
+.protocol-widget{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px}
+.widget-header{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.widget-icon{width:36px;height:36px;background:var(--surface-elevated);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.widget-icon svg{width:18px;height:18px;fill:var(--text-secondary)}
+.widget-title{font-size:15px;font-weight:700;color:var(--text-primary)}
+.protocol-bars{display:flex;flex-direction:column;gap:16px}
+.protocol-bar{display:flex;align-items:center;gap:12px}
+.protocol-name{width:70px;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.protocol-track{flex:1;height:24px;background:var(--surface-elevated);border-radius:8px;overflow:hidden;position:relative;border:1px solid var(--border)}
+.protocol-fill{
+  height:100%;border-radius:8px;width:0;
+  transition:width 1.5s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;justify-content:flex-end;padding-right:8px;
+  font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);
+}
+.protocol-fill.vless{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.protocol-fill.vmess{background:linear-gradient(90deg,#10b981,#34d399)}
+.protocol-fill.trojan{background:linear-gradient(90deg,#ef4444,#f87171)}
+.protocol-fill.ss{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.protocol-fill.hysteria{background:linear-gradient(90deg,#a855f7,#c084fc)}
+.protocol-fill.wireguard{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+.protocol-fill.mtproto{background:linear-gradient(90deg,#eab308,#facc15)}
+.protocol-count{width:30px;text-align:right;font-size:13px;font-weight:800;color:var(--text-primary)}
+
+/* -------------------------------- status -------------------------------- */
+.status-widget{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:16px}
+.status-indicator{display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface-elevated);border-radius:12px;border:1px solid var(--border)}
+.status-pulse{width:12px;height:12px;border-radius:50%;background:var(--success);box-shadow:0 0 12px var(--success);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.95)}}
+.status-pulse.warning{background:var(--warning);box-shadow:0 0 12px var(--warning)}
+.status-pulse.danger{background:var(--danger);box-shadow:0 0 12px var(--danger)}
+.status-pulse.inactive{background:var(--text-tertiary);box-shadow:none;animation:none}
+.status-info{flex:1}
+.status-text{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:2px}
+.status-desc{font-size:12px;color:var(--text-secondary)}
+.status-badge-inline{padding:6px 12px;border-radius:8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.status-badge-inline.active{background:rgba(16,185,129,.15);color:var(--success)}
+.status-badge-inline.limited{background:rgba(239,68,68,.15);color:var(--danger)}
+.status-badge-inline.expired,.status-badge-inline.disabled{background:rgba(85,85,85,.15);color:var(--text-tertiary)}
+.status-badge-inline.on_hold{background:rgba(245,158,11,.15);color:var(--warning)}
+
+/* -------------------------------- actions -------------------------------- */
+.actions-widget{grid-column:1/-1;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:20px;display:flex;gap:12px;flex-wrap:wrap}
+.action-btn{
+  flex:1;min-width:140px;height:52px;border-radius:12px;
+  border:1px solid var(--border);background:var(--surface-elevated);color:var(--text-primary);
+  font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;text-decoration:none;
+}
+.action-btn:hover{border-color:var(--accent);background:var(--accent);color:#000;transform:translateY(-2px);box-shadow:0 8px 24px var(--accent-glow)}
+.action-btn.primary{background:var(--accent);color:#000;border-color:var(--accent)}
+.action-btn.primary:hover{background:#ffed4e;box-shadow:0 8px 32px var(--accent-glow)}
+.action-btn svg{width:20px;height:20px;fill:currentColor}
+
+/* -------------------------------- configs -------------------------------- */
+.configs-widget{grid-column:1/-1;background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:24px}
+.configs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.configs-title{display:flex;align-items:center;gap:10px}
+.configs-count{background:var(--accent);color:#000;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:800}
+.configs-copy-all{padding:8px 16px;background:var(--surface-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-secondary);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+.configs-copy-all:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.configs-copy-all svg{width:14px;height:14px;fill:currentColor}
+.configs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.config-card{background:var(--surface-elevated);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.config-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+.config-protocol-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;flex-shrink:0;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.config-protocol-icon.vless{background:linear-gradient(135deg,#3b82f6,#2563eb)}
+.config-protocol-icon.vmess{background:linear-gradient(135deg,#10b981,#059669)}
+.config-protocol-icon.trojan{background:linear-gradient(135deg,#ef4444,#dc2626)}
+.config-protocol-icon.ss{background:linear-gradient(135deg,#f59e0b,#d97706)}
+.config-protocol-icon.hysteria{background:linear-gradient(135deg,#a855f7,#9333ea)}
+.config-protocol-icon.wireguard{background:linear-gradient(135deg,#14b8a6,#0d9488)}
+.config-protocol-icon.mtproto{background:linear-gradient(135deg,#eab308,#ca8a04)}
+.config-details{flex:1;min-width:0}
+.config-name{font-size:14px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;direction:ltr;text-align:left}
+.config-protocol-text{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.5px}
+.config-copy-btn{width:36px;height:36px;border-radius:8px;background:transparent;border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.config-card:hover .config-copy-btn{background:var(--accent);color:#000;border-color:var(--accent)}
+.config-copy-btn svg{width:16px;height:16px;fill:currentColor}
+
+/* -------------------------------- info banners / toast -------------------------------- */
+.info-banner{grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:12px;padding:16px 20px;font-size:13px;line-height:1.7;color:var(--text-secondary)}
+html[dir="ltr"] .info-banner{border-left:1px solid var(--border);border-right-width:4px}
+.toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);color:var(--text-primary);padding:14px 28px;border-radius:12px;font-size:14px;font-weight:700;border:1px solid var(--border);opacity:0;pointer-events:none;transition:all .3s;z-index:1000;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--success)}
+.hidden{display:none!important}
+
+@media(max-width:640px){
+  body{padding:12px}
+  .dashboard{gap:16px}
+  .gauge-container{width:160px;height:160px}
+  .gauge-percent{font-size:36px}
+  .countdown-grid{gap:8px}
+  .countdown-value{font-size:24px}
+  .configs-grid{grid-template-columns:1fr}
+  .action-btn{min-width:120px;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- Top Bar -->
+  <div class="topbar full-width">
+    <div class="brand">
+      <div class="brand-icon">N</div>
+      <div class="brand-text">
+        <h1>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</h1>
+        <p>NUC-SUB Dashboard</p>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn" title="Language">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="themeBtn" title="Theme">
+        <svg viewBox="0 0 24 24" id="iconSun" class="hidden"><path d="M12 7a5 5 0 1 0 5 5 5 5 0 0 0-5-5zm0 3a2 2 0 1 1-2 2 2 2 0 0 1 2-2zm9-2h-3a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zM4 11H1a1 1 0 0 0 0 2h3a1 1 0 0 0 0-2zm4.5-5.5a1 1 0 0 0-1.41 0l-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zm11 5.41l-1.41-1.41-2 2a1 1 0 0 0 1.41 1.41l2-2a1 1 0 0 0 0-1.41zM20.41 21a1 1 0 0 1-.7.29 1 1 0 0 1-.71-.29L5.29 7.3a1 1 0 1 1 1.41-1.42l13.7 13.7a1 1 0 0 1 .01 1.42z"/></svg>
+        <svg viewBox="0 0 24 24" id="iconMoon"><path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-4.4 2.26 5.4 5.4 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Status Widget -->
+  <div class="status-widget">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm3.5-8.5a3.5 3.5 0 1 1-5-3.15V7h2v1.35a3.5 3.5 0 0 1 3 3.15z"/></svg>
+      </div>
+      <div class="widget-title">وضعیت سرویس</div>
+    </div>
+    <div class="status-indicator">
+      <div class="status-pulse" id="statusPulse"></div>
+      <div class="status-info">
+        <div class="status-text" id="statusText">فعال</div>
+        <div class="status-desc">اشتراک اختصاصی شما</div>
+      </div>
+      <span class="status-badge-inline active" id="statusBadge">فعال</span>
+    </div>
+  </div>
+
+  <!-- Circular Gauge Widget -->
+  <div class="gauge-widget">
+    <div class="gauge-container">
+      <svg class="gauge-svg" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#FFE100;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#ffed4e;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+        <circle class="gauge-bg" cx="100" cy="100" r="90"></circle>
+        <circle class="gauge-fill" id="gaugeFill" cx="100" cy="100" r="90"></circle>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-percent"><span id="gaugePercent">0</span><span>٪</span></div>
+        <div class="gauge-label">مصرف شده</div>
+      </div>
+    </div>
+    <div class="gauge-stats">
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="usedDisplay">{{ .used }}</div>
+        <div class="gauge-stat-label">مصرف</div>
+      </div>
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="totalDisplay">{{ if .totalByte }}{{ .total }}{{ else }}∞{{ end }}</div>
+        <div class="gauge-stat-label">کل</div>
+      </div>
+      <div class="gauge-stat">
+        <div class="gauge-stat-value" id="remainDisplay">{{ if .totalByte }}{{ .remained }}{{ else }}∞{{ end }}</div>
+        <div class="gauge-stat-label">باقی</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown Widget -->
+  <div class="countdown-widget">
+    <div class="countdown-header">
+      <div class="countdown-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 9V7h2v6h-2zm0 5h2v2h-2z"/></svg>
+      </div>
+      <div class="countdown-title">زمان باقی‌مانده</div>
+    </div>
+    <div class="countdown-grid">
+      <div class="countdown-cell"><div class="countdown-value" id="countDays">--</div><div class="countdown-label">روز</div></div>
+      <div class="countdown-cell"><div class="countdown-value" id="countHours">--</div><div class="countdown-label">ساعت</div></div>
+      <div class="countdown-cell"><div class="countdown-value" id="countMinutes">--</div><div class="countdown-label">دقیقه</div></div>
+      <div class="countdown-cell"><div class="countdown-value" id="countSeconds">--</div><div class="countdown-label">ثانیه</div></div>
+    </div>
+    <div class="countdown-expire">
+      <span class="countdown-expire-label">تاریخ انقضا:</span>
+      <span class="countdown-expire-date" id="expireDate">∞ نامحدود</span>
+    </div>
+  </div>
+
+  <!-- Protocol Distribution Widget -->
+  <div class="protocol-widget full-width">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM8 13.5h-1v-3h1v3zm5 0h-1v-3h1v3zm5 0h-1v-3h1v3z"/></svg>
+      </div>
+      <div class="widget-title">توزیع پروتکل‌ها</div>
+    </div>
+    <div class="protocol-bars" id="protocolBars"></div>
+  </div>
+
+  {{ if .announce }}
+  <div class="info-banner full-width">{{ .announce }}</div>
+  {{ end }}
+
+  <!-- Actions -->
+  <div class="actions-widget full-width">
+    {{ if .subSupportUrl }}
+    <a class="action-btn primary" id="tgBtn" href="{{ .subSupportUrl }}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M9.04 15.43l-.35 4.91c.5 0 .72-.21.99-.49l2.39-2.31 4.95 3.66c.91.5 1.56.24 1.8-.85l3.28-15.45c.3-1.35-.51-1.88-1.42-1.55L1.3 9.7c-1.34.53-1.32 1.28-.24 1.61l5.01 1.56L16.94 5.9c.55-.37 1.06-.16.64.21L9.04 15.43z"/></svg>
+      کانال تلگرام
+    </a>
+    {{ end }}
+    <a class="action-btn" href="{{ .subJsonUrl }}" target="_blank" rel="noopener">باز کردن در اپ</a>
+    <button class="action-btn" id="copyAllBtn">
+      <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg>
+      کپی همه
+    </button>
+  </div>
+
+  <!-- Configs -->
+  <div class="configs-widget full-width">
+    <div class="configs-header">
+      <div class="configs-title">
+        <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:var(--accent)"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-2 15H8v-8h2v8zm0-10H8V5h2v2zm6 10h-2v-8h2v8zm0-10h-2V5h2v2z"/></svg>
+        <span style="font-size:15px;font-weight:700">کانفیگ‌ها</span>
+        <span class="configs-count" id="configCount">0</span>
+      </div>
+    </div>
+    <div class="configs-grid" id="configsGrid">
+    {{ range $i, $link := .links }}
+      <div class="config-card" data-link="{{ $link }}">
+        <div class="config-protocol-icon"></div>
+        <div class="config-details">
+          <div class="config-name"></div>
+          <div class="config-protocol-text"></div>
+        </div>
+        <button class="config-copy-btn"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2z"/></svg></button>
+      </div>
+    {{ end }}
+    </div>
+  </div>
+
+  <div class="footer" style="grid-column:1/-1;text-align:center;padding:20px 0;font-size:12px;color:var(--text-tertiary)">
+    <span>طراحی شده توسط</span> <a href="https://github.com/nuctereadev" target="_blank" rel="noopener" style="color:var(--text-secondary);text-decoration:none;font-weight:700">NUCTEREA</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var D = {
+  expire: {{ .expire }},
+  enabled: {{ .enabled }},
+  total: {{ .totalByte }},
+  used: {{ .downloadByte }} + {{ .uploadByte }},
+  up: {{ .downloadByte }}, down: {{ .uploadByte }}
+};
+
+function findEl(id){ var x=document.getElementById(id); return x?x:null; }
+function showToast(msg, ok){
+  var t=findEl('toast'); if(!t) return;
+  t.textContent=msg; t.className=ok?'toast show ok':'toast show';
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+}
+function rawLink(s){ return (s||'').replace(/&amp;/g,'&'); }
+function protocolOf(link){ var m=link.match(/^([a-z0-9]+):\/\//i); return m?m[1].toLowerCase():'unknown'; }
+function fmtBytes(n){
+  if(n==null||isNaN(n)) return '0 B';
+  if(n<=0) return '0 B';
+  var u=['B','KB','MB','GB','TB']; var i=0;
+  while(n>=1024&&i<u.length-1){n/=1024;i++}
+  return n.toFixed(n>=100?0:1)+' '+u[i];
+}
+function fmtDate(ts){
+  if(!ts||ts<=0) return '∞ نامحدود';
+  var d=new Date(ts*1000);
+  var opts={year:'numeric',month:'long',day:'numeric'};
+  return d.toLocaleDateString('fa-IR',opts);
+}
+function copy(text){
+  var done=function(){ showToast('کپی شد!', true); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text, done); });
+  } else fallbackCopy(text, done);
+}
+function fallbackCopy(text, done){
+  var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  var sun=findEl('iconSun'), moon=findEl('iconMoon');
+  if(sun) sun.classList.toggle('hidden', t==='dark');
+  if(moon) moon.classList.toggle('hidden', t==='light');
+  try{ localStorage.setItem('nuc-theme', t); }catch(e){}
+}
+
+(function init(){
+  // theme / lang
+  var st='dark'; try{ st=localStorage.getItem('nuc-theme')||'dark'; }catch(e){}
+  setTheme(st);
+  findEl('themeBtn').addEventListener('click', function(){
+    setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+  });
+  findEl('langBtn').addEventListener('click', function(){
+    var l=document.documentElement.getAttribute('lang')==='fa'?'en':'fa';
+    document.documentElement.setAttribute('lang', l);
+    document.documentElement.setAttribute('dir', l==='fa'?'rtl':'ltr');
+    try{ localStorage.setItem('nuc-lang', l); }catch(e){}
+  });
+
+  // status
+  var statusKey='active';
+  if(!D.enabled) statusKey='disabled';
+  else if(D.expire>0 && D.expire*1000 < Date.now()) statusKey='expired';
+  var cls={active:[''],disabled:['inactive','disabled'],expired:['inactive','expired']}[statusKey]||[''];
+  if(statusKey!=='active'){
+    findEl('statusPulse').className='status-pulse '+cls[0];
+    findEl('statusBadge').className='status-badge-inline '+cls[1];
+  }
+  var txt={active:'فعال',disabled:'غیرفعال',expired:'منقضی'}[statusKey]||'فعال';
+  findEl('statusText').textContent=txt;
+  findEl('statusBadge').textContent=txt;
+
+  // gauge
+  var total=D.total, used=D.used, per=0;
+  if(total>0){
+    per=Math.min(100,(used/total)*100);
+    var gaugeFill=findEl('gaugeFill');
+    var gaugePercent=findEl('gaugePercent');
+    if(gaugeFill && gaugePercent){
+      var circumference=2*Math.PI*90;
+      var offset=circumference-(per/100)*circumference;
+      setTimeout(function(){
+        gaugeFill.style.strokeDashoffset=offset;
+        animateCounter(gaugePercent, 0, per, 1500);
+      }, 200);
+    }
+  }
+
+  function animateCounter(el, start, end, duration){
+    var target=Math.round(end);
+    var current=start;
+    var increment=target>current?1:-1;
+    var calls=Math.max(1, Math.round(duration/Math.max(1, Math.abs(target-current))));
+    var timer=setInterval(function(){
+      current+=increment;
+      el.textContent=current>target?target:current;
+      if(current>=target){ clearInterval(timer); }
+    }, calls);
+  }
+
+  // countdown
+  if(D.expire>0){
+    findEl('expireDate').textContent=fmtDate(D.expire);
+    var expireDate=new Date(D.expire*1000);
+    function updateCountdown(){
+      var now=new Date().getTime();
+      var distance=expireDate.getTime()-now;
+      if(distance>0){
+        var days=Math.floor(distance/(1000*60*60*24));
+        var hours=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
+        var minutes=Math.floor((distance%(1000*60*60))/(1000*60));
+        var seconds=Math.floor((distance%(1000*60))/1000);
+        findEl('countDays').textContent=String(days).padStart(2,'0');
+        findEl('countHours').textContent=String(hours).padStart(2,'0');
+        findEl('countMinutes').textContent=String(minutes).padStart(2,'0');
+        findEl('countSeconds').textContent=String(seconds).padStart(2,'0');
+      } else {
+        ['countDays','countHours','countMinutes','countSeconds'].forEach(function(id){ findEl(id).textContent='00'; });
+      }
+    }
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  }
+
+  // configs
+  var cards=document.querySelectorAll('.config-card[data-link]');
+  findEl('configCount').textContent=cards.length;
+  var protoIcon={'vless':'VL','vmess':'VM','trojan':'TR','ss':'SS','hysteria':'HY','wireguard':'W','mtproto':'MT'};
+  cards.forEach(function(card, index){
+    var btn=card.querySelector('.config-copy-btn');
+    var nameEl=card.querySelector('.config-name');
+    var protoEl=card.querySelector('.config-protocol-text');
+    var link=rawLink(card.getAttribute('data-link'));
+    var proto=protocolOf(link);
+    var cls={'vless':'vless','vmess':'vmess','trojan':'trojan','ss':'ss','hysteria':'hysteria','wireguard':'wireguard','mtproto':'mtproto'}[proto]||'other';
+    card.querySelector('.config-protocol-icon').className='config-protocol-icon '+cls;
+    card.querySelector('.config-protocol-icon').textContent=protoIcon[proto]||(proto||'CF').substring(0,2).toUpperCase();
+    if(nameEl){
+      var frag=link.split('#');
+      if(frag.length>1 && frag[1]){ try{ nameEl.textContent=decodeURIComponent(frag[1]); }catch(e){ nameEl.textContent=frag[1]; } }
+      else nameEl.textContent='Config '+(index+1);
+    }
+    if(protoEl) protoEl.textContent=proto.toUpperCase();
+    if(btn) btn.addEventListener('click', function(e){ e.stopPropagation(); copy(link); });
+    card.addEventListener('click', function(e){ if(btn&&(e.target===btn||btn.contains(e.target))) return; copy(link); });
+  });
+
+  // copy all
+  var ca=findEl('copyAllBtn');
+  if(ca && cards.length>1){
+    ca.addEventListener('click', function(){
+      copy(Array.from(cards).map(function(c){ return rawLink(c.getAttribute('data-link')); }).join('\n'));
+    });
+  }
+})();
+</script>
+</body>
+</html>

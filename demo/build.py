@@ -187,7 +187,15 @@ def _go_render_body(body, scope):
         if expr == "end":
             break
         # variable or literal
-        out.append(str(_go_lookup(scope, expr)))
+        v = _go_lookup(scope, expr)
+        if v is True:
+            out.append("true")
+        elif v is False:
+            out.append("false")
+        elif isinstance(v, str):
+            out.append(v)
+        else:
+            out.append(str(v))
     return "".join(out)
 
 
@@ -230,6 +238,18 @@ def render_xui(theme_name, ctx):
     src_path = os.path.join(XUI_THEMES, theme_name, "index.html")
     with open(src_path, encoding="utf-8") as f:
         src = f.read()
+
+    def jsval(v):
+        """Render Python values the way Go templates would — booleans must be
+        lowercase true/false (JS), not Python's True/False."""
+        if v is True:
+            return "true"
+        if v is False:
+            return "false"
+        if isinstance(v, (list, tuple)):
+            return "[" + ", ".join(jsval(x) for x in v) + "]"
+        return v
+
     scope = {"ctx": {k: list(v) if isinstance(v, list) else v for k, v in ctx.items()}}
     return _go_render_body(src, scope)
 

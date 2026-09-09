@@ -26,8 +26,8 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
-XUI_THEMES=(minimal gradient matrix glass neon sunset arctic cyberpunk)
-PG_THEMES=(gradient minimal glass sunset matrix neon aurora cyberpunk)
+XUI_THEMES=(minimal volt matrix glass neon sunset arctic cyberpunk)
+PG_THEMES=(volt minimal glass sunset matrix neon aurora cyberpunk)
 
 # ------------------------------------------------------- panel detection -------
 # nucsub supports two panels: 3x-ui (sqlite subThemeDir) and Pasarguard
