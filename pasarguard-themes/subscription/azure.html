@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1a1a1f">
+    <title>NucSub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           DESIGN SYSTEM — CLEAN & WIDE — NucSub
+           ============================================================ */
+        :root[data-theme="dark"] {
+            --bg: #1a1a1f;
+            --bg-elevated: #222228;
+            --surface: #24242b;
+            --surface-2: #2a2a32;
+            --surface-3: #303038;
+            --border-subtle: #2e2e36;
+            --border: #3a3a44;
+            --border-strong: #4a4a56;
+            --text-primary: #f0f0f2;
+            --text-secondary: #a0a0aa;
+            --text-tertiary: #6a6a74;
+            --accent: #5b8cff;
+            --accent-strong: #3d6ee0;
+            --accent-soft: rgba(91, 140, 255, 0.1);
+            --highlight: #e6b800;
+            --highlight-soft: rgba(230, 184, 0, 0.08);
+            --success: #34c759;
+            --success-soft: rgba(52, 199, 89, 0.1);
+            --warning: #ff9f0a;
+            --warning-soft: rgba(255, 159, 10, 0.1);
+            --danger: #ff453a;
+            --danger-soft: rgba(255, 69, 58, 0.1);
+            --info: #64d2ff;
+            --info-soft: rgba(100, 210, 255, 0.1);
+            --purple: #bf5af2;
+            --purple-soft: rgba(191, 90, 242, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        :root[data-theme="light"] {
+            --bg: #f4f4f7;
+            --bg-elevated: #ffffff;
+            --surface: #ffffff;
+            --surface-2: #f8f8fa;
+            --surface-3: #f0f0f3;
+            --border-subtle: #e4e4e8;
+            --border: #d4d4da;
+            --border-strong: #b8b8c0;
+            --text-primary: #1a1a1f;
+            --text-secondary: #6a6a74;
+            --text-tertiary: #9e9ea8;
+            --accent: #2f6fed;
+            --accent-strong: #1e56c8;
+            --accent-soft: rgba(47, 111, 237, 0.06);
+            --highlight: #b89600;
+            --highlight-soft: rgba(230, 184, 0, 0.12);
+            --success: #28a745;
+            --success-soft: rgba(40, 167, 69, 0.06);
+            --warning: #e68a00;
+            --warning-soft: rgba(255, 159, 10, 0.08);
+            --danger: #dc3545;
+            --danger-soft: rgba(220, 53, 69, 0.06);
+            --info: #0a84ff;
+            --info-soft: rgba(10, 132, 255, 0.06);
+            --purple: #9b35d4;
+            --purple-soft: rgba(155, 53, 212, 0.06);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        /* ============================================================
+           BASE
+           ============================================================ */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+        body {
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.55;
+            font-size: 14px;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            padding-bottom: 40px;
+        }
+        @supports (padding-top: env(safe-area-inset-top)) {
+            body {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
+
+        .app {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+            width: 100%;
+        }
+
+        /* ============================================================
+           TOP BAR
+           ============================================================ */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0 16px;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .topbar-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .topbar-mark svg {
+            width: 15px;
+            height: 15px;
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2.2;
+        }
+        .topbar-title {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+        }
+        .topbar-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .control-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .control-btn:hover {
+            background: var(--surface-2);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+        .control-btn:active {
+            transform: scale(0.94);
+        }
+        .control-btn svg {
+            width: 17px;
+            height: 17px;
+        }
+
+        /* ============================================================
+           MAIN CONTENT GRID — Wide layout
+           ============================================================ */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+            margin-top: 24px;
+        }
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ============================================================
+           TRAFFIC MODULE
+           ============================================================ */
+        .traffic-module {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-sm);
+        }
+        .traffic-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .traffic-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .traffic-label svg {
+            width: 15px;
+            height: 15px;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .traffic-pct {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .traffic-visual {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 20px;
+        }
+        .progress-ring {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            flex-shrink: 0;
+        }
+        .progress-ring svg {
+            width: 110px;
+            height: 110px;
+            transform: rotate(-90deg);
+            display: block;
+        }
+        .ring-bg {
+            fill: none;
+            stroke: var(--border-subtle);
+            stroke-width: 8;
+        }
+        .ring-fg {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ring-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            text-align: center;
+            padding: 4px;
+        }
+        .ring-center .big {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-primary);
+            line-height: 1.2;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .ring-center .small {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            margin-top: 2px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .traffic-stats {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: 10px;
+        }
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        .stat-row .key {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            min-width: 0;
+        }
+        .stat-row .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .stat-row .dot.used {
+            background: var(--accent);
+        }
+        .stat-row .dot.remaining {
+            background: var(--border-strong);
+        }
+        .stat-row .dot.total {
+            background: var(--text-tertiary);
+        }
+        .stat-row .val {
+            font-size: 12px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-primary);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .traffic-bar-wrap {
+            margin-top: 4px;
+        }
+        .traffic-bar {
+            height: 6px;
+            background: var(--border-subtle);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .traffic-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 999px;
+            width: 0%;
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============================================================
+           DETAILS GROUP
+           ============================================================ */
+        .details-group {
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .details-group-header {
+            padding: 16px 20px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .detail-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 20px;
+            transition: background-color 0.15s ease;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: 12px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-row:hover {
+            background: var(--surface-2);
+        }
+        .detail-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            min-width: 0;
+        }
+        .detail-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            background: var(--accent-soft);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            border: 1px solid var(--border-subtle);
+        }
+        .detail-icon svg {
+            width: 14px;
+            height: 14px;
+            color: var(--accent);
+        }
+        .detail-icon.warn {
+            background: var(--warning-soft);
+        }
+        .detail-icon.warn svg {
+            color: var(--warning);
+        }
+        .detail-icon.ok {
+            background: var(--success-soft);
+        }
+        .detail-icon.ok svg {
+            color: var(--success);
+        }
+        .detail-icon.info {
+            background: var(--info-soft);
+        }
+        .detail-icon.info svg {
+            color: var(--info);
+        }
+        .detail-label {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .detail-value {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            text-align: left;
+            max-width: 55%;
+            word-break: break-all;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .detail-value.muted {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        .detail-value.ok {
+            color: var(--success);
+        }
+        .detail-value.danger {
+            color: var(--danger);
+        }
+        .detail-value.warn {
+            color: var(--warning);
+        }
+
+        /* ============================================================
+           CALLOUTS
+           ============================================================ */
+        .callout {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            border: 1px solid var(--border-subtle);
+            background: var(--surface);
+        }
+        .callout-announce {
+            border-right: 3px solid var(--accent);
+        }
+        .callout-note {
+            border-right: 3px solid var(--highlight);
+        }
+        html[lang="en"] .callout-announce {
+            border-right: none;
+            border-left: 3px solid var(--accent);
+        }
+        html[lang="en"] .callout-note {
+            border-right: none;
+            border-left: 3px solid var(--highlight);
+        }
+        .callout-icon {
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .callout-announce .callout-icon {
+            color: var(--accent);
+        }
+        .callout-note .callout-icon {
+            color: var(--highlight);
+        }
+        .callout-icon svg {
+            width: 16px;
+            height: 16px;
+        }
+        .callout-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .callout-title {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            letter-spacing: 0.3px;
+        }
+        .callout-announce .callout-title {
+            color: var(--accent);
+        }
+        .callout-note .callout-title {
+            color: var(--highlight);
+        }
+        .callout-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        /* ============================================================
+           ACTION STRIP
+           ============================================================ */
+        .action-strip {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            margin-top: 8px;
+        }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 11px 20px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .action-btn:hover {
+            background: var(--surface-2);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+        .action-btn:active {
+            transform: scale(0.97);
+        }
+        .action-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .action-btn.primary:hover {
+            background: var(--accent-strong);
+            border-color: var(--accent-strong);
+            color: #fff;
+        }
+        .action-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ============================================================
+           CONFIGURATIONS
+           ============================================================ */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 2px 14px;
+        }
+        .section-title {
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title svg {
+            width: 13px;
+            height: 13px;
+            color: var(--accent);
+        }
+        .section-count {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-variant-numeric: tabular-nums;
+            font-weight: 500;
+        }
+
+        .config-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        .config-item {
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: var(--shadow-sm);
+        }
+        .config-item:hover {
+            background: var(--surface-2);
+            border-color: var(--border);
+            box-shadow: var(--shadow-md);
+        }
+        .config-item:active {
+            transform: scale(0.98);
+        }
+        .config-item.copied {
+            border-color: var(--success);
+            background: var(--success-soft);
+        }
+
+        .proto-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.2px;
+        }
+        .proto-vless {
+            background: #4e7cff;
+        }
+        .proto-vmess {
+            background: #10b981;
+        }
+        .proto-trojan {
+            background: #ef4444;
+        }
+        .proto-shadowsocks {
+            background: #f59e0b;
+        }
+        .proto-hysteria {
+            background: #8b5cf6;
+        }
+        .proto-wireguard {
+            background: #06b6d4;
+        }
+        .proto-default {
+            background: #64748b;
+        }
+
+        .config-main {
+            flex: 1;
+            min-width: 0;
+        }
+        .config-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+        .config-meta {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .config-meta .sep {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-tertiary);
+        }
+
+        .config-copy {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+        .config-copy:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .config-copy.copied {
+            background: var(--success);
+            color: #fff;
+            border-color: var(--success);
+        }
+        .config-copy svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        /* ============================================================
+           QR MODAL
+           ============================================================ */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 24px;
+        }
+        .modal-backdrop.active {
+            display: flex;
+            animation: fadeIn 0.15s ease;
+        }
+        .modal-sheet {
+            background: var(--surface);
+            border-radius: 14px;
+            padding: 24px;
+            max-width: 300px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            animation: sheetUp 0.25s ease;
+        }
+        .modal-sheet h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .qr-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 14px;
+            display: inline-block;
+        }
+        .qr-container img {
+            display: block;
+            width: 180px;
+            height: 180px;
+        }
+        .modal-sheet .close-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background: var(--surface-2);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .modal-sheet .close-btn:hover {
+            background: var(--surface-3);
+        }
+
+        /* ============================================================
+           TOAST
+           ============================================================ */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast svg {
+            width: 15px;
+            height: 15px;
+            color: var(--success);
+            flex-shrink: 0;
+        }
+
+        /* ============================================================
+           ANIMATIONS
+           ============================================================ */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes sheetUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: slideUp 0.45s ease both;
+        }
+        .animate-in.delay-1 {
+            animation-delay: 0.05s;
+        }
+        .animate-in.delay-2 {
+            animation-delay: 0.1s;
+        }
+        .animate-in.delay-3 {
+            animation-delay: 0.15s;
+        }
+        .animate-in.delay-4 {
+            animation-delay: 0.2s;
+        }
+
+        /* ============================================================
+           LANGUAGE / DIRECTION
+           ============================================================ */
+        html[lang="en"] {
+            direction: ltr;
+        }
+        html[lang="en"] .detail-value {
+            text-align: right;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 768px) {
+            .app {
+                padding: 0 20px;
+            }
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .traffic-visual {
+                gap: 16px;
+            }
+            .progress-ring,
+            .progress-ring svg {
+                width: 90px;
+                height: 90px;
+            }
+            .ring-center .big {
+                font-size: 13px;
+            }
+            .ring-center .small {
+                font-size: 8px;
+            }
+            .action-strip {
+                flex-direction: column;
+            }
+            .config-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 480px) {
+            .app {
+                padding: 0 14px;
+            }
+            .traffic-module {
+                padding: 16px;
+            }
+            .detail-row {
+                padding: 10px 12px;
+            }
+            .detail-icon {
+                width: 26px;
+                height: 26px;
+            }
+            .detail-icon svg {
+                width: 12px;
+                height: 12px;
+            }
+            .detail-label {
+                font-size: 12px;
+            }
+            .detail-value {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+
+        <!-- ===== TOP BAR ===== -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-mark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <span class="topbar-title" data-i18n="subscription">اشتراک</span>
+            </div>
+            <div class="topbar-controls">
+                <button class="control-btn" id="langBtn" title="Language" aria-label="Toggle language">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </button>
+                <button class="control-btn" id="themeBtn" title="Theme" aria-label="Toggle theme">
+                    <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"/>
+                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                    </svg>
+                    <svg class="i-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== MAIN GRID: TRAFFIC + DETAILS ===== -->
+        <div class="main-grid">
+            <!-- Traffic Module -->
+            <div class="traffic-module animate-in delay-1">
+                <div class="traffic-header">
+                    <span class="traffic-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+                            <path d="M12 7v5l3 2"/>
+                        </svg>
+                        <span data-i18n="traffic_usage">مصرف ترافیک</span>
+                    </span>
+                    <span class="traffic-pct">{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span>
+                </div>
+
+                <div class="traffic-visual">
+                    <div class="progress-ring">
+                        <svg viewBox="0 0 110 110">
+                            <circle class="ring-bg" cx="55" cy="55" r="46"/>
+                            <circle class="ring-fg" cx="55" cy="55" r="46"
+                            stroke-dasharray="289.026"
+                            stroke-dashoffset="289.026"
+                            data-target="162.4806"/>
+                        </svg>
+                        <div class="ring-center">
+                            <span class="big">{{ user.used_traffic | bytesformat }}</span>
+                            <span class="small" data-i18n="used">مصرف شده</span>
+                        </div>
+                    </div>
+                    <div class="traffic-stats">
+                        <div class="stat-row">
+                            <span class="key"><span class="dot used"></span><span data-i18n="used">مصرف شده</span></span>
+                            <span class="val">{{ user.used_traffic | bytesformat }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="key"><span class="dot remaining"></span><span data-i18n="remaining">باقیمانده</span></span>
+                            <span class="val">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="key"><span class="dot total"></span><span data-i18n="total">حجم کل</span></span>
+                            <span class="val">{{ user.data_limit | bytesformat }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="traffic-bar-wrap">
+                    <div class="traffic-bar">
+                        <div class="traffic-bar-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Group -->
+            <div class="details-group animate-in delay-2">
+                <div class="details-group-header" data-i18n="subscription_details">جزئیات اشتراک</div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <div class="detail-icon warn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                        </div>
+                        <span class="detail-label" data-i18n="expiry">تاریخ انقضا</span>
+                    </div>
+                    <span class="detail-value">{{ user.expire | datetime }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <div class="detail-icon ok">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <span class="detail-label" data-i18n="status">وضعیت</span>
+                    </div>
+                    <span class="detail-value ok">
+                        <span data-i18n="st_active">فعال</span>
+                    </span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <div class="detail-icon info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                        <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
+                    </div>
+                    <span class="detail-value">3</span>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-left">
+                        <div class="detail-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <span class="detail-label" data-i18n="username">نام کاربری</span>
+                    </div>
+                    <span class="detail-value muted" style="direction:ltr">{{ user.username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ANNOUNCEMENT ===== -->
+        <div class="callout callout-announce animate-in delay-3">
+            <div class="callout-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/>
+                    <path d="M16 8a5 5 0 0 1 0 8"/>
+                </svg>
+            </div>
+            <div class="callout-body">
+                <div class="callout-title" data-i18n="announcement">اعلان</div>
+                <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev
+                گزارش مشکلات: t.me/nucsub</div>
+            </div>
+        </div>
+
+        <!-- ===== ADMIN NOTE ===== -->
+        <div class="callout callout-note animate-in delay-3">
+            <div class="callout-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+            </div>
+            <div class="callout-body">
+                <div class="callout-title" data-i18n="admin_note">یادداشت</div>
+                <div class="callout-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div>
+            </div>
+        </div>
+
+        <!-- ===== ACTION STRIP ===== -->
+        <div class="action-strip animate-in delay-3" style="margin-top: 8px;">
+            <button class="action-btn" id="qrBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                    <path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/>
+                </svg>
+                <span data-i18n="qr_code">کد QR</span>
+            </button>
+            <button class="action-btn primary" id="copyAllBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                <span data-i18n="copy_all">کپی همه</span>
+            </button>
+        </div>
+
+        <!-- ===== CONFIGURATIONS ===== -->
+        <div class="section-header animate-in delay-4">
+            <span class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                <span data-i18n="configurations">کانفیگ‌ها</span>
+            </span>
+            <span class="section-count">6</span>
+        </div>
+
+        <div class="config-list">
+            {% for link in links %}
+<div class="config-item animate-in delay-4" data-link="{{ link }}">
+                <div class="proto-badge proto-vless"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><button class="config-copy" title="Copy" aria-label="Copy link"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button></div>
+{% endfor %}
+
+        </div>
+
+    </div>
+
+    <!-- ===== QR MODAL ===== -->
+    <div class="modal-backdrop" id="qrModal">
+        <div class="modal-sheet">
+            <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+            <div class="qr-container" id="qrContainer">
+                <img id="qrImg" alt="QR Code">
+            </div>
+            <button class="close-btn" id="modalClose" data-i18n="close">بستن</button>
+        </div>
+    </div>
+
+    <!-- ===== TOAST ===== -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span id="toastText" data-i18n="copied">کپی شد</span>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== TRANSLATIONS =====
+            const i18n = {
+                fa: {
+                    subscription: 'اشتراک',
+                    st_active: 'فعال',
+                    st_limited: 'محدود',
+                    st_expired: 'منقضی',
+                    st_hold: 'در انتظار',
+                    st_disabled: 'غیرفعال',
+                    account_subtitle: 'حساب کاربری شما',
+                    traffic_usage: 'مصرف ترافیک',
+                    used: 'مصرف شده',
+                    remaining: 'باقیمانده',
+                    total: 'حجم کل',
+                    subscription_details: 'جزئیات اشتراک',
+                    expiry: 'تاریخ انقضا',
+                    unlimited: 'نامحدود',
+                    status: 'وضعیت',
+                    device_limit: 'محدودیت دستگاه',
+                    username: 'نام کاربری',
+                    announcement: 'اعلان',
+                    admin_note: 'یادداشت',
+                    telegram: 'تلگرام',
+                    qr_code: 'کد QR',
+                    copy_all: 'کپی همه',
+                    configurations: 'کانفیگ‌ها',
+                    tap_to_copy: 'کلیک برای کپی',
+                    qr_title: 'کد QR اشتراک',
+                    close: 'بستن',
+                    copied: 'کپی شد',
+                    all_copied: 'همه کپی شدند'
+                },
+                en: {
+                    subscription: 'Subscription',
+                    st_active: 'Active',
+                    st_limited: 'Limited',
+                    st_expired: 'Expired',
+                    st_hold: 'On Hold',
+                    st_disabled: 'Disabled',
+                    account_subtitle: 'Your account',
+                    traffic_usage: 'Traffic Usage',
+                    used: 'Used',
+                    remaining: 'Remaining',
+                    total: 'Total',
+                    subscription_details: 'Subscription Details',
+                    expiry: 'Expiry Date',
+                    unlimited: 'Unlimited',
+                    status: 'Status',
+                    device_limit: 'Device Limit',
+                    username: 'Username',
+                    announcement: 'Announcement',
+                    admin_note: 'Note',
+                    telegram: 'Telegram',
+                    qr_code: 'QR Code',
+                    copy_all: 'Copy All',
+                    configurations: 'Configurations',
+                    tap_to_copy: 'Tap to copy',
+                    qr_title: 'Subscription QR',
+                    close: 'Close',
+                    copied: 'Copied',
+                    all_copied: 'All copied'
+                }
+            };
+
+            // ===== STATE =====
+            const html = document.documentElement;
+            let lang = localStorage.getItem('nuc_lang') || 'fa';
+            let theme = localStorage.getItem('nuc_theme') || 'dark';
+
+            // ===== INIT THEME =====
+            html.setAttribute('data-theme', theme);
+            html.setAttribute('lang', lang);
+            html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+
+            const themeBtn = document.getElementById('themeBtn');
+            const iSun = themeBtn.querySelector('.i-sun');
+            const iMoon = themeBtn.querySelector('.i-moon');
+
+            function syncThemeIcons() {
+                if (theme === 'dark') {
+                    iSun.style.display = '';
+                    iMoon.style.display = 'none';
+                } else {
+                    iSun.style.display = 'none';
+                    iMoon.style.display = '';
+                }
+            }
+            syncThemeIcons();
+
+            themeBtn.addEventListener('click', function() {
+                theme = theme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('nuc_theme', theme);
+                syncThemeIcons();
+            });
+
+            // ===== LANGUAGE =====
+            const langBtn = document.getElementById('langBtn');
+
+            function applyLanguage(l) {
+                html.setAttribute('lang', l);
+                html.setAttribute('dir', l === 'fa' ? 'rtl' : 'ltr');
+                document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                    const k = el.getAttribute('data-i18n');
+                    if (i18n[l] && i18n[l][k]) el.textContent = i18n[l][k];
+                });
+            }
+            applyLanguage(lang);
+
+            langBtn.addEventListener('click', function() {
+                lang = lang === 'fa' ? 'en' : 'fa';
+                localStorage.setItem('nuc_lang', lang);
+                applyLanguage(lang);
+            });
+
+            // ===== ANIMATE RING & BAR =====
+            requestAnimationFrame(function() {
+                setTimeout(function() {
+                    const ring = document.querySelector('.ring-fg');
+                    if (ring) ring.style.strokeDashoffset = ring.getAttribute('data-target');
+                    const bar = document.querySelector('.traffic-bar-fill');
+                    if (bar) bar.style.width = bar.getAttribute('data-width') + '%';
+                }, 200);
+            });
+
+            // ===== COPY =====
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            let toastTimer;
+
+            function showToast(msg) {
+                if (msg) toastText.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 1800);
+            }
+
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    const ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    return ok;
+                }
+            }
+
+            function flashCopy(item, btn) {
+                const iCopy = btn.querySelector('.i-copy');
+                const iCheck = btn.querySelector('.i-check');
+                item.classList.add('copied');
+                btn.classList.add('copied');
+                iCopy.style.display = 'none';
+                iCheck.style.display = '';
+                setTimeout(function() {
+                    item.classList.remove('copied');
+                    btn.classList.remove('copied');
+                    iCopy.style.display = '';
+                    iCheck.style.display = 'none';
+                }, 1300);
+            }
+
+            document.querySelectorAll('.config-item').forEach(function(item) {
+                const link = item.getAttribute('data-link');
+                const btn = item.querySelector('.config-copy');
+
+                const nameEl = item.querySelector('.config-name');
+                if (nameEl && nameEl.textContent.indexOf('%') !== -1) {
+                    try { nameEl.textContent = decodeURIComponent(nameEl.textContent); } catch (e) {}
+                }
+
+                function doCopy() {
+                    copyText(link).then(function(ok) {
+                        if (ok) {
+                            flashCopy(item, btn);
+                            showToast(i18n[lang].copied);
+                        }
+                    });
+                }
+
+                item.addEventListener('click', function(e) {
+                    if (!e.target.closest('.config-copy')) doCopy();
+                });
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    doCopy();
+                });
+            });
+
+            // ===== COPY ALL =====
+            document.getElementById('copyAllBtn').addEventListener('click', function() {
+                const links = [];
+                document.querySelectorAll('.config-item').forEach(function(it) {
+                    links.push(it.getAttribute('data-link'));
+                });
+                if (links.length) {
+                    copyText(links.join('\n')).then(function(ok) {
+                        if (ok) showToast(i18n[lang].all_copied);
+                    });
+                }
+            });
+
+            // ===== QR MODAL =====
+            const qrModal = document.getElementById('qrModal');
+            const qrImg = document.getElementById('qrImg');
+
+            document.getElementById('qrBtn').addEventListener('click', function() {
+                const first = document.querySelector('.config-item');
+                if (first) {
+                    const data = encodeURIComponent(first.getAttribute('data-link'));
+                    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=' + data;
+                    qrModal.classList.add('active');
+                }
+            });
+
+            document.getElementById('modalClose').addEventListener('click', function() {
+                qrModal.classList.remove('active');
+            });
+            qrModal.addEventListener('click', function(e) {
+                if (e.target === qrModal) qrModal.classList.remove('active');
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') qrModal.classList.remove('active');
+            });
+
+        })();
+    </script>
+
+
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\/\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+</body>
+</html>

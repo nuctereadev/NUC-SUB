@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e1e1e">
+    <title>Copper Slate — Subscription</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           COPPER SLATE — FLAT, NO GRADIENTS, BOLD STRUCTURE
+           ============================================================ */
+        :root[data-theme="dark"] {
+            --bg: #1e1e1e;
+            --bg-alt: #242424;
+            --card: #2a2a2a;
+            --card-hover: #303030;
+            --border: #3a3a3a;
+            --border-strong: #4a4a4a;
+            --text: #f0ece4;
+            --text-secondary: #b8b0a5;
+            --text-muted: #8a8278;
+            --accent: #d4a373;
+            --accent-strong: #b8845c;
+            --accent-soft: #d4a37322;
+            --success: #7d9b76;
+            --success-soft: #7d9b7622;
+            --warning: #c9a36a;
+            --warning-soft: #c9a36a22;
+            --danger: #b56a6a;
+            --danger-soft: #b56a6a22;
+            --info: #7a9eb5;
+            --info-soft: #7a9eb522;
+            --shadow-card: 0 6px 18px rgba(0,0,0,0.35);
+            --shadow-hover: 0 10px 28px rgba(0,0,0,0.45);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
+        }
+
+        :root[data-theme="light"] {
+            --bg: #f2efe9;
+            --bg-alt: #eae5dc;
+            --card: #ffffff;
+            --card-hover: #faf8f4;
+            --border: #dcd5cc;
+            --border-strong: #c5bdb2;
+            --text: #2a2520;
+            --text-secondary: #5c554a;
+            --text-muted: #8a8278;
+            --accent: #b8845c;
+            --accent-strong: #a06e48;
+            --accent-soft: #b8845c1a;
+            --success: #5c7d56;
+            --success-soft: #5c7d561a;
+            --warning: #a8814c;
+            --warning-soft: #a8814c1a;
+            --danger: #9c5c5c;
+            --danger-soft: #9c5c5c1a;
+            --info: #5c7d8c;
+            --info-soft: #5c7d8c1a;
+            --shadow-card: 0 4px 12px rgba(0,0,0,0.05);
+            --shadow-hover: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            font-size: 15px;
+            font-weight: 400;
+            padding-bottom: 40px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0 18px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .icon-btn:hover {
+            background: var(--card-hover);
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+        .icon-btn svg { width: 18px; height: 18px; }
+
+        /* Layout: Traffic full width, then stats, then details */
+        .traffic-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+        .traffic-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .traffic-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        .traffic-percentage {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .traffic-bar {
+            height: 14px;
+            background: var(--bg-alt);
+            border-radius: 50px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .traffic-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 50px;
+            width: 0%;
+            transition: width 1.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .traffic-stats {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        /* Details row — table-like */
+        .details-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+        .detail-cell {
+            padding: 16px 20px;
+            border-left: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-cell:nth-child(4n) { border-left: none; }
+        .detail-cell:nth-child(2n) { border-bottom: none; }
+        @media (min-width: 600px) {
+            .detail-cell:nth-child(2) { border-bottom: none; }
+            .detail-cell:nth-child(4) { border-bottom: none; }
+        }
+        @media (max-width: 599px) {
+            .detail-cell { border-left: none; border-bottom: 1px solid var(--border); }
+            .detail-cell:last-child { border-bottom: none; }
+        }
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .detail-value {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .detail-value.success { color: var(--success); }
+        .detail-value.warn { color: var(--warning); }
+
+        /* Callout row */
+        .callout-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 600px) { .callout-row { grid-template-columns: 1fr; } }
+        .callout {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            box-shadow: var(--shadow-card);
+        }
+        .callout-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+        .callout.note .callout-icon { background: var(--warning-soft); color: var(--warning); }
+        .callout-content { flex: 1; }
+        .callout-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+        .callout-text { font-size: 12px; color: var(--text-secondary); }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .action-btn {
+            flex: 1;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn:hover {
+            background: var(--card-hover);
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+        .action-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .action-btn.primary:hover {
+            background: var(--accent-strong);
+            border-color: var(--accent-strong);
+        }
+        .action-btn svg { width: 20px; height: 20px; }
+
+        /* Config list */
+        .configs-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .configs-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .configs-count { font-size: 13px; color: var(--text-muted); }
+
+        .configs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .config-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-card);
+        }
+        .config-item:hover {
+            background: var(--card-hover);
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
+        }
+        .config-item.copied {
+            border-color: var(--success);
+            background: var(--success-soft);
+        }
+        .proto-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            background: var(--accent);
+        }
+        .proto-vless { background: #5a7fa3; }
+        .proto-vmess { background: #5a9e7f; }
+        .proto-trojan { background: #a35a5a; }
+        .proto-shadowsocks { background: #a3835a; }
+        .proto-hysteria { background: #8a5aa3; }
+        .proto-wireguard { background: #5a9ea3; }
+        .proto-default { background: #6b6b6b; }
+        .config-info { flex: 1; min-width: 0; }
+        .config-name {
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .config-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .config-meta .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--text-muted); }
+        .config-copy {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--border);
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .config-copy:hover { background: var(--accent); color: #fff; }
+        .config-copy.copied { background: var(--success); color: #fff; }
+        .config-copy svg { width: 16px; height: 16px; }
+
+        /* Modal & Toast */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-card {
+            background: var(--card);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: var(--shadow-hover);
+        }
+        .modal-card h3 { margin-bottom: 16px; }
+        .qr-wrapper { background: #fff; border-radius: 12px; padding: 12px; display: inline-block; margin-bottom: 16px; }
+        .qr-wrapper img { width: 180px; height: 180px; display: block; }
+        .modal-close {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background: var(--border);
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-close:hover { background: var(--border-strong); }
+
+        .toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--card);
+            border: 1px solid var(--border-strong);
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.4s;
+            box-shadow: var(--shadow-hover);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast svg { width: 18px; height: 18px; color: var(--success); }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .app { padding: 0 16px; }
+            .traffic-section { padding: 20px; }
+            .traffic-stats { gap: 20px; }
+            .actions { flex-direction: column; }
+            .config-item { padding: 12px 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">C</div>
+                <span class="logo-text">Copper Slate</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="langBtn" title="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></button>
+                <button class="icon-btn" id="themeBtn" title="Theme">
+                    <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    <svg class="i-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- TRAFFIC SECTION -->
+        <div class="traffic-section">
+            <div class="traffic-header">
+                <span class="traffic-title">مصرف ترافیک</span>
+                <span class="traffic-percentage">{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span>
+            </div>
+            <div class="traffic-bar">
+                <div class="traffic-bar-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div>
+            </div>
+            <div class="traffic-stats">
+                <div class="stat-item">
+                    <span class="stat-label">مصرف شده</span>
+                    <span class="stat-value">{{ user.used_traffic | bytesformat }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">باقیمانده</span>
+                    <span class="stat-value">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">حجم کل</span>
+                    <span class="stat-value">{{ user.data_limit | bytesformat }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DETAILS ROW -->
+        <div class="details-row">
+            <div class="detail-cell">
+                <div class="detail-label">تاریخ انقضا</div>
+                <div class="detail-value warn">{{ user.expire | datetime }}</div>
+            </div>
+            <div class="detail-cell">
+                <div class="detail-label">وضعیت</div>
+                <div class="detail-value success">فعال</div>
+            </div>
+            <div class="detail-cell">
+                <div class="detail-label">محدودیت دستگاه</div>
+                <div class="detail-value">3</div>
+            </div>
+            <div class="detail-cell">
+                <div class="detail-label">نام کاربری</div>
+                <div class="detail-value" style="direction:ltr">{{ user.username }}</div>
+            </div>
+        </div>
+
+        <!-- CALLOUT ROW -->
+        <div class="callout-row">
+            <div class="callout announce">
+                <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
+                <div class="callout-content">
+                    <div class="callout-title">اعلان</div>
+                    <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+                </div>
+            </div>
+            <div class="callout note">
+                <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                <div class="callout-content">
+                    <div class="callout-title">یادداشت</div>
+                    <div class="callout-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="actions">
+            <button class="action-btn" id="qrBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
+                <span>کد QR</span>
+            </button>
+            <button class="action-btn primary" id="copyAllBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>کپی همه</span>
+            </button>
+        </div>
+
+        <!-- CONFIGS -->
+        <div class="configs-header">
+            <span class="configs-title">کانفیگ‌ها</span>
+            <span class="configs-count" >{{ links | length }}</span>
+        </div>
+        <div class="configs-list">
+            {% for link in links %}
+<div class="config-item" data-link="{{ link }}">
+                <div class="proto-badge proto-vless"></div><div class="config-info"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span></span></div></div><button class="config-copy" title="Copy"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button></div>
+{% endfor %}
+
+        </div>
+    </div>
+
+    <!-- QR MODAL -->
+    <div class="modal-backdrop" id="qrModal">
+        <div class="modal-card">
+            <h3>کد QR اشتراک</h3>
+            <div class="qr-wrapper" id="qrContainer"><img id="qrImg" alt="QR Code"></div>
+            <button class="modal-close" id="modalClose">بستن</button>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="toastText">کپی شد</span>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const i18n = {
+                fa: {
+                    subscription: 'اشتراک', st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+                    account_subtitle: 'حساب کاربری شما', traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل',
+                    subscription_details: 'جزئیات اشتراک', expiry: 'تاریخ انقضا', unlimited: 'نامحدود', status: 'وضعیت', device_limit: 'محدودیت دستگاه',
+                    username: 'نام کاربری', announcement: 'اعلان', admin_note: 'یادداشت', telegram: 'تلگرام', qr_code: 'کد QR', copy_all: 'کپی همه',
+                    configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی', qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
+                },
+                en: {
+                    subscription: 'Subscription', st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+                    account_subtitle: 'Your account', traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total',
+                    subscription_details: 'Subscription Details', expiry: 'Expiry Date', unlimited: 'Unlimited', status: 'Status', device_limit: 'Device Limit',
+                    username: 'Username', announcement: 'Announcement', admin_note: 'Note', telegram: 'Telegram', qr_code: 'QR Code', copy_all: 'Copy All',
+                    configurations: 'Configurations', tap_to_copy: 'Tap to copy', qr_title: 'Subscription QR', close: 'Close', copied: 'Copied', all_copied: 'All copied'
+                }
+            };
+
+            const html = document.documentElement;
+            let lang = localStorage.getItem('copper_lang') || 'fa';
+            let theme = localStorage.getItem('copper_theme') || 'dark';
+
+            html.setAttribute('data-theme', theme);
+            html.setAttribute('lang', lang);
+            html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+
+            const themeBtn = document.getElementById('themeBtn');
+            const iSun = themeBtn.querySelector('.i-sun');
+            const iMoon = themeBtn.querySelector('.i-moon');
+
+            function syncThemeIcons() {
+                if (theme === 'dark') { iSun.style.display = ''; iMoon.style.display = 'none'; }
+                else { iSun.style.display = 'none'; iMoon.style.display = ''; }
+            }
+            syncThemeIcons();
+            themeBtn.addEventListener('click', () => {
+                theme = theme === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', theme);
+                localStorage.setItem('copper_theme', theme);
+                syncThemeIcons();
+            });
+
+            const langBtn = document.getElementById('langBtn');
+            function applyLanguage(l) {
+                html.setAttribute('lang', l);
+                html.setAttribute('dir', l === 'fa' ? 'rtl' : 'ltr');
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const k = el.getAttribute('data-i18n');
+                    if (i18n[l] && i18n[l][k]) el.textContent = i18n[l][k];
+                });
+            }
+            applyLanguage(lang);
+            langBtn.addEventListener('click', () => {
+                lang = lang === 'fa' ? 'en' : 'fa';
+                localStorage.setItem('copper_lang', lang);
+                applyLanguage(lang);
+            });
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    const bar = document.querySelector('.traffic-bar-fill');
+                    if (bar) bar.style.width = bar.getAttribute('data-width') + '%';
+                }, 200);
+            });
+
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toastText');
+            let toastTimer;
+            function showToast(msg) {
+                if (msg) toastText.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+            }
+
+            async function copyText(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                } catch (e) {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    const ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    return ok;
+                }
+            }
+
+            function flashCopy(item, btn) {
+                const iCopy = btn.querySelector('.i-copy');
+                const iCheck = btn.querySelector('.i-check');
+                item.classList.add('copied');
+                btn.classList.add('copied');
+                iCopy.style.display = 'none';
+                iCheck.style.display = '';
+                setTimeout(() => {
+                    item.classList.remove('copied');
+                    btn.classList.remove('copied');
+                    iCopy.style.display = '';
+                    iCheck.style.display = 'none';
+                }, 1500);
+            }
+
+            document.querySelectorAll('.config-item').forEach(item => {
+                const link = item.getAttribute('data-link');
+                const btn = item.querySelector('.config-copy');
+                if (!btn || !link) return;
+
+                function doCopy() {
+                    copyText(link).then(ok => {
+                        if (ok) {
+                            flashCopy(item, btn);
+                            showToast(i18n[lang].copied);
+                        }
+                    });
+                }
+
+                item.addEventListener('click', (e) => {
+                    if (!e.target.closest('.config-copy')) doCopy();
+                });
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    doCopy();
+                });
+            });
+
+            document.getElementById('copyAllBtn').addEventListener('click', () => {
+                const links = [...document.querySelectorAll('.config-item')].map(c => c.getAttribute('data-link'));
+                if (links.length) {
+                    copyText(links.join('\n')).then(ok => {
+                        if (ok) showToast(i18n[lang].all_copied);
+                    });
+                }
+            });
+
+            const qrModal = document.getElementById('qrModal');
+            const qrImg = document.getElementById('qrImg');
+            document.getElementById('qrBtn').addEventListener('click', () => {
+                const first = document.querySelector('.config-item');
+                if (first) {
+                    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + encodeURIComponent(first.getAttribute('data-link'));
+                    qrModal.classList.add('active');
+                }
+            });
+            document.getElementById('modalClose').addEventListener('click', () => qrModal.classList.remove('active'));
+            qrModal.addEventListener('click', (e) => { if (e.target === qrModal) qrModal.classList.remove('active'); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') qrModal.classList.remove('active'); });
+
+        })();
+    </script>
+
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\/\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+</body>
+</html>

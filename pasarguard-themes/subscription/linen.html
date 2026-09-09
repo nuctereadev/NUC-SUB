@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ffffff">
+    <title>Linen — Subscription</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ============================================================
+           LINEN — MINIMALIST, EDITORIAL, PURE
+           ============================================================ */
+        :root[data-theme="light"] {
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --surface-alt: #f5f5f5;
+            --border: #e5e5e5;
+            --border-strong: #d0d0d0;
+            --text: #1a1a1a;
+            --text-secondary: #555555;
+            --text-muted: #888888;
+            --accent: #6b7280;
+            --accent-soft: #f0f0f0;
+            --success: #4c9a5c;
+            --success-soft: #ecf6ee;
+            --warning: #b8860b;
+            --warning-soft: #fdf6e3;
+            --danger: #c0392b;
+            --danger-soft: #fdecea;
+            --info: #2c7a9e;
+            --info-soft: #eaf4f8;
+            --shadow-card: none;
+            --shadow-hover: none;
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+        :root[data-theme="dark"] {
+            --bg: #0d0d0d;
+            --surface: #161616;
+            --surface-alt: #1c1c1c;
+            --border: #2a2a2a;
+            --border-strong: #3a3a3a;
+            --text: #f0f0f0;
+            --text-secondary: #b0b0b0;
+            --text-muted: #707070;
+            --accent: #9ca3af;
+            --accent-soft: #262626;
+            --success: #5fae72;
+            --success-soft: #1a2b1e;
+            --warning: #c9a23b;
+            --warning-soft: #2b2413;
+            --danger: #d35a4a;
+            --danger-soft: #2b1815;
+            --info: #4a90b8;
+            --info-soft: #15242b;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.8;
+            font-size: 15px;
+            font-weight: 400;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 0 0 40px;
+        }
+        .app {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: var(--text);
+        }
+        .logo-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: inline-block;
+        }
+        .header-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .icon-btn:hover {
+            background: var(--accent-soft);
+            color: var(--text);
+        }
+        .icon-btn svg { width: 18px; height: 18px; }
+
+        /* Section titles */
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Info block */
+        .info-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 32px;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+        @media (max-width: 480px) {
+            .info-block { grid-template-columns: 1fr; gap: 16px; }
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
+        }
+        .info-value {
+            font-size: 16px;
+            font-weight: 500;
+            word-break: break-all;
+        }
+        .info-value.success { color: var(--success); }
+        .info-value.warn { color: var(--warning); }
+
+        /* Traffic block */
+        .traffic-block {
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 32px;
+        }
+        .traffic-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .traffic-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text);
+        }
+        .traffic-percent {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .traffic-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .traffic-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 1.2s ease;
+        }
+        .traffic-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px 40px;
+        }
+        .stat-item {
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+        .stat-label { color: var(--text-muted); font-size: 12px; }
+        .stat-value { font-weight: 500; }
+
+        /* Callouts */
+        .callout-group {
+            display: grid;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .callout {
+            padding: 16px 20px;
+            border-left: 3px solid var(--border-strong);
+            background: var(--surface);
+        }
+        .callout.announce { border-left-color: var(--accent); }
+        .callout.note { border-left-color: var(--warning); }
+        .callout-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .callout.announce .callout-title { color: var(--accent); }
+        .callout.note .callout-title { color: var(--warning); }
+        .callout-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            word-break: break-word;
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 36px;
+        }
+        .action-btn {
+            flex: 1;
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .action-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--border-strong);
+            color: var(--text);
+        }
+        .action-btn.primary {
+            background: var(--text);
+            border-color: var(--text);
+            color: var(--bg);
+        }
+        .action-btn.primary:hover {
+            background: var(--text-secondary);
+            border-color: var(--text-secondary);
+            color: var(--bg);
+        }
+        .action-btn svg { width: 18px; height: 18px; }
+
+        /* Config list */
+        .configs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .config-item:hover {
+            border-color: var(--border-strong);
+            background: var(--surface-alt);
+        }
+        .config-item.copied {
+            border-color: var(--success);
+            background: var(--success-soft);
+        }
+        .proto-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            background: var(--accent-soft);
+            color: var(--text);
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .config-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .config-name {
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .config-meta {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .config-meta .sep {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        .config-copy {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+        .config-copy:hover {
+            background: var(--accent-soft);
+            color: var(--text);
+        }
+        .config-copy.copied {
+            color: var(--success);
+        }
+        .config-copy svg { width: 16px; height: 16px; }
+
+        /* Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-backdrop.active { display: flex; }
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 28px;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
+        }
+        .modal-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .qr-wrapper {
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+        .qr-wrapper img {
+            display: block;
+            width: 180px;
+            height: 180px;
+        }
+        .modal-close {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .modal-close:hover {
+            background: var(--accent-soft);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 18px;
+            font-size: 13px;
+            color: var(--text);
+            z-index: 2000;
+            opacity: 0;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast svg { width: 16px; height: 16px; color: var(--success); }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .app { padding: 0 16px; }
+            .header { padding: 20px 0 14px; margin-bottom: 24px; }
+            .info-block { padding: 18px 0; margin-bottom: 24px; }
+            .traffic-block { padding: 16px 0; margin-bottom: 24px; }
+            .actions { flex-direction: column; }
+            .action-btn { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span class="logo-dot"></span>
+                <span>Linen</span>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn" id="langBtn" title="Language" aria-label="Toggle language">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </button>
+                <button class="icon-btn" id="themeBtn" title="Theme" aria-label="Toggle theme">
+                    <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    <svg class="i-moon" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="section-title">جزئیات اشتراک</div>
+        <div class="info-block">
+            <div class="info-item">
+                <span class="info-label" data-i18n="expiry">تاریخ انقضا</span>
+                <span class="info-value warn" data-i18n="expiry">{{ user.expire | datetime }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label" data-i18n="status">وضعیت</span>
+                <span class="info-value success" data-i18n="st_active">فعال</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label" data-i18n="device_limit">محدودیت دستگاه</span>
+                <span class="info-value">3</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label" data-i18n="username">نام کاربری</span>
+                <span class="info-value" style="direction:ltr">{{ user.username }}</span>
+            </div>
+        </div>
+
+        <!-- Traffic Section -->
+        <div class="section-title">مصرف ترافیک</div>
+        <div class="traffic-block">
+            <div class="traffic-header">
+                <span class="traffic-title">حجم کل</span>
+                <span class="traffic-percent">{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span>
+            </div>
+            <div class="traffic-bar">
+                <div class="traffic-bar-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div>
+            </div>
+            <div class="traffic-stats">
+                <div class="stat-item">
+                    <span class="stat-label" data-i18n="used">مصرف شده</span>
+                    <span class="stat-value">{{ user.used_traffic | bytesformat }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label" data-i18n="remaining">باقیمانده</span>
+                    <span class="stat-value">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label" data-i18n="total">حجم کل</span>
+                    <span class="stat-value">{{ user.data_limit | bytesformat }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Callouts -->
+        <div class="callout-group">
+            <div class="callout announce">
+                <div class="callout-title" data-i18n="announcement">اعلان</div>
+                <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+            </div>
+            <div class="callout note">
+                <div class="callout-title" data-i18n="admin_note">یادداشت</div>
+                <div class="callout-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+            <button class="action-btn" id="qrBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
+                <span data-i18n="qr_code">کد QR</span>
+            </button>
+            <button class="action-btn primary" id="copyAllBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span data-i18n="copy_all">کپی همه</span>
+            </button>
+        </div>
+
+        <!-- Configs -->
+        <div class="section-title">کانفیگ‌ها</div>
+        <div class="configs-list">
+            {% for link in links %}
+<div class="config-item" data-link="{{ link }}">
+                <div class="proto-badge"></div><div class="config-info"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><button class="config-copy" title="Copy" aria-label="Copy link"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button></div>
+{% endfor %}
+
+            <!-- Repeat similar for other configs -->
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div class="modal-backdrop" id="qrModal">
+        <div class="modal-card">
+            <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+            <div class="qr-wrapper" id="qrContainer"><img id="qrImg" alt="QR Code"></div>
+            <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="toastText" data-i18n="copied">کپی شد</span>
+    </div>
+
+    <script>
+        (function() {
+            const i18n = {
+                fa: { subscription:'اشتراک', st_active:'فعال', traffic_usage:'مصرف ترافیک', used:'مصرف شده', remaining:'باقیمانده', total:'حجم کل', expiry:'تاریخ انقضا', status:'وضعیت', device_limit:'محدودیت دستگاه', username:'نام کاربری', announcement:'اعلان', admin_note:'یادداشت', qr_code:'کد QR', copy_all:'کپی همه', configurations:'کانفیگ‌ها', tap_to_copy:'کلیک برای کپی', qr_title:'کد QR اشتراک', close:'بستن', copied:'کپی شد', all_copied:'همه کپی شدند' },
+                en: { subscription:'Subscription', st_active:'Active', traffic_usage:'Traffic Usage', used:'Used', remaining:'Remaining', total:'Total', expiry:'Expiry Date', status:'Status', device_limit:'Device Limit', username:'Username', announcement:'Announcement', admin_note:'Note', qr_code:'QR Code', copy_all:'Copy All', configurations:'Configurations', tap_to_copy:'Tap to copy', qr_title:'Subscription QR', close:'Close', copied:'Copied', all_copied:'All copied' }
+            };
+            const html = document.documentElement;
+            let lang = localStorage.getItem('linen_lang') || 'fa';
+            let theme = localStorage.getItem('linen_theme') || 'light';
+            html.setAttribute('data-theme', theme);
+            html.setAttribute('lang', lang);
+            html.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+
+            const themeBtn = document.getElementById('themeBtn');
+            const iSun = themeBtn.querySelector('.i-sun');
+            const iMoon = themeBtn.querySelector('.i-moon');
+            function syncIcons() { if(theme==='dark'){iSun.style.display='';iMoon.style.display='none';}else{iSun.style.display='none';iMoon.style.display='';} }
+            syncIcons();
+            themeBtn.addEventListener('click',()=>{ theme = theme==='dark'?'light':'dark'; html.setAttribute('data-theme',theme); localStorage.setItem('linen_theme',theme); syncIcons(); });
+
+            const langBtn = document.getElementById('langBtn');
+            function applyLang(l){ html.setAttribute('lang',l); html.setAttribute('dir',l==='fa'?'rtl':'ltr'); document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.getAttribute('data-i18n'); if(i18n[l] && i18n[l][k]) el.textContent=i18n[l][k]; }); }
+            applyLang(lang);
+            langBtn.addEventListener('click',()=>{ lang = lang==='fa'?'en':'fa'; localStorage.setItem('linen_lang',lang); applyLang(lang); });
+
+            requestAnimationFrame(()=>setTimeout(()=>{ const bar=document.querySelector('.traffic-bar-fill'); if(bar) bar.style.width=bar.getAttribute('data-width')+'%'; },200));
+
+            const toast=document.getElementById('toast'); const toastText=document.getElementById('toastText'); let timer;
+            function showToast(msg){ if(msg) toastText.textContent=msg; toast.classList.add('show'); clearTimeout(timer); timer=setTimeout(()=>toast.classList.remove('show'),2000); }
+            async function copyText(text){ try{ await navigator.clipboard.writeText(text); return true;}catch(e){ const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0;pointer-events:none'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); document.body.removeChild(ta); return ok; } }
+            function flashCopy(item,btn){ const ic=btn.querySelector('.i-copy'); const ic2=btn.querySelector('.i-check'); item.classList.add('copied'); btn.classList.add('copied'); ic.style.display='none'; ic2.style.display=''; setTimeout(()=>{ item.classList.remove('copied'); btn.classList.remove('copied'); ic.style.display=''; ic2.style.display='none'; },1500); }
+            document.querySelectorAll('.config-item').forEach(item=>{ const link=item.getAttribute('data-link'); const btn=item.querySelector('.config-copy'); if(!btn||!link)return; const doCopy=()=>copyText(link).then(ok=>{ if(ok){ flashCopy(item,btn); showToast(i18n[lang].copied); } }); item.addEventListener('click',e=>{ if(!e.target.closest('.config-copy')) doCopy(); }); btn.addEventListener('click',e=>{ e.stopPropagation(); doCopy(); }); });
+            document.getElementById('copyAllBtn').addEventListener('click',()=>{ const links=[...document.querySelectorAll('.config-item')].map(c=>c.getAttribute('data-link')); if(links.length) copyText(links.join('\n')).then(ok=>{ if(ok) showToast(i18n[lang].all_copied); }); });
+            const qrModal=document.getElementById('qrModal'); const qrImg=document.getElementById('qrImg');
+            document.getElementById('qrBtn').addEventListener('click',()=>{ const first=document.querySelector('.config-item'); if(first){ qrImg.src='https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data='+encodeURIComponent(first.getAttribute('data-link')); qrModal.classList.add('active'); } });
+            document.getElementById('modalClose').addEventListener('click',()=>qrModal.classList.remove('active'));
+            qrModal.addEventListener('click',e=>{ if(e.target===qrModal) qrModal.classList.remove('active'); });
+            document.addEventListener('keydown',e=>{ if(e.key==='Escape') qrModal.classList.remove('active'); });
+        })();
+    </script>
+
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\/\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+</body>
+</html>

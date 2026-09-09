@@ -44,6 +44,24 @@ BATCH = [
     ("olive",   "pasarguard_true_minimal_theme.html"),   # "PasarGuard true minimal"
     ("pulse",   "pasarguard_unlocked_theme.html"),       # "PasarGuard pulse"
     ("teal",    "pasarguard_subscription_theme4.html"),  # "PasarGuard subscription 4"
+    # ---- second batch: the remaining unique drafts -> 8 + 33 = 41 PG themes ----
+    ("azure",   "deepseek_html_20260909_190a7e.html"),   # "NucSub" (blue/cyan)
+    ("cobalt",  "deepseek_html_20260909_228d29.html"),   # "Minimal" (royal blue)
+    ("lagoon",  "deepseek_html_20260909_30d6f0.html"),   # "Azure Minimal" (teal)
+    ("linen",   "deepseek_html_20260909_8bedf6.html"),   # "Linen" (light dark)
+    ("stark",   "deepseek_html_20260909_92ec18.html"),   # "Stark" (deep navy)
+    ("copper",  "deepseek_html_20260909_cdb2bf.html"),   # "Copper Slate" (brown)
+    ("emerald", "deepseek_html_20260909_edd7df.html"),   # "NucSub Clean" (green)
+    ("ocean",   "doubao_html_20260909_181243.html"),     # doubao variant 1
+    ("marine",  "doubao_html_20260909_201700.html"),     # doubao variant 2
+    ("tide",    "doubao_html_20260909_203422.html"),     # doubao variant 3
+    ("abyss",   "doubao_html_20260909_204328.html"),     # doubao variant 4
+    ("dusk",    "html lang=fa dir=rtl style=margin0.html"),
+    ("prisma",  "pasarguard_subscription_rebuilt.html"), # "Subscription rebuilt"
+    ("coal",    "Qwen_html_20260909_ik5a4p1jr.html"),    # Qwen graphite a
+    ("chrome",  "Qwen_html_20260909_miyicnbdv.html"),    # Qwen graphite b
+    ("steel",   "Qwen_html_20260909_opy5hz04b.html"),    # Qwen graphite c
+    ("comet",   "Qwen_html_20260909_x0hgdbmwm.html"),    # "Nova Template" (green)
 ]
 
 RULES = [

@@ -1,0 +1,1099 @@
+<html lang="fa" dir="rtl" style="margin:0;padding:0;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+(function(){
+  var s = document.createElement('style');
+  s.textContent = `
+    :root {
+      --bg: #faf7ff;
+      --card: #ffffff;
+      --text: #1a1025;
+      --muted: #8a7f99;
+      --accent: #bd3193;
+      --accent-dark: #9a2477;
+      --accent-soft: rgba(189,49,147,0.08);
+      --accent-strong: rgba(189,49,147,0.15);
+      --accent2: #0891b2;
+      --accent2-soft: rgba(8,145,178,0.08);
+      --border: rgba(26,16,37,0.06);
+      --border-strong: rgba(26,16,37,0.1);
+      --success: #10b981;
+      --success-soft: rgba(16,185,129,0.1);
+      --warning: #f59e0b;
+      --warning-soft: rgba(245,158,11,0.1);
+      --shadow-sm: 0 2px 8px rgba(26,16,37,0.04);
+      --shadow-md: 0 8px 24px rgba(26,16,37,0.06);
+      --shadow-lg: 0 16px 40px rgba(26,16,37,0.08);
+    }
+    :root[data-theme="dark"] {
+      --bg: #120a1a;
+      --card: #1e1428;
+      --text: #f0e8f7;
+      --muted: #9a8faa;
+      --accent: #e85bb3;
+      --accent-dark: #c44494;
+      --accent-soft: rgba(232,91,179,0.12);
+      --accent-strong: rgba(232,91,179,0.2);
+      --accent2: #22d3ee;
+      --accent2-soft: rgba(34,211,238,0.1);
+      --border: rgba(240,232,247,0.06);
+      --border-strong: rgba(240,232,247,0.1);
+      --success: #34d399;
+      --success-soft: rgba(52,211,153,0.12);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251,191,36,0.12);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.25);
+      --shadow-lg: 0 16px 40px rgba(0,0,0,0.3);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Vazirmatn', 'Urbanist', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      transition: background .3s, color .3s;
+      padding-bottom: 60px;
+      position: relative;
+    }
+    html[lang="en"] body { font-family: 'Urbanist', 'Vazirmatn', sans-serif; direction: ltr; }
+    html[lang="en"] { direction: ltr; }
+
+    /* Subtle grid pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+
+    .app {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .svg-icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .svg-icon.sm { width: 16px; height: 16px; }
+    .svg-icon.lg { width: 22px; height: 22px; }
+
+    /* ===== HEADER ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 32px;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 6px 20px var(--accent-strong);
+    }
+    .logo-text h1 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.3px;
+    }
+    .logo-text p {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 1px 0 0;
+      font-weight: 500;
+    }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ===== 3D BUTTONS ===== */
+    .btn-3d {
+      position: relative;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      transition: transform .08s ease, box-shadow .08s ease;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-3d-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 0 var(--border-strong), 0 4px 12px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+    }
+    .btn-3d-icon:hover { color: var(--accent); }
+    .btn-3d-icon:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 var(--border-strong), 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .btn-3d-primary {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 5px 0 var(--accent-dark), 0 8px 24px var(--accent-strong);
+    }
+    .btn-3d-primary:hover { filter: brightness(1.05); }
+    .btn-3d-primary:active {
+      transform: translateY(5px);
+      box-shadow: 0 0 0 var(--accent-dark), 0 2px 8px var(--accent-strong);
+    }
+    .btn-3d-secondary {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 16px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 0 var(--border-strong), 0 6px 16px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+    }
+    .btn-3d-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-3d-secondary:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 var(--border-strong), 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    /* ===== STATUS BADGE ===== */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .status-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    .status-badge.active { color: var(--success); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 var(--success-soft); }
+      50% { opacity: 0.7; transform: scale(0.9); box-shadow: 0 0 0 6px transparent; }
+    }
+
+    /* ===== MAIN CARD ===== */
+    .main-card {
+      background: var(--card);
+      border-radius: 28px;
+      padding: 28px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      transition: background .3s, border-color .3s;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 12px;
+    }
+    .card-title h2 {
+      font-size: 26px;
+      font-weight: 800;
+      margin: 0 0 4px;
+      letter-spacing: -0.6px;
+      line-height: 1.15;
+    }
+    .card-title h2 span {
+      color: var(--accent);
+    }
+    .card-title .sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* ===== USAGE DISPLAY (NEW DESIGN) ===== */
+    .usage-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px;
+      border-radius: 20px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-strong);
+      margin-bottom: 24px;
+    }
+    .usage-big {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .usage-big .num {
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -1.5px;
+      color: var(--accent);
+      font-variant-numeric: tabular-nums;
+    }
+    .usage-big .unit {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .usage-divider {
+      width: 1px;
+      height: 50px;
+      background: var(--border-strong);
+    }
+    .usage-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+    }
+    html[lang="en"] .usage-info { text-align: right; }
+    .usage-info-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .usage-info-row .lbl {
+      color: var(--muted);
+    }
+    .usage-info-row .val {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ===== PROGRESS BARS ===== */
+    .progress-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .progress-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .progress-item .lbl {
+      font-size: 12px;
+      color: var(--muted);
+      width: 70px;
+      flex-shrink: 0;
+    }
+    html[lang="en"] .progress-item .lbl { text-align: right; }
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--bg);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: width 1.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .progress-fill.used {
+      background: linear-gradient(90deg, var(--accent), #d946a8);
+    }
+    .progress-fill.remain {
+      background: linear-gradient(90deg, var(--muted), #a89cb8);
+    }
+    .progress-item .pct {
+      font-size: 12px;
+      font-weight: 600;
+      width: 40px;
+      text-align: left;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+    html[lang="en"] .progress-item .pct { text-align: right; }
+
+    /* ===== DETAIL ROWS ===== */
+    .detail-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 24px;
+    }
+    .detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-radius: 14px;
+      transition: background .15s;
+      gap: 12px;
+    }
+    .detail-row:hover {
+      background: var(--bg);
+    }
+    .detail-row-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .detail-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .detail-icon.accent { background: var(--accent-soft); color: var(--accent); }
+    .detail-icon.accent2 { background: var(--accent2-soft); color: var(--accent2); }
+    .detail-icon.success { background: var(--success-soft); color: var(--success); }
+    .detail-icon.warning { background: var(--warning-soft); color: var(--warning); }
+    .detail-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .detail-value {
+      font-size: 14px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .detail-value.ok { color: var(--success); }
+    .detail-value.muted { color: var(--muted); font-weight: 500; }
+
+    /* ===== ACTION BUTTONS ROW ===== */
+    .actions-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* ===== CONFIG SECTION ===== */
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 4px 18px;
+    }
+    .section-head h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-head h3 .accent-line {
+      width: 4px;
+      height: 20px;
+      border-radius: 3px;
+      background: var(--accent);
+    }
+    .section-count {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .config-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .config-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all .2s;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+    }
+    .config-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 60px;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, var(--accent-soft));
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    html[lang="en"] .config-card::before {
+      right: auto;
+      left: 0;
+      background: linear-gradient(270deg, transparent, var(--accent-soft));
+    }
+    .config-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--accent);
+    }
+    .config-card:hover::before { opacity: 1; }
+    .config-card:active {
+      transform: translateY(-1px);
+    }
+    .config-card.copied {
+      border-color: var(--success);
+      background: var(--success-soft);
+    }
+    .config-card.copied::before { display: none; }
+
+    .config-proto {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+      z-index: 1;
+    }
+    .proto-vless { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .proto-vmess { background: linear-gradient(135deg, #10b981, #059669); }
+    .proto-trojan { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .proto-shadowsocks { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .proto-hysteria { background: linear-gradient(135deg, #a855f7, #9333ea); }
+    .proto-wireguard { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+
+    .config-body {
+      flex: 1;
+      min-width: 0;
+      z-index: 1;
+    }
+    .config-name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .config-meta {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .config-meta .sep {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--muted);
+      opacity: 0.5;
+    }
+    .config-arrow {
+      color: var(--muted);
+      z-index: 1;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    .config-card:hover .config-arrow {
+      color: var(--accent);
+      transform: translateX(-4px);
+    }
+    html[lang="en"] .config-card:hover .config-arrow {
+      transform: translateX(4px);
+    }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,16,37,0.4);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .modal-backdrop.active { display: flex; animation: fadeIn .2s; }
+    .modal-sheet {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 28px;
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      animation: sheetUp .35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-sheet h3 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 20px;
+    }
+    .qr-box {
+      background: #fff;
+      border-radius: 18px;
+      padding: 14px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .qr-box img { display: block; width: 200px; height: 200px; }
+    .modal-close {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .modal-close:hover { background: var(--border-strong); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      padding: 12px 22px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 2000;
+      opacity: 0;
+      transition: all .35s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast .svg-icon { color: var(--success); width: 16px; height: 16px; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: slideUp .5s cubic-bezier(0.4,0,0.2,1) both; }
+    .animate-in.d1 { animation-delay: .06s; }
+    .animate-in.d2 { animation-delay: .12s; }
+    .animate-in.d3 { animation-delay: .18s; }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 520px) {
+      .app { padding: 0 16px; }
+      .header { padding: 22px 0 26px; }
+      .logo-mark { width: 36px; height: 36px; border-radius: 12px; }
+      .logo-mark .svg-icon { width: 18px; height: 18px; }
+      .logo-text h1 { font-size: 16px; }
+      .btn-3d-icon { width: 36px; height: 36px; border-radius: 10px; }
+
+      .main-card { padding: 22px; border-radius: 22px; margin-bottom: 16px; }
+      .card-header { margin-bottom: 22px; }
+      .card-title h2 { font-size: 22px; }
+
+      .usage-display {
+        flex-direction: column;
+        gap: 16px;
+        padding: 18px;
+        border-radius: 16px;
+      }
+      .usage-divider {
+        width: 100%;
+        height: 1px;
+      }
+      .usage-info {
+        width: 100%;
+        flex-direction: row;
+        justify-content: space-around;
+        text-align: center;
+      }
+      html[lang="en"] .usage-info { text-align: center; }
+      .usage-info-row { flex-direction: column; gap: 2px; }
+      .usage-big .num { font-size: 36px; }
+
+      .progress-grid { margin-bottom: 22px; }
+      .progress-item .lbl { width: 60px; font-size: 11px; }
+      .progress-item .pct { width: 34px; font-size: 11px; }
+
+      .detail-row { padding: 12px 14px; border-radius: 12px; }
+      .detail-icon { width: 32px; height: 32px; border-radius: 10px; }
+      .detail-icon .svg-icon { width: 16px; height: 16px; }
+      .detail-label { font-size: 13px; }
+      .detail-value { font-size: 13px; }
+
+      .actions-row { grid-template-columns: 1fr; gap: 10px; }
+      .btn-3d-primary, .btn-3d-secondary { padding: 14px 18px; font-size: 14px; }
+
+      .config-cards { gap: 10px; }
+      .config-card { padding: 14px; border-radius: 16px; }
+      .config-proto { width: 40px; height: 40px; border-radius: 12px; font-size: 8px; }
+      .config-name { font-size: 13px; }
+
+      .modal-sheet { padding: 22px; border-radius: 20px; }
+      .qr-box { padding: 12px; }
+      .qr-box img { width: 170px; height: 170px; }
+
+      .toast {
+        bottom: 24px;
+        padding: 11px 18px;
+        font-size: 12px;
+        max-width: calc(100% - 40px);
+      }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+</script>
+
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header animate-in">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="logo-text">
+        <h1 data-i18n="panel">پنل کاربری</h1>
+        <p data-i18n="template">PlumPop Template</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-3d btn-3d-icon" id="langBtn" title="Language" aria-label="Toggle language">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      </button>
+      <button class="btn-3d btn-3d-icon" id="themeBtn" title="Theme" aria-label="Toggle theme">
+        <svg class="svg-icon sm i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="svg-icon sm i-moon" style="display:none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="main-card animate-in d1">
+    <div class="card-header">
+      <div class="card-title">
+        <h2 data-i18n="greeting">سلام، <span>پلن پرمیوم</span></h2>
+        <p class="sub" data-i18n="subtitle">اشتراک شما فعال و آماده استفاده است</p>
+      </div>
+      <div class="status-badge active">
+        <span class="dot"></span>
+        <span data-i18n="st_active">فعال</span>
+      </div>
+    </div>
+
+    <!-- Usage Display -->
+    <div class="usage-display">
+      <div class="usage-big">
+        <span class="num">43.75</span>
+        <span class="unit" data-i18n="gb_used">گیگابایت مصرف شده</span>
+      </div>
+      <div class="usage-divider"></div>
+      <div class="usage-info">
+        <div class="usage-info-row">
+          <span class="lbl" data-i18n="remaining">باقیمانده:</span>
+          <span class="val">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+        </div>
+        <div class="usage-info-row">
+          <span class="lbl" data-i18n="total">کل حجم:</span>
+          <span class="val">{{ user.data_limit | bytesformat }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress Bars -->
+    <div class="progress-grid">
+      <div class="progress-item">
+        <span class="lbl" data-i18n="used">مصرف</span>
+        <div class="progress-track">
+          <div class="progress-fill used" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div>
+        </div>
+        <span class="pct">43%</span>
+      </div>
+      <div class="progress-item">
+        <span class="lbl" data-i18n="free">خالی</span>
+        <div class="progress-track">
+          <div class="progress-fill remain" data-width="56.2"></div>
+        </div>
+        <span class="pct">56%</span>
+      </div>
+    </div>
+
+    <!-- Detail Rows -->
+    <div class="detail-list">
+      <div class="detail-row">
+        <div class="detail-row-left">
+          <div class="detail-icon warning">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <span class="detail-label" data-i18n="expiry">تاریخ انقضا</span>
+        </div>
+        <span class="detail-value">{{ user.expire | datetime }}</span>
+      </div>
+      <div class="detail-row">
+        <div class="detail-row-left">
+          <div class="detail-icon success">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <span class="detail-label" data-i18n="status">وضعیت</span>
+        </div>
+        <span class="detail-value ok" data-i18n="st_active">فعال</span>
+      </div>
+      <div class="detail-row">
+        <div class="detail-row-left">
+          <div class="detail-icon accent2">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <span class="detail-label" data-i18n="devices">دستگاه‌ها</span>
+        </div>
+        <span class="detail-value">3 <span data-i18n="of">از</span> 3</span>
+      </div>
+      <div class="detail-row">
+        <div class="detail-row-left">
+          <div class="detail-icon accent">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="detail-label" data-i18n="username">نام کاربری</span>
+        </div>
+        <span class="detail-value muted" style="direction:ltr">{{ user.username }}</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions-row">
+      <button class="btn-3d btn-3d-secondary" id="qrBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
+        <span data-i18n="qr_code">کد QR</span>
+      </button>
+      <button class="btn-3d btn-3d-primary" id="copyAllBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span data-i18n="copy_all">کپی همه</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Configurations -->
+  <div class="section-head animate-in d2">
+    <h3>
+      <span class="accent-line"></span>
+      <span data-i18n="configs">کانفیگ‌ها</span>
+    </h3>
+    <span class="section-count">6</span>
+  </div>
+
+  <div class="config-cards animate-in d2">
+    {% for link in links %}
+<div class="config-card" data-link="{{ link }}">
+      <div class="config-proto proto-vless"></div><div class="config-body"><div class="config-name"></div><div class="config-meta"><span></span><span class="sep"></span><span data-i18n="tap_to_copy"></span></div></div><svg class="svg-icon sm config-arrow" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+{% endfor %}
+
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qrModal">
+  <div class="modal-sheet">
+    <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+    <div class="qr-box">
+      <img id="qrImg" alt="QR Code">
+    </div>
+    <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastText" data-i18n="copied">کپی شد</span>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const i18n = {
+    fa: {
+      panel: 'پنل کاربری',
+      template: 'PlumPop Template',
+      greeting: 'سلام، پلن پرمیوم',
+      subtitle: 'اشتراک شما فعال و آماده استفاده است',
+      st_active: 'فعال',
+      gb_used: 'گیگابایت مصرف شده',
+      remaining: 'باقیمانده:',
+      total: 'کل حجم:',
+      used: 'مصرف',
+      free: 'خالی',
+      expiry: 'تاریخ انقضا',
+      status: 'وضعیت',
+      devices: 'دستگاه‌ها',
+      of: 'از',
+      username: 'نام کاربری',
+      qr_code: 'کد QR',
+      copy_all: 'کپی همه',
+      configs: 'کانفیگ‌ها',
+      tap_to_copy: 'کلیک برای کپی',
+      qr_title: 'کد QR اشتراک',
+      close: 'بستن',
+      copied: 'کپی شد',
+      all_copied: 'همه کانفیگ‌ها کپی شدند'
+    },
+    en: {
+      panel: 'User Panel',
+      template: 'PlumPop Template',
+      greeting: 'Hello, Premium Plan',
+      subtitle: 'Your subscription is active and ready',
+      st_active: 'Active',
+      gb_used: 'GB Used',
+      remaining: 'Remaining:',
+      total: 'Total:',
+      used: 'Used',
+      free: 'Free',
+      expiry: 'Expiry Date',
+      status: 'Status',
+      devices: 'Devices',
+      of: 'of',
+      username: 'Username',
+      qr_code: 'QR Code',
+      copy_all: 'Copy All',
+      configs: 'Configurations',
+      tap_to_copy: 'Tap to copy',
+      qr_title: 'Subscription QR',
+      close: 'Close',
+      copied: 'Copied',
+      all_copied: 'All configs copied'
+    }
+  };
+
+  const html = document.documentElement;
+  let lang = localStorage.getItem('pp_lang') || 'fa';
+  let theme = localStorage.getItem('pp_theme') || 'light';
+
+  // Theme
+  html.setAttribute('data-theme', theme);
+  const themeBtn = document.getElementById('themeBtn');
+  const iSun = themeBtn.querySelector('.i-sun');
+  const iMoon = themeBtn.querySelector('.i-moon');
+  function syncTheme() {
+    if (theme === 'dark') { iSun.style.display = 'none'; iMoon.style.display = ''; }
+    else { iSun.style.display = ''; iMoon.style.display = 'none'; }
+  }
+  syncTheme();
+  themeBtn.addEventListener('click', function() {
+    theme = theme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('pp_theme', theme);
+    syncTheme();
+  });
+
+  // Language
+  const langBtn = document.getElementById('langBtn');
+  function applyLang(l) {
+    html.setAttribute('lang', l);
+    html.setAttribute('dir', l === 'fa' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      const k = el.getAttribute('data-i18n');
+      if (i18n[l] && i18n[l][k]) el.textContent = i18n[l][k];
+    });
+  }
+  applyLang(lang);
+  langBtn.addEventListener('click', function() {
+    lang = lang === 'fa' ? 'en' : 'fa';
+    localStorage.setItem('pp_lang', lang);
+    applyLang(lang);
+  });
+
+  // Animate progress bars
+  setTimeout(function() {
+    document.querySelectorAll('.progress-fill').forEach(function(el) {
+      el.style.width = el.getAttribute('data-width') + '%';
+    });
+  }, 250);
+
+  // Toast
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  let toastTimer;
+  function showToast(msg) {
+    if (msg) toastText.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+  }
+
+  // Copy
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  document.querySelectorAll('.config-card').forEach(function(card) {
+    const link = card.getAttribute('data-link');
+    function doCopy() {
+      copyText(link).then(function(ok) {
+        if (ok) {
+          card.classList.add('copied');
+          setTimeout(function() { card.classList.remove('copied'); }, 1500);
+          showToast(i18n[lang].copied);
+        }
+      });
+    }
+    card.addEventListener('click', doCopy);
+  });
+
+  // Copy All
+  document.getElementById('copyAllBtn').addEventListener('click', function() {
+    const links = [];
+    document.querySelectorAll('.config-card').forEach(function(c) {
+      links.push(c.getAttribute('data-link'));
+    });
+    if (links.length) {
+      copyText(links.join('\n')).then(function(ok) {
+        if (ok) showToast(i18n[lang].all_copied);
+      });
+    }
+  });
+
+  // QR Modal
+  const qrModal = document.getElementById('qrModal');
+  const qrImg = document.getElementById('qrImg');
+  document.getElementById('qrBtn').addEventListener('click', function() {
+    const first = document.querySelector('.config-card');
+    if (first) {
+      const data = encodeURIComponent(first.getAttribute('data-link'));
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + data;
+      qrModal.classList.add('active');
+    }
+  });
+  document.getElementById('modalClose').addEventListener('click', function() {
+    qrModal.classList.remove('active');
+  });
+  qrModal.addEventListener('click', function(e) {
+    if (e.target === qrModal) qrModal.classList.remove('active');
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') qrModal.classList.remove('active');
+  });
+})();
+</script>
+
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\/\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+</body>
+</html>

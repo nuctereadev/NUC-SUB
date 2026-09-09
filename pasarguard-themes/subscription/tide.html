@@ -1,0 +1,1058 @@
+<html lang="fa" dir="rtl" style="margin:0;padding:0;">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+(function(){
+  var s = document.createElement('style');
+  s.textContent = `
+    :root {
+      --bg: #faf8ff;
+      --surface: #ffffff;
+      --text: #1a0f2e;
+      --text-soft: #4a3f66;
+      --muted: #8b80a3;
+      --accent: #6d28d9;
+      --accent-light: #8b5cf6;
+      --accent-soft: rgba(109,40,217,0.08);
+      --accent-strong: rgba(109,40,217,0.15);
+      --accent2: #ec4899;
+      --accent2-soft: rgba(236,72,153,0.08);
+      --line: rgba(26,15,46,0.06);
+      --line-strong: rgba(26,15,46,0.1);
+      --success: #059669;
+      --success-soft: rgba(5,150,105,0.08);
+      --warning: #d97706;
+      --warning-soft: rgba(217,119,6,0.08);
+    }
+    :root[data-theme="dark"] {
+      --bg: #0c0718;
+      --surface: #150d26;
+      --text: #ede9f7;
+      --text-soft: #b8add4;
+      --muted: #7a6f99;
+      --accent: #a78bfa;
+      --accent-light: #c4b5fd;
+      --accent-soft: rgba(167,139,250,0.12);
+      --accent-strong: rgba(167,139,250,0.2);
+      --accent2: #f472b6;
+      --accent2-soft: rgba(244,114,182,0.1);
+      --line: rgba(237,233,247,0.06);
+      --line-strong: rgba(237,233,247,0.1);
+      --success: #34d399;
+      --success-soft: rgba(52,211,153,0.1);
+      --warning: #fbbf24;
+      --warning-soft: rgba(251,191,36,0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Vazirmatn', 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      font-size: 15px;
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      transition: background .3s, color .3s;
+      padding-bottom: 60px;
+      position: relative;
+    }
+    html[lang="en"] body { font-family: 'Space Grotesk', 'Vazirmatn', sans-serif; direction: ltr; }
+    html[lang="en"] { direction: ltr; }
+
+    /* Vertical accent line on side */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--accent), var(--accent2), var(--accent));
+      z-index: 0;
+    }
+    html[lang="en"] body::after {
+      right: auto;
+      left: 0;
+    }
+
+    .app {
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .svg-icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 1.6;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .svg-icon.sm { width: 16px; height: 16px; }
+    .svg-icon.lg { width: 24px; height: 24px; }
+    .svg-icon.xl { width: 28px; height: 28px; }
+
+    /* ===== HEADER ===== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 32px 0 40px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+    .brand-name {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .controls {
+      display: flex;
+      gap: 4px;
+    }
+    .ctrl-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+    }
+    .ctrl-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    .ctrl-btn:active { transform: scale(0.92); }
+
+    /* ===== HERO / STATUS ===== */
+    .hero {
+      margin-bottom: 48px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: softPulse 2s ease-in-out infinite;
+    }
+    @keyframes softPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--success-soft); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
+    }
+    .hero-title {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin: 0 0 12px;
+    }
+    .hero-title .accent {
+      color: var(--accent);
+    }
+    .hero-subtitle {
+      font-size: 15px;
+      color: var(--text-soft);
+      margin: 0;
+      line-height: 1.7;
+    }
+
+    /* ===== USAGE RING ===== */
+    .usage-module {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 32px;
+      align-items: center;
+      padding: 32px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 32px;
+    }
+    .ring-wrap {
+      position: relative;
+      width: 160px;
+      height: 160px;
+      margin: 0 auto;
+    }
+    .ring-wrap svg {
+      width: 160px;
+      height: 160px;
+      transform: rotate(-90deg);
+      display: block;
+    }
+    .ring-bg {
+      fill: none;
+      stroke: var(--line);
+      stroke-width: 2;
+    }
+    .ring-fg {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .ring-center .num {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -1px;
+      font-variant-numeric: tabular-nums;
+    }
+    .ring-center .unit {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .usage-details {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .usage-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .usage-row .label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .usage-row .label .tick {
+      width: 16px;
+      height: 2px;
+      border-radius: 2px;
+    }
+    .usage-row .label .tick.used { background: var(--accent); }
+    .usage-row .label .tick.remain { background: var(--line-strong); }
+    .usage-row .label .tick.total { background: var(--accent2); }
+    .usage-row .value {
+      font-size: 16px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.3px;
+    }
+
+    /* ===== INFO LIST ===== */
+    .info-section {
+      margin-bottom: 40px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+    .info-list {
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .info-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      gap: 16px;
+      transition: background .15s;
+    }
+    .info-item + .info-item {
+      border-top: 1px solid var(--line);
+    }
+    .info-item:hover {
+      background: var(--accent-soft);
+    }
+    .info-item-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .info-item-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .info-item-icon.ok { color: var(--success); background: var(--success-soft); }
+    .info-item-icon.warn { color: var(--warning); background: var(--warning-soft); }
+    .info-item-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .info-item-value {
+      font-size: 14px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .info-item-value.ok { color: var(--success); }
+    .info-item-value.muted { color: var(--muted); font-weight: 500; }
+
+    /* ===== BUTTONS ===== */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 44px;
+    }
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 14px;
+      border: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line-strong);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    /* ===== CONFIGS ===== */
+    .config-section {
+      margin-bottom: 32px;
+    }
+    .config-list {
+      display: flex;
+      flex-direction: column;
+    }
+    .config-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 4px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+    }
+    .config-item:first-child {
+      border-top: 1px solid var(--line);
+    }
+    .config-item::before {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 0;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: height .25s ease;
+    }
+    html[lang="en"] .config-item::before {
+      right: auto;
+      left: -4px;
+    }
+    .config-item:hover {
+      padding-right: 12px;
+      background: var(--accent-soft);
+    }
+    html[lang="en"] .config-item:hover {
+      padding-right: 4px;
+      padding-left: 12px;
+    }
+    .config-item:hover::before {
+      height: 32px;
+    }
+    .config-item.copied {
+      background: var(--success-soft);
+    }
+    .config-item.copied::before {
+      background: var(--success);
+      height: 32px;
+    }
+    .config-index {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      width: 24px;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .config-main {
+      flex: 1;
+      min-width: 0;
+    }
+    .config-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .config-meta {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .config-meta .proto-tag {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+    .proto-tag.vless { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+    .proto-tag.vmess { background: linear-gradient(135deg, #10b981, #059669); }
+    .proto-tag.trojan { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .proto-tag.shadowsocks { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .proto-tag.hysteria { background: linear-gradient(135deg, #a855f7, #9333ea); }
+    .proto-tag.wireguard { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .config-arrow {
+      color: var(--muted);
+      opacity: 0;
+      transform: translateX(8px);
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+    html[lang="en"] .config-arrow {
+      transform: translateX(-8px);
+    }
+    .config-item:hover .config-arrow {
+      opacity: 1;
+      transform: translateX(0);
+      color: var(--accent);
+    }
+
+    /* ===== FOOTER ===== */
+    .footer {
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+    .footer p {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0;
+    }
+    .footer p strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(12,7,24,0.5);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 24px;
+    }
+    .modal-backdrop.active { display: flex; animation: fadeIn .2s; }
+    .modal-sheet {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid var(--line);
+      animation: sheetUp .35s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-sheet h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 20px;
+    }
+    .qr-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+    .qr-box img { display: block; width: 200px; height: 200px; }
+    .modal-close {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .modal-close:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--text);
+      padding: 12px 22px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 2000;
+      opacity: 0;
+      transition: all .35s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 12px 40px rgba(109,40,217,0.15);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast .svg-icon { color: var(--accent); width: 16px; height: 16px; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-in { animation: slideUp .6s cubic-bezier(0.4,0,0.2,1) both; }
+    .animate-in.d1 { animation-delay: .08s; }
+    .animate-in.d2 { animation-delay: .16s; }
+    .animate-in.d3 { animation-delay: .24s; }
+
+    /* ===== MOBILE ===== */
+    @media (max-width: 520px) {
+      .app { padding: 0 20px; }
+      body::after { width: 2px; }
+      .topbar { padding: 24px 0 32px; }
+
+      .hero { margin-bottom: 36px; }
+      .hero-title { font-size: 34px; letter-spacing: -1px; }
+      .hero-subtitle { font-size: 14px; }
+
+      .usage-module {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 24px 0;
+        margin-bottom: 28px;
+      }
+      .ring-wrap { width: 140px; height: 140px; }
+      .ring-wrap svg { width: 140px; height: 140px; }
+      .ring-center .num { font-size: 32px; }
+      .usage-details { gap: 14px; }
+      .usage-row .value { font-size: 15px; }
+
+      .info-section { margin-bottom: 32px; }
+      .info-item { padding: 16px 18px; }
+      .info-item-icon { width: 30px; height: 30px; border-radius: 7px; }
+      .info-item-icon .svg-icon { width: 16px; height: 16px; }
+      .info-item-label { font-size: 13px; }
+      .info-item-value { font-size: 13px; }
+
+      .btn-group { margin-bottom: 36px; }
+      .btn { padding: 14px 18px; font-size: 13px; border-radius: 12px; }
+
+      .config-item {
+        padding: 16px 4px;
+        gap: 12px;
+      }
+      .config-item:hover {
+        padding-right: 10px;
+      }
+      html[lang="en"] .config-item:hover {
+        padding-right: 4px;
+        padding-left: 10px;
+      }
+      .config-index { width: 20px; font-size: 11px; }
+      .config-name { font-size: 14px; }
+      .config-arrow { display: none; }
+
+      .modal-sheet { padding: 22px; border-radius: 18px; }
+      .qr-box { padding: 12px; }
+      .qr-box img { width: 170px; height: 170px; }
+
+      .toast {
+        bottom: 24px;
+        padding: 11px 18px;
+        font-size: 12px;
+        max-width: calc(100% - 40px);
+      }
+    }
+  `;
+  document.head.appendChild(s);
+})();
+</script>
+
+<body>
+<div class="app">
+  <!-- Topbar -->
+  <div class="topbar animate-in">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div>
+        <div class="brand-name" data-i18n="panel">پنل اشتراک</div>
+        <div class="brand-sub" data-i18n="template">Violeta Template</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn" title="Language" aria-label="Toggle language">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+      </button>
+      <button class="ctrl-btn" id="themeBtn" title="Theme" aria-label="Toggle theme">
+        <svg class="svg-icon sm i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="svg-icon sm i-moon" style="display:none" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero animate-in d1">
+    <div class="hero-eyebrow" data-i18n="active_sub">اشتراک فعال</div>
+    <h1 class="hero-title" data-i18n="hero_title">همه چیز <span class="accent">آماده</span> است</h1>
+    <p class="hero-subtitle" data-i18n="hero_sub">پلن پرمیوم شما در حال اجراست و می‌توانید از تمام کانفیگ‌های فعال استفاده کنید.</p>
+  </div>
+
+  <!-- Usage Module -->
+  <div class="usage-module animate-in d1">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 120 120">
+        <circle class="ring-bg" cx="60" cy="60" r="54"/>
+        <circle class="ring-fg" cx="60" cy="60" r="54"
+                stroke-dasharray="339.292"
+                stroke-dashoffset="339.292"
+                data-target="190.64"/>
+      </svg>
+      <div class="ring-center">
+        <span class="num">43%</span>
+        <span class="unit" data-i18n="used">مصرف شده</span>
+      </div>
+    </div>
+    <div class="usage-details">
+      <div class="usage-row">
+        <span class="label"><span class="tick used"></span><span data-i18n="used_traffic">ترافیک مصرفی</span></span>
+        <span class="value">{{ user.used_traffic | bytesformat }}</span>
+      </div>
+      <div class="usage-row">
+        <span class="label"><span class="tick remain"></span><span data-i18n="remaining">ترافیک باقیمانده</span></span>
+        <span class="value">{{ (user.data_limit - user.used_traffic) | bytesformat }}</span>
+      </div>
+      <div class="usage-row">
+        <span class="label"><span class="tick total"></span><span data-i18n="total">حجم کل اشتراک</span></span>
+        <span class="value">{{ user.data_limit | bytesformat }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info List -->
+  <div class="info-section animate-in d2">
+    <div class="section-label" data-i18n="details">جزئیات اشتراک</div>
+    <div class="info-list">
+      <div class="info-item">
+        <div class="info-item-left">
+          <div class="info-item-icon warn">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <span class="info-item-label" data-i18n="expiry">تاریخ انقضا</span>
+        </div>
+        <span class="info-item-value">{{ user.expire | datetime }}</span>
+      </div>
+      <div class="info-item">
+        <div class="info-item-left">
+          <div class="info-item-icon ok">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <span class="info-item-label" data-i18n="status">وضعیت</span>
+        </div>
+        <span class="info-item-value ok" data-i18n="st_active">فعال</span>
+      </div>
+      <div class="info-item">
+        <div class="info-item-left">
+          <div class="info-item-icon">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <span class="info-item-label" data-i18n="devices">دستگاه‌های فعال</span>
+        </div>
+        <span class="info-item-value">3 <span data-i18n="of">از</span> 3</span>
+      </div>
+      <div class="info-item">
+        <div class="info-item-left">
+          <div class="info-item-icon">
+            <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="info-item-label" data-i18n="username">نام کاربری</span>
+        </div>
+        <span class="info-item-value muted" style="direction:ltr">{{ user.username }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="btn-group animate-in d2">
+    <button class="btn btn-primary" id="copyAllBtn">
+      <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      <span data-i18n="copy_all">کپی تمام کانفیگ‌ها</span>
+    </button>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="qrBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
+        <span data-i18n="qr_code">کد QR</span>
+      </button>
+      <button class="btn btn-secondary" id="renewBtn">
+        <svg class="svg-icon sm" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 4 3 10 9 10"/></svg>
+        <span data-i18n="renew">تمدید اشتراک</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Configurations -->
+  <div class="config-section animate-in d3">
+    <div class="section-label" data-i18n="configs">کانفیگ‌ها</div>
+    <div class="config-list" id="configList">
+      {% for link in links %}
+<div class="config-item" data-link="{{ link }}">
+        <span class="config-index"></span><div class="config-main"><div class="config-name"></div><div class="config-meta"><span class="proto-tag vless"></span><span data-i18n="tap_copy"></span></div></div><svg class="svg-icon sm config-arrow" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></div>
+{% endfor %}
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer animate-in d3">
+    <p data-i18n="footer"><strong>Violeta</strong> — قالب مینیمال پنل اشتراک</p>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal-backdrop" id="qrModal">
+  <div class="modal-sheet">
+    <h3 data-i18n="qr_title">کد QR اشتراک</h3>
+    <div class="qr-box">
+      <img id="qrImg" alt="QR Code">
+    </div>
+    <button class="modal-close" id="modalClose" data-i18n="close">بستن</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastText" data-i18n="copied">کپی شد</span>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const i18n = {
+    fa: {
+      panel: 'پنل اشتراک',
+      template: 'Violeta Template',
+      active_sub: 'اشتراک فعال',
+      hero_title: 'همه چیز آماده است',
+      hero_sub: 'پلن پرمیوم شما در حال اجراست و می‌توانید از تمام کانفیگ‌های فعال استفاده کنید.',
+      used: 'مصرف شده',
+      used_traffic: 'ترافیک مصرفی',
+      remaining: 'ترافیک باقیمانده',
+      total: 'حجم کل اشتراک',
+      details: 'جزئیات اشتراک',
+      expiry: 'تاریخ انقضا',
+      status: 'وضعیت',
+      st_active: 'فعال',
+      devices: 'دستگاه‌های فعال',
+      of: 'از',
+      username: 'نام کاربری',
+      copy_all: 'کپی تمام کانفیگ‌ها',
+      qr_code: 'کد QR',
+      renew: 'تمدید اشتراک',
+      configs: 'کانفیگ‌ها',
+      tap_copy: 'کلیک برای کپی',
+      footer: 'Violeta — قالب مینیمال پنل اشتراک',
+      qr_title: 'کد QR اشتراک',
+      close: 'بستن',
+      copied: 'کپی شد',
+      all_copied: 'همه کانفیگ‌ها کپی شدند'
+    },
+    en: {
+      panel: 'Subscription',
+      template: 'Violeta Template',
+      active_sub: 'Active Subscription',
+      hero_title: 'Everything is ready',
+      hero_sub: 'Your Premium plan is running and you can use all active configurations.',
+      used: 'Used',
+      used_traffic: 'Used Traffic',
+      remaining: 'Remaining Traffic',
+      total: 'Total Volume',
+      details: 'Subscription Details',
+      expiry: 'Expiry Date',
+      status: 'Status',
+      st_active: 'Active',
+      devices: 'Active Devices',
+      of: 'of',
+      username: 'Username',
+      copy_all: 'Copy All Configs',
+      qr_code: 'QR Code',
+      renew: 'Renew Plan',
+      configs: 'Configurations',
+      tap_copy: 'Tap to copy',
+      footer: 'Violeta — Minimal subscription template',
+      qr_title: 'Subscription QR',
+      close: 'Close',
+      copied: 'Copied',
+      all_copied: 'All configs copied'
+    }
+  };
+
+  const html = document.documentElement;
+  let lang = localStorage.getItem('vi_lang') || 'fa';
+  let theme = localStorage.getItem('vi_theme') || 'light';
+
+  // Theme
+  html.setAttribute('data-theme', theme);
+  const themeBtn = document.getElementById('themeBtn');
+  const iSun = themeBtn.querySelector('.i-sun');
+  const iMoon = themeBtn.querySelector('.i-moon');
+  function syncTheme() {
+    if (theme === 'dark') { iSun.style.display = 'none'; iMoon.style.display = ''; }
+    else { iSun.style.display = ''; iMoon.style.display = 'none'; }
+  }
+  syncTheme();
+  themeBtn.addEventListener('click', function() {
+    theme = theme === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', theme);
+    localStorage.setItem('vi_theme', theme);
+    syncTheme();
+  });
+
+  // Language
+  const langBtn = document.getElementById('langBtn');
+  function applyLang(l) {
+    html.setAttribute('lang', l);
+    html.setAttribute('dir', l === 'fa' ? 'rtl' : 'ltr');
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      const k = el.getAttribute('data-i18n');
+      if (i18n[l] && i18n[l][k]) el.textContent = i18n[l][k];
+    });
+  }
+  applyLang(lang);
+  langBtn.addEventListener('click', function() {
+    lang = lang === 'fa' ? 'en' : 'fa';
+    localStorage.setItem('vi_lang', lang);
+    applyLang(lang);
+  });
+
+  // Animate ring
+  setTimeout(function() {
+    const ring = document.querySelector('.ring-fg');
+    if (ring) ring.style.strokeDashoffset = ring.getAttribute('data-target');
+  }, 300);
+
+  // Toast
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  let toastTimer;
+  function showToast(msg) {
+    if (msg) toastText.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+  }
+
+  // Copy
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }
+  }
+
+  document.querySelectorAll('.config-item').forEach(function(item) {
+    const link = item.getAttribute('data-link');
+    function doCopy() {
+      copyText(link).then(function(ok) {
+        if (ok) {
+          item.classList.add('copied');
+          setTimeout(function() { item.classList.remove('copied'); }, 1500);
+          showToast(i18n[lang].copied);
+        }
+      });
+    }
+    item.addEventListener('click', doCopy);
+  });
+
+  // Copy All
+  document.getElementById('copyAllBtn').addEventListener('click', function() {
+    const links = [];
+    document.querySelectorAll('.config-item').forEach(function(c) {
+      links.push(c.getAttribute('data-link'));
+    });
+    if (links.length) {
+      copyText(links.join('\n')).then(function(ok) {
+        if (ok) showToast(i18n[lang].all_copied);
+      });
+    }
+  });
+
+  // Renew
+  document.getElementById('renewBtn').addEventListener('click', function() {
+    showToast(lang === 'fa' ? 'در حال انتقال به درگاه پرداخت...' : 'Redirecting to payment...');
+  });
+
+  // QR Modal
+  const qrModal = document.getElementById('qrModal');
+  const qrImg = document.getElementById('qrImg');
+  document.getElementById('qrBtn').addEventListener('click', function() {
+    const first = document.querySelector('.config-item');
+    if (first) {
+      const data = encodeURIComponent(first.getAttribute('data-link'));
+      qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=0&data=' + data;
+      qrModal.classList.add('active');
+    }
+  });
+  document.getElementById('modalClose').addEventListener('click', function() {
+    qrModal.classList.remove('active');
+  });
+  qrModal.addEventListener('click', function(e) {
+    if (e.target === qrModal) qrModal.classList.remove('active');
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') qrModal.classList.remove('active');
+  });
+})();
+</script>
+
+<script>
+(function(){
+  function dec(s){try{return decodeURIComponent(s);}catch(e){return s;}}
+  var cards=document.querySelectorAll('[data-link]');
+  cards.forEach(function(card,i){
+    var link=(card.getAttribute('data-link')||'').replace(/&amp;/g,'&');
+    var m=link.match(/^([a-z0-9]+):\/\//i);
+    var proto=m?m[1].toLowerCase():'unknown';
+    var frag=link.split('#');
+    var name=frag.length>1&&frag[1]?dec(frag[1]):(i18n&&i18n.configN?i18n.configN:'Config')+' '+(i+1);
+    var badge=card.querySelector('.proto-badge,.c-badge,.config-protocol-icon,.link-badge,.protocol-badge');
+    if(badge){
+      badge.className=badge.className.split(' ')[0]+' proto-'+proto;
+      if(!badge.textContent.trim()) badge.textContent=proto.slice(0,4).toUpperCase();
+    }
+    var nameEl=card.querySelector('.config-name,.c-name,.cfgname,.link-name,.node-name,.config-name,.cfg-nm');
+    if(nameEl) nameEl.textContent=name;
+    var protoEl=card.querySelector('.config-meta span,.c-meta span,.cfgmeta em,.config-protocol-text,.link-type,.cfg-meta span');
+    if(protoEl&&!protoEl.textContent.trim()) protoEl.textContent=proto.toUpperCase();
+  });
+})();
+</script>
+</body>
+</html>
