@@ -296,6 +296,20 @@ def add_dynamic_js(html):
     return html
 
 
+def ensure_charset(html):
+    """Some Approved drafts have no <head> and no charset declaration, so the
+    browser falls back to Windows-1252 and mangles the Persian text. Inject
+    <meta charset="utf-8"> right after the opening <html ...> tag (or at the
+    very top) whenever it is missing within the first 2 KB."""
+    if "charset=" in html[:2048]:
+        return html
+    head_end = re.search(r"<html\b[^>]*>", html)
+    meta = '<meta charset="utf-8">'
+    if head_end:
+        return html[:head_end.end()] + "\n" + meta + html[head_end.end():]
+    return meta + "\n" + html
+
+
 def main():
     dry = "--dry-run" in sys.argv
     os.makedirs(DEST, exist_ok=True)
@@ -308,7 +322,8 @@ def main():
             continue
         with open(sp, encoding="utf-8", errors="replace") as f:
             html = f.read()
-        out = rewrite_statics(html)
+        out = ensure_charset(html)
+        out = rewrite_statics(out)
         out, found = rewrite_link_blocks(out)
         out = add_dynamic_js(out)
         dest = os.path.join(DEST, f"{name}.html")
