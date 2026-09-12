@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="light">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#fafafa">
-    <title>Pearl — Subscription</title>
+    <title>{{ user.username }} - NUC-SUB</title>
     
     
     
@@ -518,7 +519,7 @@
             </div>
             <div class="info-block">
                 <div class="label">محدودیت دستگاه</div>
-                <div class="value">3</div>
+                <div class="value">{{ user.hwid_limit }}</div>
             </div>
             <div class="info-block">
                 <div class="label">نام کاربری</div>
@@ -556,7 +557,7 @@
             <div class="notice-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
             <div class="notice-content">
                 <div class="notice-title">اعلان</div>
-                <div class="notice-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+                <div class="notice-text">{% if announce %}{{ announce }}{% endif %}</div>
             </div>
         </div>
         <div class="notice note fade-in">

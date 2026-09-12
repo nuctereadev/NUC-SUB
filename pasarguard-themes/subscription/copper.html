@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1e1e1e">
-    <title>Copper Slate — Subscription</title>
+    <title>{{ user.username }} - NUC-SUB</title>
     
     
     
@@ -541,7 +542,7 @@
             </div>
             <div class="detail-cell">
                 <div class="detail-label">محدودیت دستگاه</div>
-                <div class="detail-value">3</div>
+                <div class="detail-value">{{ user.hwid_limit }}</div>
             </div>
             <div class="detail-cell">
                 <div class="detail-label">نام کاربری</div>
@@ -555,7 +556,7 @@
                 <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
                 <div class="callout-content">
                     <div class="callout-title">اعلان</div>
-                    <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+                    <div class="callout-text">{% if announce %}{{ announce }}{% endif %}</div>
                 </div>
             </div>
             <div class="callout note">

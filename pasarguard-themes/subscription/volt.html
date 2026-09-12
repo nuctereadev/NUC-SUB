@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -756,8 +757,10 @@ html[dir="ltr"] .info-banner {
   <div class="topbar full-width">
     <div class="brand">
       <div class="brand-icon">N</div>
+      <img src="@@BRAND_LOGO@@" alt="" class="nuc-brand-logo">
       <div class="brand-text">
         <h1>{{ user.username }}</h1>
+        <p class="nuc-brand-name">@@BRAND_NAME@@</p>
         <p>NUC-SUB Dashboard</p>
       </div>
     </div>
@@ -1331,7 +1334,11 @@ function applyI18n(l){
   line-height: 1;
   padding: 4px;
 }
-</style>
+
+    .nuc-brand-logo{display:none!important;max-height:32px;max-width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-left:6px}
+    .nuc-brand-logo[src]:not([src='']):not([src='data:;base64,']){display:inline-block!important}
+    .nuc-brand-name{font-size:11px;color:var(--text-secondary,var(--muted,#999));font-weight:400;margin-top:2px}
+  </style>
 <script>
 (function(){
 //---------------------------------------------------------------------

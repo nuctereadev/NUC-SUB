@@ -231,7 +231,11 @@ html[dir="ltr"] .info-banner{border-left:1px solid var(--border);border-right-wi
   .configs-grid{grid-template-columns:1fr}
   .action-btn{min-width:120px;font-size:13px}
 }
-</style>
+
+    .nuc-brand-logo{display:none!important;max-height:32px;max-width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-left:6px}
+    .nuc-brand-logo[src]:not([src='']):not([src='data:;base64,']){display:inline-block!important}
+    .nuc-brand-name{font-size:11px;color:var(--text-secondary,var(--muted,#999));font-weight:400;margin-top:2px}
+  </style>
 </head>
 <body>
 <div class="dashboard">
@@ -240,8 +244,10 @@ html[dir="ltr"] .info-banner{border-left:1px solid var(--border);border-right-wi
   <div class="topbar full-width">
     <div class="brand">
       <div class="brand-icon">N</div>
+      <img src="@@BRAND_LOGO@@" alt="" class="nuc-brand-logo">
       <div class="brand-text">
         <h1>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</h1>
+        <p class="nuc-brand-name">@@BRAND_NAME@@</p>
         <p>NUC-SUB Dashboard</p>
       </div>
     </div>

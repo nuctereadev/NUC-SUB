@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- data-nuc-dynamized -->
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
 /* nuc-local fonts: IranSansX 400/700 embedded (offline) */
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0c0f14">
-<title>Graphite Dashboard</title>
+<title>{{ .subTitle }} - اکانت</title>
 <style>
 :root[data-theme="dark"] {
   --bg: #0c0f14;
@@ -195,12 +196,12 @@ html[lang="en"]{direction:ltr}
       <div class="user-block">
         <div class="avatar">D</div>
         <div class="user-info">
-          <h2>demo.user</h2>
+          <h2>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</h2>
           <div class="status-line">
             <span class="status-dot"></span>
             <span data-i18n="st_active">فعال</span>
             <span>·</span>
-            <span>2026-09-20</span>
+            <span><i data-nuc-expire></i></span>
           </div>
         </div>
       </div>
@@ -208,14 +209,14 @@ html[lang="en"]{direction:ltr}
 
     <div class="traffic-block">
       <div class="traffic-row">
-        <span class="t-used">43.75</span>
+        <span class="t-used">{{ .used }}</span>
         <span class="t-sep">/</span>
-        <span class="t-total">100</span>
-        <span class="t-unit">GB</span>
-        <span class="t-pct">43.8%</span>
+        <span class="t-total">{{ .total }}</span>
+        <span class="t-unit"></span>
+        <span class="t-pct"><i data-nuc-pct></i>%</span>
       </div>
       <div class="progress-track">
-        <div class="progress-fill" data-width="43.8"></div>
+        <div class="progress-fill" data-nuc-width=""></div>
       </div>
     </div>
   </div>
@@ -223,15 +224,15 @@ html[lang="en"]{direction:ltr}
   <!-- STATS -->
   <div class="stats-row">
     <div class="card stat-item">
-      <div class="num">43.75</div>
+      <div class="num">{{ .used }}</div>
       <div class="txt" data-i18n="used">مصرف</div>
     </div>
     <div class="card stat-item">
-      <div class="num">56.25</div>
+      <div class="num">{{ .remained }}</div>
       <div class="txt" data-i18n="remaining">باقی</div>
     </div>
     <div class="card stat-item">
-      <div class="num">100</div>
+      <div class="num">{{ .total }}</div>
       <div class="txt" data-i18n="total">کل</div>
     </div>
   </div>
@@ -245,14 +246,14 @@ html[lang="en"]{direction:ltr}
           <div class="d-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <span class="d-label" data-i18n="expiry">انقضا</span>
         </div>
-        <span class="d-val">2026-09-20</span>
+        <span class="d-val"><i data-nuc-expire></i></span>
       </div>
       <div class="detail-item">
         <div class="d-left">
           <div class="d-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <span class="d-label" data-i18n="device_limit">دستگاه</span>
         </div>
-        <span class="d-val">3</span>
+        <span class="d-val">{{ len .emails }}</span>
       </div>
       <div class="detail-item">
         <div class="d-left">
@@ -2651,5 +2652,20 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="dynamize">(function(){
+var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+function pad(n){return String(n).length<2?'0'+n:n;}
+function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
+var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
+fill('[data-nuc-expire]',function(el){if(D.expire>0){var d=new Date(D.expire*1000);el.textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}else{el.textContent="\u221E";}});
+fill('[data-nuc-days]',function(el){if(D.expire>0){var n=Math.ceil((D.expire*1000-Date.now())/86400000);el.textContent=n>0?String(n).toLocaleString('fa-IR'):'0';}else{el.textContent="\u221E";}});
+fill('[data-nuc-pct]',function(el){el.textContent=pct.toFixed(pct%1?1:0);});
+fill('[data-nuc-pct-rem]',function(el){var r=100-pct;el.textContent=r.toFixed(r%1?1:0);});
+fill('[data-nuc-width]',function(el){el.setAttribute('data-width',pct);el.style.width=pct+'%';});
+fill('[data-nuc-width-rem]',function(el){var r=100-pct;el.setAttribute('data-width',r);el.style.width=r+'%';});
+fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);});
+fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
+fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
+})();</script>
 </body>
 </html>

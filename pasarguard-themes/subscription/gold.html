@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0c1012">
-<title>PasarGuard</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -213,11 +214,11 @@ button{font:inherit}
 
       <div class="side-section">
         <div class="side-label" data-i18n="traffic_usage">مصرف ترافیک</div>
-        <div class="metric"><strong>43.75</strong><span>GB / {{ user.data_limit | bytesformat }}</span></div>
+        <div class="metric"><strong>{{ (user.used_traffic / 1024 ** 3) | round(2) }}</strong><span>GB / {{ user.data_limit | bytesformat }}</span></div>
         <div class="track"><div class="fill"></div></div>
         <div class="nums">
-          <div class="num"><b>43.75</b><span data-i18n="used">مصرف</span></div>
-          <div class="num"><b>56.25</b><span data-i18n="remaining">باقیمانده</span></div>
+          <div class="num"><b>{{ (user.used_traffic / 1024 ** 3) | round(2) }}</b><span data-i18n="used">مصرف</span></div>
+          <div class="num"><b>{{ ((user.data_limit - user.used_traffic) / 1024 ** 3) | round(2) }}</b><span data-i18n="remaining">باقیمانده</span></div>
           <div class="num"><b>{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</b><span data-i18n="total">مصرف کل</span></div>
         </div>
       </div>
@@ -237,7 +238,7 @@ button{font:inherit}
         <div class="note">
           <b data-i18n="subscription_details">جزئیات اشتراک</b>
           <span data-i18n="expiry">تاریخ انقضا</span> · {{ user.expire | datetime }}<br>
-          <span data-i18n="device_limit">محدودیت دستگاه</span> · 3<br>
+          <span data-i18n="device_limit">محدودیت دستگاه</span> · {{ user.hwid_limit }}<br>
           <span data-i18n="username">نام کاربری</span> · {{ user.username }}
         </div>
       </div>

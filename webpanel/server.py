@@ -36,7 +36,7 @@ if mimetypes.guess_type("x.woff2")[0] is None:
 # ---------------------------------------------------------------------------
 # Settings persistence (config.json in install dir)
 # ---------------------------------------------------------------------------
-SAFE_SETTINGS_KEYS = {"telegram_channel"}
+SAFE_SETTINGS_KEYS = {"telegram_channel", "brand_name", "brand_logo"}
 
 def _settings_path():
     return SETTINGS_FILE
@@ -260,18 +260,41 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 SETTINGS[k] = v
                 updated[k] = v
+            elif k == "brand_name":
+                v = str(v).strip()
+                if len(v) > 64:
+                    self._send_json({"error": "brand name too long (max 64 chars)"}, 400)
+                    return
+                SETTINGS[k] = v
+                updated[k] = v
+            elif k == "brand_logo":
+                v = str(v).strip()
+                if v and not v.startswith("data:image/"):
+                    self._send_json({"error": "brand logo must be a data:image URL"}, 400)
+                    return
+                if len(v) > 1_050_000:
+                    self._send_json({"error": "brand logo too large (max ~1 MiB)"}, 413)
+                    return
+                SETTINGS[k] = v
+                updated[k] = v
             else:
                 SETTINGS[k] = v
                 updated[k] = v
 
         save_settings()
 
-        # Refresh the active theme so the channel link appears immediately.
+        # Refresh the active theme so the channel/branding appears immediately.
         if "telegram_channel" in updated:
             if updated["telegram_channel"]:
                 run_cli(["telegram", "set", updated["telegram_channel"]])
             else:
                 run_cli(["telegram", "clear"])
+        if "brand_name" in updated or "brand_logo" in updated:
+            run_cli(["brand", "set-name", updated.get("brand_name", "") or ""])
+            if updated.get("brand_logo"):
+                run_cli(["brand", "set-logo-data", updated["brand_logo"]])
+            else:
+                run_cli(["brand", "clear-logo"])
 
         self._send_json({"ok": True, "settings": SETTINGS, "updated": updated})
 

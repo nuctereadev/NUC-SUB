@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b1114">
-<title>PasarGuard Subscription</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -308,7 +309,7 @@ button{font:inherit}
     <div class="usage">
       <div>
         <div class="usage-label" data-i18n="traffic_usage">مصرف ترافیک</div>
-        <div class="usage-main"><strong>43.75</strong><span>GB / {{ user.data_limit | bytesformat }}</span></div>
+        <div class="usage-main"><strong>{{ (user.used_traffic / 1024 ** 3) | round(2) }}</strong><span>GB / {{ user.data_limit | bytesformat }}</span></div>
         <div class="bar"><div class="bar-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div></div>
       </div>
       <div class="usage-pct"><span>{{ (user.used_traffic / user.data_limit * 100) | round(1) }}%</span></div>
@@ -359,7 +360,7 @@ button{font:inherit}
               <span class="row-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 21h8M12 16v5"/></svg></span>
               <span data-i18n="device_limit">محدودیت دستگاه</span>
             </div>
-            <span class="row-value">3</span>
+            <span class="row-value">{{ user.hwid_limit }}</span>
           </div>
           <div class="row">
             <div class="row-label">
@@ -378,7 +379,7 @@ button{font:inherit}
           </div>
           <div>
             <div class="note-title" data-i18n="announcement">اعلان</div>
-            <div class="note-text">t.me/nuctereadev<br>t.me/nucsub</div>
+            <div class="note-text">{% if announce %}{{ announce }}{% endif %}</div>
           </div>
         </div>
         <div class="note info">

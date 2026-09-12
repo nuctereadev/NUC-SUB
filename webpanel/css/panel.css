@@ -1349,6 +1349,39 @@ a{
   font-size:9px;
 }
 
+.brand-logo-row{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.brand-logo-preview{
+  width:48px;
+  height:48px;
+  flex:0 0 48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  border-radius:10px;
+  border:1px dashed var(--border);
+  background:var(--bg-soft);
+
+  overflow:hidden;
+}
+.brand-logo-preview img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.brand-logo-row .input-shell{
+  flex:1;
+}
+.field-hint{
+  margin-top:6px;
+  font-size:9px;
+  color:var(--text-dim);
+}
+
 
 /* =========================================================
    AUTH

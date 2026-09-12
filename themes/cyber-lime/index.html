@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- data-nuc-dynamized -->
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
 /* nuc-local fonts: IranSansX 400/700 embedded (offline) */
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#09090b">
-<title>Onyx Dashboard</title>
+<title>{{ .subTitle }} - اکانت</title>
 <style>
 /* ============================================================
    ONYX DESIGN SYSTEM - CYBER MINIMALISM
@@ -660,7 +661,11 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
   .hud-chart { align-self: center; }
   .info-grid { grid-template-columns: 1fr; }
 }
-</style>
+
+    .nuc-brand-logo{display:none!important;max-height:32px;max-width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-left:6px}
+    .nuc-brand-logo[src]:not([src='']):not([src='data:;base64,']){display:inline-block!important}
+    .nuc-brand-name{font-size:11px;color:var(--text-secondary,var(--muted,#999));font-weight:400;margin-top:2px}
+  </style>
 </head>
 <body>
 
@@ -674,7 +679,8 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
       </div>
-      <span class="brand-name">Onyx</span>
+      <img src="@@BRAND_LOGO@@" alt="" class="nuc-brand-logo">
+      <span class="brand-name">@@BRAND_NAME@@</span>
     </div>
     <div class="controls">
       <button class="icon-btn" id="langBtn" aria-label="Language">
@@ -702,7 +708,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
         <span class="status-orb"></span>
         <span data-i18n="st_active">فعال</span>
       </div>
-      <span style="font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums;">43.8%</span>
+      <span style="font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums;"><i data-nuc-pct></i>%</span>
     </div>
 
     <div class="hero-content">
@@ -713,26 +719,26 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
           <circle class="hud-fill" cx="60" cy="60" r="56"
                   stroke-dasharray="351.86"
                   stroke-dashoffset="351.86"
-                  data-target="197.74"/>
+                  data-nuc-gauge=""/>
         </svg>
         <div class="hud-center">
-          <span class="hud-value">43.75</span>
-          <span class="hud-unit">GB</span>
+          <span class="hud-value">{{ .used }}</span>
+          <span class="hud-unit"></span>
         </div>
       </div>
       
       <div class="hero-stats">
         <div class="stat-row">
           <span class="stat-label"><span class="stat-dot used"></span><span data-i18n="used">مصرف شده</span></span>
-          <span class="stat-val">43.75 GB</span>
+          <span class="stat-val">{{ .used }}</span>
         </div>
         <div class="stat-row">
           <span class="stat-label"><span class="stat-dot left"></span><span data-i18n="remaining">باقیمانده</span></span>
-          <span class="stat-val">56.25 GB</span>
+          <span class="stat-val">{{ .remained }}</span>
         </div>
         <div class="stat-row">
           <span class="stat-label" style="color: var(--text-muted); font-size: 11px;" data-i18n="total">حجم کل</span>
-          <span class="stat-val" style="color: var(--text-muted);">100 GB</span>
+          <span class="stat-val" style="color: var(--text-muted);">{{ .total }}</span>
         </div>
       </div>
     </div>
@@ -745,21 +751,21 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         <span data-i18n="expiry">انقضا</span>
       </span>
-      <span class="info-value">2026-09-20</span>
+      <span class="info-value"><i data-nuc-expire></i></span>
     </div>
     <div class="info-card">
       <span class="info-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span data-i18n="device_limit">دستگاه</span>
       </span>
-      <span class="info-value">3</span>
+      <span class="info-value">{{ len .emails }}</span>
     </div>
     <div class="info-card">
       <span class="info-label">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span data-i18n="username">کاربری</span>
       </span>
-      <span class="info-value muted" style="direction:ltr">demo.user</span>
+      <span class="info-value muted" style="direction:ltr">{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
     </div>
     <div class="info-card">
       <span class="info-label">
@@ -3348,5 +3354,20 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="dynamize">(function(){
+var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+function pad(n){return String(n).length<2?'0'+n:n;}
+function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
+var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
+fill('[data-nuc-expire]',function(el){if(D.expire>0){var d=new Date(D.expire*1000);el.textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}else{el.textContent="\u221E";}});
+fill('[data-nuc-days]',function(el){if(D.expire>0){var n=Math.ceil((D.expire*1000-Date.now())/86400000);el.textContent=n>0?String(n).toLocaleString('fa-IR'):'0';}else{el.textContent="\u221E";}});
+fill('[data-nuc-pct]',function(el){el.textContent=pct.toFixed(pct%1?1:0);});
+fill('[data-nuc-pct-rem]',function(el){var r=100-pct;el.textContent=r.toFixed(r%1?1:0);});
+fill('[data-nuc-width]',function(el){el.setAttribute('data-width',pct);el.style.width=pct+'%';});
+fill('[data-nuc-width-rem]',function(el){var r=100-pct;el.setAttribute('data-width',r);el.style.width=r+'%';});
+fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);});
+fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
+fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
+})();</script>
 </body>
 </html>

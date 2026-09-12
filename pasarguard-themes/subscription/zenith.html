@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0d12">
-<title>Zenith Dashboard</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -740,10 +741,10 @@ html[lang="en"] { direction: ltr; }
           <circle class="gauge-fill" cx="60" cy="60" r="54"
                   stroke-dasharray="339.29"
                   stroke-dashoffset="339.29"
-                  data-target="190.51"/>
+                  data-target="{% if user.data_limit %}{{ ((1 - user.used_traffic / user.data_limit) * 339.29) | round(2) }}{% else %}0{% endif %}"/>
         </svg>
         <div class="gauge-center">
-          <span class="gauge-val">43.75</span>
+          <span class="gauge-val">{{ user.used_traffic | bytesformat }}</span>
           <span class="gauge-unit">GB</span>
         </div>
       </div>
@@ -784,7 +785,7 @@ html[lang="en"] { direction: ltr; }
             </div>
             <span class="d-label" data-i18n="device_limit">دستگاه</span>
           </div>
-          <span class="d-val">3</span>
+          <span class="d-val">{{ user.hwid_limit }}</span>
         </div>
         <div class="detail-row">
           <div class="d-left">

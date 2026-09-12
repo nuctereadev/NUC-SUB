@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#111315">
-<title>PasarGuard — Pulse Theme</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -238,8 +239,8 @@ html[lang="en"]{direction:ltr}html[lang="en"] .detail-value,html[lang="en"] .exp
           </div>
           <div class="usage-main">
             <div class="meter">
-              <svg viewBox="0 0 100 100"><circle class="meter-bg" cx="50" cy="50" r="42"/><circle class="meter-fg" cx="50" cy="50" r="42" stroke-dasharray="263.89" stroke-dashoffset="263.89" data-target="148.16"/></svg>
-              <div class="meter-label"><div><strong>43.75</strong><span>GB</span></div></div>
+              <svg viewBox="0 0 100 100"><circle class="meter-bg" cx="50" cy="50" r="42"/><circle class="meter-fg" cx="50" cy="50" r="42" stroke-dasharray="263.89" stroke-dashoffset="263.89" data-target="{% if user.data_limit %}{{ ((1 - user.used_traffic / user.data_limit) * 263.89) | round(2) }}{% else %}0{% endif %}"/></svg>
+              <div class="meter-label"><div><strong>{{ (user.used_traffic / 1024 ** 3) | round(2) }}</strong><span>GB</span></div></div>
             </div>
             <div class="stats">
               <div class="stat"><span data-i18n="used">مصرف شده</span><strong>{{ user.used_traffic | bytesformat }}</strong></div>
@@ -254,14 +255,14 @@ html[lang="en"]{direction:ltr}html[lang="en"] .detail-value,html[lang="en"] .exp
       <section class="lower">
         <div class="details-panel">
           <div class="detail"><span class="detail-label" data-i18n="status">وضعیت</span><span class="detail-value success" data-i18n="st_active">فعال</span></div>
-          <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">3</span></div>
+          <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">{{ user.hwid_limit }}</span></div>
           <div class="detail"><span class="detail-label" data-i18n="username">نام کاربری</span><span class="detail-value muted" dir="ltr">{{ user.username }}</span></div>
           <div class="detail"><span class="detail-label">ID</span><span class="detail-value muted" dir="ltr">PG-7F42</span></div>
         </div>
         <div class="notices">
           <div class="notice info">
             <div class="notice-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a2 2 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
-            <div><div class="notice-title" data-i18n="announcement">اعلان</div><div class="notice-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div></div>
+            <div><div class="notice-title" data-i18n="announcement">اعلان</div><div class="notice-text">{% if announce %}{{ announce }}{% endif %}</div></div>
           </div>
           <div class="notice warn">
             <div class="notice-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>

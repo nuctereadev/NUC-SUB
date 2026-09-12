@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f0f1e">
-<title>Nova Template</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -944,7 +945,7 @@ html[lang="en"] .detail-value { text-align: right; }
           <circle class="circle-fg" cx="80" cy="80" r="70"
                   stroke-dasharray="439.82"
                   stroke-dashoffset="439.82"
-                  data-target="247.18"/> 
+                  data-target="{% if user.data_limit %}{{ ((1 - user.used_traffic / user.data_limit) * 439.82) | round(2) }}{% else %}0{% endif %}"/> 
         </svg>
         <div class="circle-center">
           <span class="value">{{ user.used_traffic | bytesformat }}</span>
@@ -1029,7 +1030,7 @@ html[lang="en"] .detail-value { text-align: right; }
         </div>
         <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
       </div>
-      <span class="detail-value">3</span>
+      <span class="detail-value">{{ user.hwid_limit }}</span>
     </div>
 
     <div class="detail-row">
@@ -1056,7 +1057,7 @@ html[lang="en"] .detail-value { text-align: right; }
     </div>
     <div class="callout-content">
       <div class="callout-title" data-i18n="announcement">اعلان</div>
-      <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+      <div class="callout-text">{% if announce %}{{ announce }}{% endif %}</div>
     </div>
   </div>
 

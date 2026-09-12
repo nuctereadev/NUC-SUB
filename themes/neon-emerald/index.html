@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- data-nuc-dynamized -->
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
 /* nuc-local fonts: IranSansX 400/700 embedded (offline) */
@@ -9,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f0f13">
-    <title>NucSub — Clean</title>
+    <title>{{ .subTitle }} - اکانت</title>
     <style>
         /* ============================================================
            NUCSUB — CLEAN & SPACIOUS
@@ -1075,7 +1076,7 @@
                     </svg>
                     <span data-i18n="traffic_usage">مصرف ترافیک</span>
                 </span>
-                <span class="traffic-pct">43.8%</span>
+                <span class="traffic-pct"><i data-nuc-pct></i>%</span>
             </div>
 
             <div class="traffic-content">
@@ -1085,32 +1086,32 @@
                         <circle class="ring-fg" cx="60" cy="60" r="50"
                         stroke-dasharray="314.159"
                         stroke-dashoffset="314.159"
-                        data-target="176.55735800000002"/>
+                        data-nuc-gauge=""/>
                     </svg>
                     <div class="ring-center">
-                        <span class="big">43.75 GB</span>
+                        <span class="big">{{ .used }}</span>
                         <span class="small" data-i18n="used">مصرف شده</span>
                     </div>
                 </div>
                 <div class="traffic-stats">
                     <div class="stat-row">
                         <span class="key"><span class="dot used"></span><span data-i18n="used">مصرف شده</span></span>
-                        <span class="val">43.75 GB</span>
+                        <span class="val">{{ .used }}</span>
                     </div>
                     <div class="stat-row">
                         <span class="key"><span class="dot remaining"></span><span data-i18n="remaining">باقیمانده</span></span>
-                        <span class="val">56.25 GB</span>
+                        <span class="val">{{ .remained }}</span>
                     </div>
                     <div class="stat-row">
                         <span class="key"><span class="dot total"></span><span data-i18n="total">حجم کل</span></span>
-                        <span class="val">100.0 GB</span>
+                        <span class="val">{{ .total }}</span>
                     </div>
                 </div>
             </div>
 
             <div class="traffic-bar-wrap">
                 <div class="traffic-bar">
-                    <div class="traffic-bar-fill" data-width="43.8"></div>
+                    <div class="traffic-bar-fill" data-nuc-width=""></div>
                 </div>
             </div>
         </div>
@@ -1128,7 +1129,7 @@
                 </div>
                 <div class="detail-info">
                     <div class="detail-label" data-i18n="expiry">تاریخ انقضا</div>
-                    <div class="detail-value">2026-09-20 20:25:02</div>
+                    <div class="detail-value"><i data-nuc-expire></i></div>
                 </div>
             </div>
 
@@ -1155,7 +1156,7 @@
                 </div>
                 <div class="detail-info">
                     <div class="detail-label" data-i18n="device_limit">محدودیت دستگاه</div>
-                    <div class="detail-value">3</div>
+                    <div class="detail-value">{{ len .emails }}</div>
                 </div>
             </div>
 
@@ -1168,7 +1169,7 @@
                 </div>
                 <div class="detail-info">
                     <div class="detail-label" data-i18n="username">نام کاربری</div>
-                    <div class="detail-value muted" style="direction:ltr">demo.user</div>
+                    <div class="detail-value muted" style="direction:ltr">{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</div>
                 </div>
             </div>
         </div>
@@ -1184,9 +1185,8 @@
                 </div>
                 <div class="callout-body">
                     <div class="callout-title" data-i18n="announcement">اعلان</div>
-                    <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev
-                    گزارش مشکلات: t.me/nucsub</div>
-                </div>
+                    <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+                
             </div>
 
             <div class="callout callout-note">
@@ -1200,8 +1200,8 @@
                 </div>
                 <div class="callout-body">
                     <div class="callout-title" data-i18n="admin_note">یادداشت</div>
-                    <div class="callout-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div>
-                </div>
+                    <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+                
             </div>
         </div>
 
@@ -3929,5 +3929,20 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="dynamize">(function(){
+var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+function pad(n){return String(n).length<2?'0'+n:n;}
+function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
+var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
+fill('[data-nuc-expire]',function(el){if(D.expire>0){var d=new Date(D.expire*1000);el.textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}else{el.textContent="\u221E";}});
+fill('[data-nuc-days]',function(el){if(D.expire>0){var n=Math.ceil((D.expire*1000-Date.now())/86400000);el.textContent=n>0?String(n).toLocaleString('fa-IR'):'0';}else{el.textContent="\u221E";}});
+fill('[data-nuc-pct]',function(el){el.textContent=pct.toFixed(pct%1?1:0);});
+fill('[data-nuc-pct-rem]',function(el){var r=100-pct;el.textContent=r.toFixed(r%1?1:0);});
+fill('[data-nuc-width]',function(el){el.setAttribute('data-width',pct);el.style.width=pct+'%';});
+fill('[data-nuc-width-rem]',function(el){var r=100-pct;el.setAttribute('data-width',r);el.style.width=r+'%';});
+fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);});
+fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
+fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
+})();</script>
 </body>
 </html>

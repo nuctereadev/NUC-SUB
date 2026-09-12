@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101214">
-<title>PasarGuard — Orbit</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -138,7 +139,7 @@ html[lang="en"]{direction:ltr} html[lang="en"] .detail-value{text-align:right}
         <div class="status"><span data-i18n="st_active">فعال</span></div>
       </div>
       <div class="usage">
-        <div><div class="usage-label" data-i18n="traffic_usage">مصرف ترافیک</div><div class="usage-value">43.75 <span>GB</span></div><div class="progress"><div class="progress-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div></div></div>
+        <div><div class="usage-label" data-i18n="traffic_usage">مصرف ترافیک</div><div class="usage-value">{{ (user.used_traffic / 1024 ** 3) | round(2) }}<span>GB</span></div><div class="progress"><div class="progress-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div></div></div>
         <div class="usage-side">
           <div class="usage-metric"><small data-i18n="used">مصرف شده</small><strong>{{ user.used_traffic | bytesformat }}</strong></div>
           <div class="usage-metric"><small data-i18n="remaining">باقیمانده</small><strong>{{ (user.data_limit - user.used_traffic) | bytesformat }}</strong></div>
@@ -153,14 +154,14 @@ html[lang="en"]{direction:ltr} html[lang="en"] .detail-value{text-align:right}
     <div class="panel-title" data-i18n="subscription_details">جزئیات اشتراک</div>
     <div class="detail"><span class="detail-label" data-i18n="expiry">تاریخ انقضا</span><span class="detail-value">{{ user.expire | datetime }}</span></div>
     <div class="detail"><span class="detail-label" data-i18n="status">وضعیت</span><span class="detail-value good" data-i18n="st_active">فعال</span></div>
-    <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">3</span></div>
+    <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">{{ user.hwid_limit }}</span></div>
     <div class="detail"><span class="detail-label" data-i18n="username">نام کاربری</span><span class="detail-value">{{ user.username }}</span></div>
   </section>
 </div>
 
 <div class="lower">
   <div class="side-stack">
-    <div class="notice announce"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8"/></svg><span data-i18n="announcement">اعلان</span></div><div class="notice-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div></div>
+    <div class="notice announce"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8"/></svg><span data-i18n="announcement">اعلان</span></div><div class="notice-text">{% if announce %}{{ announce }}{% endif %}</div></div>
     <div class="notice note"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg><span data-i18n="admin_note">یادداشت</span></div><div class="notice-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div></div>
     <div class="actions"><button class="action" id="qrBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg><span data-i18n="qr_code">کد QR</span></button><button class="action primary" id="copyAllBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_all">کپی همه</span></button></div>
   </div>

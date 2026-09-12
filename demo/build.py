@@ -91,7 +91,7 @@ PG_CONTEXT = {
 
 XUI_CONTEXT = {
     "subTitle": "NUC-SUB",
-    "emails": ["demo.user"],
+    "emails": ["demo.user", "demo.user2", "demo.user3"],
     "totalByte": SAMPLE_TOTAL,
     "total": _size(SAMPLE_TOTAL),
     "used": _size(SAMPLE_USED),
@@ -222,6 +222,10 @@ def _go_lookup(scope, expr):
     expr = expr.strip()
     if expr.startswith('"') and expr.endswith('"'):
         return expr[1:-1]
+    lm = re.match(r"^len\s+(.+)$", expr)
+    if lm:
+        v = _go_lookup(scope, lm.group(1).strip())
+        return len(v) if hasattr(v, "__len__") else 0
     if expr.startswith("$"):
         return scope.get(expr, "")
     if expr.startswith("."):
@@ -256,6 +260,18 @@ def render_xui(theme_name, ctx):
 
 """-------------------------------------------- site writer --------------------------------------------"""
 
+def _fill_demo_tokens(html):
+    """Fill brand/telegram @@slots for the static demo site. Empty when unset;
+    the .nuc-brand-name/.nuc-brand-logo CSS hides empty placeholders."""
+    demo_brand_name = "NUC-SUB"
+    demo_brand_logo = ""  # no logo asset to inline in the demo
+    return (
+        html.replace("@@BRAND_NAME@@", demo_brand_name)
+        .replace("@@BRAND_LOGO@@", demo_brand_logo)
+        .replace("@@TG_CHANNEL@@", "")
+    )
+
+
 def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "pg"), exist_ok=True)
@@ -268,6 +284,7 @@ def main():
     for name in pg_names:
         try:
             html = render_pasarguard(name, PG_CONTEXT)
+            html = _fill_demo_tokens(html)
             with open(os.path.join(OUT, "pg", f"{name}.html"), "w", encoding="utf-8") as f:
                 f.write(html)
             ok[f"pg {name}"] = f"{len(html):,} B"
@@ -277,6 +294,7 @@ def main():
     for name in xui_names:
         try:
             html = render_xui(name, XUI_CONTEXT)
+            html = _fill_demo_tokens(html)
             d = os.path.join(OUT, "xui", name)
             os.makedirs(d, exist_ok=True)
             with open(os.path.join(d, "index.html"), "w", encoding="utf-8") as f:

@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1110">
-<title>PasarGuard</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -179,7 +180,7 @@ html[lang="en"] .detail-value,.usage-side{direction:ltr;text-align:right}
     <div class="usage-row">
       <div>
         <div class="mini-label" data-i18n="traffic_usage">مصرف ترافیک</div>
-        <div class="usage-number">43.75 <span>GB</span></div>
+        <div class="usage-number">{{ (user.used_traffic / 1024 ** 3) | round(2) }}<span>GB</span></div>
         <div class="progress-box"><div class="progress"><div class="progress-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div></div></div>
       </div>
       <div class="usage-side">
@@ -194,7 +195,7 @@ html[lang="en"] .detail-value,.usage-side{direction:ltr;text-align:right}
       <div class="panel-title" data-i18n="subscription_details">جزئیات اشتراک</div>
       <div class="detail"><span class="detail-label" data-i18n="expiry">تاریخ انقضا</span><span class="detail-value">{{ user.expire | datetime }}</span></div>
       <div class="detail"><span class="detail-label" data-i18n="status">وضعیت</span><span class="detail-value good" data-i18n="st_active">فعال</span></div>
-      <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">3</span></div>
+      <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">{{ user.hwid_limit }}</span></div>
       <div class="detail"><span class="detail-label" data-i18n="username">نام کاربری</span><span class="detail-value">{{ user.username }}</span></div>
     </section>
 
@@ -216,7 +217,7 @@ html[lang="en"] .detail-value,.usage-side{direction:ltr;text-align:right}
   <div class="notices">
     <div class="notice announce">
       <div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8"/></svg><span data-i18n="announcement">اعلان</span></div>
-      <p>🔔 کانال تلگرام: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</p>
+      <p>{% if announce %}{{ announce }}{% endif %}</p>
     </div>
     <div class="notice note">
       <div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg><span data-i18n="admin_note">یادداشت</span></div>

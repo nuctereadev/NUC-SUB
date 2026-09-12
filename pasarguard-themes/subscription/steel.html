@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f1117">
-<title>Graphite Dashboard</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -458,9 +459,9 @@ html[lang="en"] { direction:ltr; }
     <!-- New Volume Display -->
     <div class="volume-display">
       <div class="volume-row">
-        <span class="vol-int">43</span>
+        <span class="vol-int">{{ (user.used_traffic / 1024 ** 3) | int }}</span>
         <span class="vol-dot">.</span>
-        <span class="vol-dec">75</span>
+        <span class="vol-dec">{{ ((user.used_traffic / 1024 ** 3) % 1 * 100) | round | int }}</span>
         <span class="vol-unit">GB</span>
       </div>
       <div class="volume-bar">
@@ -476,15 +477,15 @@ html[lang="en"] { direction:ltr; }
   <!-- STATS -->
   <div class="stats-row">
     <div class="card stat-item">
-      <div class="num">43.75</div>
+      <div class="num">{{ user.used_traffic | bytesformat }}</div>
       <div class="txt" data-i18n="used">مصرف</div>
     </div>
     <div class="card stat-item">
-      <div class="num">56.25</div>
+      <div class="num">{ (user.data_limit - user.used_traffic) | bytesformat }</div>
       <div class="txt" data-i18n="remaining">باقیمانده</div>
     </div>
     <div class="card stat-item">
-      <div class="num">100</div>
+      <div class="num">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
       <div class="txt" data-i18n="total">کل</div>
     </div>
   </div>
@@ -509,7 +510,7 @@ html[lang="en"] { direction:ltr; }
           </div>
           <span class="detail-label" data-i18n="device_limit">دستگاه</span>
         </div>
-        <span class="detail-value">3</span>
+        <span class="detail-value">{{ user.hwid_limit }}</span>
       </div>
       <div class="detail-item">
         <div class="detail-left">

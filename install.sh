@@ -52,7 +52,7 @@ SRC_WEB=(
 # Only the DEFAULT theme is preloaded during install to keep it lightweight.
 # Every other theme is fetched on demand the first time it is applied
 # (`nucsub apply <name>` or the web panel's activate button).
-DEFAULT_THEME="${NUC_SUB_DEFAULT_THEME:-gradient}"
+DEFAULT_THEME="${NUC_SUB_DEFAULT_THEME:-volt}"
 
 INSTALL_DIR="${XUI_SUB_INSTALL_DIR:-/opt/nuc-sub}"
 THEMES_DIR="$INSTALL_DIR/themes"
@@ -264,7 +264,7 @@ echo -e "  ${CYAN}The web panel is NOT started by default — enable it from the
 echo ""
 echo -e "${CYAN}Quick commands:${NC}"
 echo -e "   nucsub list           ${DIM}# show all themes with status${NC}"
-echo -e "   nucsub apply gradient ${DIM}# activate a theme${NC}"
+echo -e "   nucsub apply volt     ${DIM}# activate a theme${NC}"
 echo -e "   nucsub menu           ${DIM}# interactive menu${NC}"
 echo -e "   nucsub status         ${DIM}# full system info (panel = $PANEL)${NC}"
 echo ""

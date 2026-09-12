@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- data-nuc-dynamized -->
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
 /* nuc-local fonts: IranSansX 400/700 embedded (offline) */
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0d12">
-<title>Zenith Dashboard</title>
+<title>{{ .subTitle }} - اکانت</title>
 <style>
 /* ============================================================
    ZENITH DESIGN SYSTEM - MINIMALIST LUXURY
@@ -720,7 +721,7 @@ html[lang="en"] { direction: ltr; }
       <div class="user-info">
         <div class="avatar">D</div>
         <div class="user-text">
-          <h2>demo.user</h2>
+          <h2>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</h2>
           <div class="status-badge">
             <span class="status-dot"></span>
             <span data-i18n="st_active">فعال</span>
@@ -737,25 +738,25 @@ html[lang="en"] { direction: ltr; }
           <circle class="gauge-fill" cx="60" cy="60" r="54"
                   stroke-dasharray="339.29"
                   stroke-dashoffset="339.29"
-                  data-target="190.51"/>
+                  data-nuc-gauge=""/>
         </svg>
         <div class="gauge-center">
-          <span class="gauge-val">43.75</span>
-          <span class="gauge-unit">GB</span>
+          <span class="gauge-val">{{ .used }}</span>
+          <span class="gauge-unit"></span>
         </div>
       </div>
       
       <div class="gauge-stats">
         <div class="g-stat">
           <span class="g-stat-label"><span class="g-stat-dot used"></span><span data-i18n="used">مصرف شده</span></span>
-          <span class="g-stat-val">43.75 GB</span>
+          <span class="g-stat-val">{{ .used }}</span>
         </div>
         <div class="g-stat">
           <span class="g-stat-label"><span class="g-stat-dot left"></span><span data-i18n="remaining">باقیمانده</span></span>
-          <span class="g-stat-val">56.25 GB</span>
+          <span class="g-stat-val">{{ .remained }}</span>
         </div>
         <div class="mini-progress">
-          <div class="mini-progress-fill" data-width="43.8"></div>
+          <div class="mini-progress-fill" data-nuc-width=""></div>
         </div>
       </div>
     </div>
@@ -772,7 +773,7 @@ html[lang="en"] { direction: ltr; }
             </div>
             <span class="d-label" data-i18n="expiry">انقضا</span>
           </div>
-          <span class="d-val">2026-09-20</span>
+          <span class="d-val"><i data-nuc-expire></i></span>
         </div>
         <div class="detail-row">
           <div class="d-left">
@@ -781,7 +782,7 @@ html[lang="en"] { direction: ltr; }
             </div>
             <span class="d-label" data-i18n="device_limit">دستگاه</span>
           </div>
-          <span class="d-val">3</span>
+          <span class="d-val">{{ len .emails }}</span>
         </div>
         <div class="detail-row">
           <div class="d-left">
@@ -3382,5 +3383,20 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="dynamize">(function(){
+var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+function pad(n){return String(n).length<2?'0'+n:n;}
+function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
+var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
+fill('[data-nuc-expire]',function(el){if(D.expire>0){var d=new Date(D.expire*1000);el.textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}else{el.textContent="\u221E";}});
+fill('[data-nuc-days]',function(el){if(D.expire>0){var n=Math.ceil((D.expire*1000-Date.now())/86400000);el.textContent=n>0?String(n).toLocaleString('fa-IR'):'0';}else{el.textContent="\u221E";}});
+fill('[data-nuc-pct]',function(el){el.textContent=pct.toFixed(pct%1?1:0);});
+fill('[data-nuc-pct-rem]',function(el){var r=100-pct;el.textContent=r.toFixed(r%1?1:0);});
+fill('[data-nuc-width]',function(el){el.setAttribute('data-width',pct);el.style.width=pct+'%';});
+fill('[data-nuc-width-rem]',function(el){var r=100-pct;el.setAttribute('data-width',r);el.style.width=r+'%';});
+fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);});
+fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
+fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
+})();</script>
 </body>
 </html>

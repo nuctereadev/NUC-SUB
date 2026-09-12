@@ -26,7 +26,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
-XUI_THEMES=(volt arctic amber-dark amethyst azure copper cyber-lime emerald forge graphite indigo-dark jade lagoon linen magenta navy neon-emerald nova onyx pearl royal sapphire slate terracotta violet)
+XUI_THEMES=(amber-dark amethyst arctic azure copper cyber-lime cyberpunk emerald forge glass graphite indigo-dark jade lagoon linen magenta matrix minimal navy neon neon-emerald nova onyx pearl royal sapphire slate sunset terracotta violet volt)
 PG_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
 
 # ------------------------------------------------------- panel detection -------
@@ -483,29 +483,46 @@ cmd_pg_diagnose() {  # print the whole Pasarguard template resolution chain so a
 
 PG_CREDS_USER=""; PG_CREDS_PASS=""
 
-pg_inject_tg() {  # pg_inject_tg <deployed-file> — fill the @@TG_CHANNEL@@ slot
-    local f="$1" tg
-    tg="$(config_get telegram_channel)"
+inject_tokens() {  # inject_tokens <file> <channel> — fill every @@ slot in-place (telegram + brand)
+    local f="$1" chan="$2" name logo
     [[ -f "$f" ]] || return 1
-    python3 - "$f" "$tg" <<'PY'
+    name="$(config_get brand_name)"
+    logo="$(config_get brand_logo)"
+    python3 - "$f" "$chan" "$name" "$logo" <<'PY'
 import sys
-p, chan = sys.argv[1], sys.argv[2]
+p, chan, name, logo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 s = open(p, encoding='utf-8').read()
-if '@@TG_CHANNEL@@' in s:
-    open(p, 'w', encoding='utf-8').write(s.replace('@@TG_CHANNEL@@', chan))
+open(p, 'w', encoding='utf-8').write(
+    s.replace('@@TG_CHANNEL@@', chan)
+     .replace('@@BRAND_NAME@@', name)
+     .replace('@@BRAND_LOGO@@', logo)
+)
 PY
 }
 
-inject_tg() {  # inject_tg <src-index.html> <dst-index.html> — copy pristine then fill the telegram slot
-    local src="$1" dst="$2" tg
+pg_inject_tg() {  # pg_inject_tg <deployed-file> — fill the @@TG_CHANNEL@@ + brand slots in a pasarguard theme
+    local f="$1" tg
+    [[ -f "$f" ]] || return 1
+    tg="$(config_get telegram_channel)"
+    inject_tokens "$f" "$tg"
+}
+
+inject_tg() {  # inject_tg <src-index.html> <dst-index.html> — copy pristine then fill every @@ slot (telegram + brand)
+    local src="$1" dst="$2" tg name logo
     [[ -f "$src" && -f "$dst" ]] || return 1
     tg="$(config_get telegram_channel)"
+    name="$(config_get brand_name)"
+    logo="$(config_get brand_logo)"
     cp -f "$src" "$dst"
-    python3 - "$dst" "$tg" <<'PY'
+    python3 - "$dst" "$tg" "$name" "$logo" <<'PY'
 import sys
-p, chan = sys.argv[1], sys.argv[2]
+p, chan, name, logo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 s = open(p, encoding='utf-8').read()
-open(p, 'w', encoding='utf-8').write(s.replace('@@TG_CHANNEL@@', chan))
+open(p, 'w', encoding='utf-8').write(
+    s.replace('@@TG_CHANNEL@@', chan)
+     .replace('@@BRAND_NAME@@', name)
+     .replace('@@BRAND_LOGO@@', logo)
+)
 PY
 }
 
@@ -1013,7 +1030,7 @@ cmd_webpanel() {
             if ! ss -tlnp 2>/dev/null | grep -q ":${port} "; then
                 : # port free
             else
-                port="$(find_free_port "$((port+1))" 100)"
+                port="$(find_free_port "$((port+1))" 9999)"
                 warn "Port ${SUB_PANEL_PORT:-8080} occupied — using $port"
             fi
             local token=""
@@ -1096,16 +1113,18 @@ web_panel_menu() {
         echo -e "  ${GREEN}3)${NC} Restart web panel"
         echo -e "  ${GREEN}4)${NC} Show token"
         echo -e "  ${GREEN}5)${NC} Telegram channel       ${DIM}— set / edit / delete the channel link (shown in themes)${NC}"
+        echo -e "  ${GREEN}6)${NC} Branding               ${DIM}— set the subscription-brand name & logo shown in themes${NC}"
         echo -e "  ${GREEN}0)${NC} Back to main menu"
         sep
-        echo -ne "  ${BOLD}Select option [0-5]: ${NC}"
+        echo -ne "  ${BOLD}Select option [0-6]: ${NC}"
         read -r choice
         case "$choice" in
             1) cmd_webpanel start; pause_enter ;;
             2) cmd_webpanel stop; pause_enter ;;
             3) cmd_webpanel restart; pause_enter ;;
-            4) title "Web Panel Token"; sep; cmd_webpanel token; pause_enter ;;
+            4) cmd_webpanel token; pause_enter ;;
             5) telegram_menu ;;
+            6) brand_menu ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1137,7 +1156,7 @@ telegram_menu() {
 }
 
 # --------------------------------------------------------------- Telegram cmd ---
-reapply_tg() {  # re-inject the telegram channel into the currently active theme
+reapply_active() {  # re-inject telegram channel + brand tokens into the active theme
     local cur
     if [[ "$PANEL" == "pasarguard" ]]; then
         cur="$(pg_current_theme)"
@@ -1173,18 +1192,123 @@ cmd_telegram() {
             fi
             config_set telegram_channel "$val"
             ok "Telegram channel set: $val"
-            reapply_tg
+            reapply_active
             ;;
         clear|unset)
             require_root
             config_set telegram_channel ""
             ok "Telegram channel cleared."
-            reapply_tg
+            reapply_active
             ;;
         *)
             echo -e "${YELLOW}Usage: nucsub telegram {get|set <url>|clear}${NC}"
             ;;
     esac
+}
+
+# --------------------------------------------------------------- Branding cmd ---
+cmd_brand() {
+    local action="${1:-get}"
+    local val
+    case "$action" in
+        get|show)
+            val="$(config_get brand_name)"
+            if [[ -n "$val" ]]; then echo -e "  Brand name: ${BOLD}$val${NC}"
+            else echo "  No brand name set."; fi
+            val="$(config_get brand_logo)"
+            if [[ -n "$val" ]]; then echo "  Brand logo: ${GREEN}set${NC} ($((${#val}/1024)) KiB data URL)"
+            else echo "  Brand logo: not set."; fi
+            ;;
+        set-logo-data)
+            require_root
+            val="${2:-}"
+            [[ -n "$val" ]] || die "No logo data URL provided."
+            [[ "$val" == data:image/* ]] || die "Logo must be a data:image URL."
+            [[ "${#val}" -le 1050000 ]] || die "Logo too large (max ~1 MiB)."
+            config_set brand_logo "$val"
+            ok "Brand logo set (${#val} chars)."
+            reapply_active
+            ;;
+        clear-logo)
+            require_root
+            config_set brand_logo ""
+            ok "Brand logo cleared."
+            reapply_active
+            ;;
+        set|set-name)
+            require_root
+            val="${2:-}"
+            if [[ -z "$val" ]]; then
+                echo -ne "  Brand name: "
+                read -r val
+            fi
+            [[ -z "$val" ]] && die "No brand name provided."
+            config_set brand_name "$val"
+            ok "Brand name set: $val"
+            reapply_active
+            ;;
+        set-logo)
+            require_root
+            val="${2:-}"
+            if [[ -z "$val" ]]; then
+                echo -ne "  Path to brand logo (png/svg/jpeg/webp): "
+                read -r val
+            fi
+            [[ -n "$val" && -f "$val" ]] || die "Logo file not found: ${val:-<empty>}"
+            local size mime b64
+            size="$(stat -c%s "$val" 2>/dev/null || wc -c < "$val")"
+            if [[ "$size" -gt 1048576 ]]; then
+                warn "Logo is ${size} bytes (>1 MiB). Consider resizing; storing anyway."
+            fi
+            case "${val##*.}" in
+                svg) mime="image/svg+xml" ;;
+                jpg|jpeg) mime="image/jpeg" ;;
+                png) mime="image/png" ;;
+                webp) mime="image/webp" ;;
+                *) mime="image/png" ;;
+            esac
+            b64="$(base64 -w0 < "$val" 2>/dev/null || base64 < "$val" | tr -d '\r\n')"
+            config_set brand_logo "data:$mime;base64,$b64"
+            ok "Brand logo stored (${size} bytes)."
+            reapply_active
+            ;;
+        clear)
+            require_root
+            config_set brand_name ""
+            config_set brand_logo ""
+            ok "Brand branding cleared."
+            reapply_active
+            ;;
+        *)
+            echo -e "${YELLOW}Usage: nucsub brand {get|set <name>|set-logo <file>|clear}${NC}"
+            ;;
+    esac
+}
+
+brand_menu() {
+    while true; do
+        clear
+        print_header
+        title "Branding"
+        sep
+        echo -e "  ${DIM}Current brand:${NC}"
+        cmd_brand get
+        sep
+        echo -e "  ${GREEN}1)${NC} Set brand name"
+        echo -e "  ${GREEN}2)${NC} Set brand logo (upload a file)"
+        echo -e "  ${GREEN}3)${NC} Clear brand"
+        echo -e "  ${GREEN}0)${NC} Back to web panel menu"
+        sep
+        echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
+        read -r choice
+        case "$choice" in
+            1) cmd_brand set; pause_enter ;;
+            2) cmd_brand set-logo; pause_enter ;;
+            3) cmd_brand clear; pause_enter ;;
+            0) return ;;
+            *) warn "Invalid option: $choice"; sleep 1 ;;
+        esac
+    done
 }
 
 # --------------------------------------------------- Pasarguard credentials ---
@@ -1328,6 +1452,7 @@ case "$cmd" in
     status)         cmd_status ;;
     webpanel)       cmd_webpanel "$@" ;;
     telegram)       cmd_telegram "$@" ;;
+    brand)          cmd_brand "$@" ;;
     pglogin)        cmd_pglogin ;;
     pg-diagnose|diagnose) cmd_pg_diagnose ;;
     update)         cmd_update "$@" ;;

@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0a0e14">
-<title>Ember — Subscription</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -989,8 +990,9 @@ html[lang="en"] .detail-value { text-align: right; }
             <path d="M12 22v-4"/>
           </svg>
         </div>
+      <img src="@@BRAND_LOGO@@" alt="" class="nuc-brand-logo">
         <div>
-          <div class="brand-name">Ember</div>
+          <div class="brand-name">@@BRAND_NAME@@</div>
           <div class="brand-tag">v2.0</div>
         </div>
       </div>
@@ -1026,7 +1028,7 @@ html[lang="en"] .detail-value { text-align: right; }
       <!-- Hero Number - IMPROVED -->
       <div class="hero-stat">
         <div class="hero-number">
-          <span class="hero-big">43.75</span>
+          <span class="hero-big">{{ user.used_traffic | bytesformat }}</span>
           <span class="hero-unit">GB</span>
         </div>
         <div class="hero-subtitle" data-i18n="used">مصرف شده</div>
@@ -1068,15 +1070,15 @@ html[lang="en"] .detail-value { text-align: right; }
       </div>
       <div class="progress-stats">
         <div class="progress-stat">
-          <div class="progress-stat-value">43.75</div>
+          <div class="progress-stat-value">{{ user.used_traffic | bytesformat }}</div>
           <div class="progress-stat-label" data-i18n="used">مصرف</div>
         </div>
         <div class="progress-stat">
-          <div class="progress-stat-value">56.25</div>
+          <div class="progress-stat-value">{ (user.data_limit - user.used_traffic) | bytesformat }</div>
           <div class="progress-stat-label" data-i18n="remaining">باقیمانده</div>
         </div>
         <div class="progress-stat">
-          <div class="progress-stat-value">100</div>
+          <div class="progress-stat-value">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
           <div class="progress-stat-label" data-i18n="total">کل</div>
         </div>
       </div>
@@ -1161,7 +1163,7 @@ html[lang="en"] .detail-value { text-align: right; }
             </div>
             <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
           </div>
-          <span class="detail-value">3</span>
+          <span class="detail-value">{{ user.hwid_limit }}</span>
         </div>
 
         <div class="detail-row">
@@ -1200,7 +1202,7 @@ html[lang="en"] .detail-value { text-align: right; }
         </div>
         <div class="callout-body">
           <div class="callout-title" data-i18n="announcement">اعلان</div>
-          <div class="callout-text">🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</div>
+          <div class="callout-text">{% if announce %}{{ announce }}{% endif %}</div>
         </div>
       </div>
     </div>
@@ -1570,7 +1572,11 @@ html[lang="en"] .detail-value { text-align: right; }
   line-height: 1;
   padding: 4px;
 }
-</style>
+
+    .nuc-brand-logo{display:none!important;max-height:32px;max-width:32px;object-fit:contain;border-radius:6px;vertical-align:middle;margin-left:6px}
+    .nuc-brand-logo[src]:not([src='']):not([src='data:;base64,']){display:inline-block!important}
+    .nuc-brand-name{font-size:11px;color:var(--text-secondary,var(--muted,#999));font-weight:400;margin-top:2px}
+  </style>
 <script>
 (function(){
 //---------------------------------------------------------------------

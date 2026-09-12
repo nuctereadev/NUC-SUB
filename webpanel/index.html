@@ -556,8 +556,77 @@
             </div>
 
 
+            <div class="field settings-field">
+
+              <label for="brand-name-input" data-i18n="set.brand.label">
+                نام برند
+              </label>
+
+              <div class="input-shell">
+
+                <i class="fa-solid fa-tag"></i>
+
+                <input
+                  id="brand-name-input"
+                  type="text"
+                  data-i18n-ph="set.brand.ph"
+                  placeholder="NUCTEREA"
+                  autocomplete="off"
+                  dir="ltr"
+                  spellcheck="false"
+                  maxlength="64"
+                >
+
+              </div>
+
+            </div>
+
+
+            <div class="field settings-field">
+
+              <label data-i18n="set.logo.label">
+                لوگوی برند
+              </label>
+
+              <div class="brand-logo-row">
+
+                <div class="brand-logo-preview" id="brand-logo-preview" hidden>
+                  <img id="brand-logo-img" alt="" src="">
+                </div>
+
+                <div class="input-shell">
+
+                  <i class="fa-solid fa-upload"></i>
+
+                  <input
+                    id="brand-logo-input"
+                    type="file"
+                    accept="image/*"
+                    data-i18n-ph="set.logo.ph"
+                    title="Upload logo"
+                  >
+
+                </div>
+
+              </div>
+              <div class="field-hint" data-i18n="set.logo.hint">
+                حداکثر ~1 مگابایت — PNG / JPG / SVG / WebP
+              </div>
+
+            </div>
+
+
             <button
               class="btn btn-primary save-settings-btn"
+              onclick="saveBrand()"
+              type="button"
+            >
+              <i class="fa-solid fa-check"></i>
+              <span data-i18n="set.saveBrand">ذخیره برندینگ</span>
+            </button>
+
+            <button
+              class="btn btn-secondary save-settings-btn"
               onclick="saveTelegram()"
               type="button"
             >
@@ -687,6 +756,12 @@ const I18N={fa:{
   'set.tg.label':'لینک کانال تلگرام',
   'set.tg.ph':'https://t.me/your_channel',
   'set.save':'ذخیره تغییرات',
+  'set.brand.label':'نام برند',
+  'set.brand.ph':'NUCTEREA',
+  'set.logo.label':'لوگوی برند',
+  'set.logo.ph':'انتخاب فایل لوگو',
+  'set.logo.hint':'حداکثر ~1 مگابایت — PNG / JPG / SVG / WebP',
+  'set.saveBrand':'ذخیره برندینگ',
   'foot.left':'ساخته‌شده توسط تیم NUCTEREA',
   'foot.right':'گیت‌هاب',
   'foot.license':'MIT',
@@ -765,6 +840,12 @@ const I18N={fa:{
   'set.tg.label':'Telegram channel link',
   'set.tg.ph':'https://t.me/your_channel',
   'set.save':'Save changes',
+  'set.brand.label':'Brand name',
+  'set.brand.ph':'NUCTEREA',
+  'set.logo.label':'Brand logo',
+  'set.logo.ph':'Choose logo file',
+  'set.logo.hint':'Max ~1 MiB — PNG / JPG / SVG / WebP',
+  'set.saveBrand':'Save branding',
   'foot.left':'Made by the NUCTEREA team',
   'foot.right':'GitHub',
   'foot.license':'MIT',
@@ -821,7 +902,7 @@ async function api(path,opts){
   return data; 
 } 
 function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'} 
-function showMain(){$('view-login').style.display='none';$('view-main').style.display='';loadSettings()} 
+function showMain(){$('view-login').style.display='none';$('view-main').style.display='';loadSettings();bindLogoUpload()} 
 function showLoginError(msg){ 
   const el=$('login-error'); 
   if(el){el.textContent=msg;el.classList.add('show')} 
@@ -982,8 +1063,73 @@ async function loadSettings(){
     const res=await api('settings'); 
     if(res.ok&&res.settings){ 
       $('tg-input').value=res.settings.telegram_channel||''; 
+      $('brand-name-input').value=res.settings.brand_name||''; 
+      const logo=res.settings.brand_logo||''; 
+      if(logo){ 
+        const pv=$('brand-logo-preview'); 
+        $('brand-logo-img').src=logo; 
+        pv.hidden=false; 
+      } 
     } 
   }catch(e){} 
+} 
+
+async function saveBrand(){ 
+  const name=$('brand-name-input').value.trim(); 
+  const logo=$('brand-logo-input')._dataUrl||''; 
+  const st=$('tg-status'); 
+  const payload={brand_name:name}; 
+  if(logo)payload.brand_logo=logo; 
+  try{ 
+    const res=await api('settings',{ 
+      method:'POST', 
+      headers:{ 
+        'Authorization':'Bearer '+token, 
+        'Content-Type':'application/json' 
+      }, 
+      body:JSON.stringify(payload) 
+    }); 
+    if(res.ok){ 
+      st.style.color='var(--green)'; 
+      st.textContent=t('js.saved'); 
+      showToast(t('js.saved')); 
+      setTimeout(()=>{st.textContent=''},2000) 
+      if(logo){ 
+        const pv=$('brand-logo-preview'); 
+        $('brand-logo-img').src=logo; 
+        pv.hidden=false; 
+      } 
+    } 
+    else{ 
+      st.style.color='var(--red)'; 
+      st.textContent=res.error||t('js.saveErr'); 
+      showToast(res.error||t('js.saveErr'),true); 
+    } 
+  }catch(e){ 
+    st.style.color='var(--red)'; 
+    st.textContent=t('js.saveErr'); 
+    showToast(t('js.saveErr'),true); 
+  } 
+} 
+
+// --- brand logo upload: read file -> resize-ish check -> data URL (<=1 MiB) ---
+function bindLogoUpload(){
+  const inp=$('brand-logo-input');
+  if(!inp)return;
+  inp.addEventListener('change',()=>{
+    const f=inp.files&&inp.files[0];
+    if(!f)return;
+    if(f.size>1048576){showToast('Logo too large (max ~1 MiB)',true);inp.value='';delete inp._dataUrl;return}
+    const fr=new FileReader();
+    fr.onload=()=>{
+      inp._dataUrl=fr.result;
+      const pv=$('brand-logo-preview');
+      $('brand-logo-img').src=fr.result;
+      pv.hidden=false;
+      showToast('Logo ready — click Save branding')
+    };
+    fr.readAsDataURL(f);
+  });
 } 
 
 async function saveTelegram(){ 

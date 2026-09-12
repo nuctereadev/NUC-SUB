@@ -67,7 +67,7 @@ Select your VPN panel:
 ```
 
 Only the selected panel's files are downloaded. A single default theme
-(`gradient`) is preloaded so the subscription page has a theme immediately;
+(`volt`) is preloaded so the subscription page has a theme immediately;
 the remaining themes are downloaded the first time they are applied.
 
 The installer then drops you into the interactive menu.
@@ -112,10 +112,9 @@ Example output of `nucsub list`:
 Installed Themes
 ──────────────────────────────────────────────
      arctic            not downloaded
- ★  gradient          downloaded
-     volt              not downloaded
+ ★  volt              downloaded
 
-✓ Active: gradient
+✓ Active: volt
   Running 'nucsub apply' downloads a theme automatically.
 ```
 

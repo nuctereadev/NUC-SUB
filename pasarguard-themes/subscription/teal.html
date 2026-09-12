@@ -1,3 +1,4 @@
+<!-- data-nuc-dynamized -->
 <!DOCTYPE html>
 <html lang="fa" dir="rtl" data-theme="dark">
 <style id="nucFonts" data-nuc="local-fonts">
@@ -9,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0d1517">
-<title>PasarGuard • Subscription</title>
+<title>{{ user.username }} - NUC-SUB</title>
 
 
 
@@ -70,7 +71,7 @@ button{font:inherit}
       <div class="info-list">
         <div class="info"><label data-i18n="expiry">تاریخ انقضا</label><strong>{{ user.expire | datetime }}</strong></div>
         <div class="info"><label data-i18n="status">وضعیت</label><strong data-i18n="st_active">فعال</strong></div>
-        <div class="info"><label data-i18n="device_limit">محدودیت دستگاه</label><strong>3</strong></div>
+        <div class="info"><label data-i18n="device_limit">محدودیت دستگاه</label><strong>{{ user.hwid_limit }}</strong></div>
         <div class="info"><label data-i18n="username">نام کاربری</label><strong dir="ltr">{{ user.username }}</strong></div>
       </div>
       <div class="profile-actions">
@@ -91,7 +92,7 @@ button{font:inherit}
       </div>
 
       <div class="messages">
-        <div class="card message"><small data-i18n="announcement">اعلان</small><p>🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev<br>گزارش مشکلات: t.me/nucsub</p></div>
+        <div class="card message"><small data-i18n="announcement">اعلان</small><p>{% if announce %}{{ announce }}{% endif %}</p></div>
         <div class="card message"><small data-i18n="admin_note">یادداشت</small><p>سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</p></div>
       </div>
 
