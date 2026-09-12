@@ -325,6 +325,14 @@ def _wrap_qr_lib():
     )
 
 
+def strip_features(html):
+    """Remove a previously injected feature block so re-runs refresh volt.html
+    with the current features.js/css (batch themes regenerate from source)."""
+    if "nuc-features" not in html:
+        return html
+    return re.sub(r"\n<!-- nuc-features -->.*?</body>", "</body>", html, flags=re.S)
+
+
 def inject_features(html):
     """Add per-config QR codes + a floating VPN-apps launcher to the theme.
     Self-contained: the QR library, styles and JS are inlined so the template
@@ -391,6 +399,7 @@ def main():
     if os.path.isfile(vp):
         with open(vp, encoding="utf-8") as f:
             v = f.read()
+        v = strip_features(v)
         nv = inject_features(v)
         if dry:
             print(f"  [dry] volt.html   features={'yes' if nv != v else 'no'}")

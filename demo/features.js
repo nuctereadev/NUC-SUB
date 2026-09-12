@@ -1,4 +1,4 @@
-/* nuc-features: per-config QR + VPN apps launcher (self-contained) */
+/* nuc-features: per-config QR codes, self-contained */
 (function () {
   'use strict';
 
@@ -15,56 +15,20 @@
   }
   function raw(s) { return String(s || '').replace(/&amp;/g, '&'); }
 
-  var APPS = [
-    { n: 'v2rayN',      p: 'Windows',     c: '#2F7BF6', h: 'https://github.com/2dust/v2rayN/releases' },
-    { n: 'Nekoray',     p: 'Windows',     c: '#7C5CFF', h: 'https://github.com/MatsuriDayo/nekoray/releases' },
-    { n: 'Hiddify',     p: 'All',         c: '#22C55E', h: 'https://github.com/hiddify/hiddify-app/releases' },
-    { n: 'v2rayNG',     p: 'Android',     c: '#10B981', h: 'https://github.com/2dust/v2rayNG/releases' },
-    { n: 'NekoBox',     p: 'Android',     c: '#F97316', h: 'https://github.com/MatsuriDayo/NekoBoxForAndroid/releases' },
-    { n: 'Streisand',   p: 'Android',     c: '#E11D48', h: 'https://github.com/StreisandEffect/streisand/releases' },
-    { n: 'Shadowrocket',p: 'iPhone',      c: '#38BDF8', h: 'https://apps.apple.com/app/shadowrocket/id932747118' },
-    { n: 'V2Box',       p: 'iPhone/Android', c: '#8B5CF6', h: 'https://apps.apple.com/app/v2box-v2ray-client/id6446814696' },
-    { n: 'sing-box',    p: 'iPhone',      c: '#0EA5E9', h: 'https://apps.apple.com/app/sing-box/id6451272673' },
-    { n: 'Qv2ray',      p: 'Linux',       c: '#6366F1', h: 'https://github.com/Qv2ray/Qv2ray/releases' }
-  ];
-
-  var ov = el('div', { id: 'nucOverlay', class: '', 'data-mode': 'qr' });
+  var ov = el('div', { id: 'nucOverlay' });
   ov.innerHTML =
     '<div class="nuc-modal">' +
       '<button class="nuc-close" aria-label="Close">&times;</button>' +
       '<h3 id="nucTitle">QR</h3>' +
-      '<div id="nucQrView">' +
-        '<img id="nucQrImg" width="240" height="240" alt="QR" style="display:none">' +
-        '<span class="nuc-link" id="nucQrLink"></span>' +
-      '</div>' +
-      '<div id="nucAppsView">' +
-        '<div class="nuc-apps"></div>' +
-        '<div class="nuc-apps-note">برنامه را نصب کنید و سرویس / کانفیگ را داخل آن اضافه کنید.&#10;Install the app and import your subscription / config.</div>' +
-      '</div>' +
+      '<img id="nucQrImg" width="240" height="240" alt="QR" style="display:none">' +
+      '<span class="nuc-link" id="nucQrLink"></span>' +
     '</div>';
   document.body.appendChild(ov);
 
   var overlayEl = document.getElementById('nucOverlay');
-  var qrView = document.getElementById('nucQrView');
-  var appsView = document.getElementById('nucAppsView');
   var titleEl = document.getElementById('nucTitle');
-  var appsGrid = appsView.querySelector('.nuc-apps');
 
-  APPS.forEach(function (a) {
-    var icon = el('span', { class: 'nuc-app-icon', style: 'background:linear-gradient(135deg,' + a.c + ',rgba(15,30,70,.85))' }, a.n.charAt(0).toUpperCase());
-    var b = document.createElement('b'); b.textContent = a.n;
-    var s = document.createElement('small'); s.textContent = a.p;
-    var link = el('a', { href: a.h, target: '_blank', rel: 'noopener', class: 'nuc-app' });
-    link.appendChild(icon); link.appendChild(b); link.appendChild(s);
-    appsGrid.appendChild(link);
-  });
-
-  function openMode(mode) {
-    overlayEl.setAttribute('data-mode', mode);
-    qrView.style.display = mode === 'qr' ? '' : 'none';
-    appsView.style.display = mode === 'apps' ? '' : 'none';
-    overlayEl.classList.add('open');
-  }
+  function openOv() { overlayEl.classList.add('open'); }
   function closeOv() { overlayEl.classList.remove('open'); }
 
   overlayEl.addEventListener('click', function (e) {
@@ -80,18 +44,18 @@
     titleEl.textContent = 'کد QR کانفیگ / Config QR';
     if (linkEl) linkEl.textContent = text;
     if (!img) return;
-    if (!QR) { openMode('qr'); return; }
+    if (!QR) { openOv(); return; }
     try {
       var q = QR(0, 'M');
       q.addData(text);
       q.make();
       img.src = q.createDataURL(5, 6);
       img.style.display = 'block';
-      openMode('qr');
+      openOv();
     } catch (err) {
       img.style.display = 'none';
       if (linkEl) linkEl.textContent = text + ' -- ' + (err && err.message ? err.message : 'QR failed');
-      openMode('qr');
+      openOv();
     }
   }
 
@@ -111,12 +75,4 @@
     });
     card.appendChild(btn);
   });
-
-  var fab = el('button', { class: 'nuc-fab', type: 'button' },
-    '<svg viewBox="0 0 24 24"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm1 14h-2v-2h2v2zm0-4h-2V7h2v4z"/></svg><span>VPN Apps</span>');
-  fab.addEventListener('click', function () {
-    titleEl.textContent = 'برنامه‌های اتصال / VPN Apps';
-    openMode('apps');
-  });
-  document.body.appendChild(fab);
 })();
