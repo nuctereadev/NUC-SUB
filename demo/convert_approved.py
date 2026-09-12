@@ -29,6 +29,9 @@ QR_LIB = os.path.join(HERE, "qrcode-lib.js")
 FEATURES_CSS = os.path.join(HERE, "features.css")
 FEATURES_JS = os.path.join(HERE, "features.js")
 
+sys.path.insert(0, HERE)  # demo/localize.py (dependency localization)
+from localize import localize_theme
+
 # name -> source file. 'orbit' duplicates amber (same source) — we keep amber and
 # drop my earlier orbit version; both map to pasarguard_orbit_theme.html.
 BATCH = [
@@ -385,6 +388,7 @@ def main():
         if name == "tide":
             out = strip_tide_hero(out)
         out = inject_features(out)
+        out = localize_theme(out)
         dest = os.path.join(DEST, f"{name}.html")
         if dry:
             print(f"  [dry] {name:<10} <- {src:<45} links_loop={found} {len(html)}->{len(out)}b")
@@ -400,7 +404,7 @@ def main():
         with open(vp, encoding="utf-8") as f:
             v = f.read()
         v = strip_features(v)
-        nv = inject_features(v)
+        nv = localize_theme(inject_features(v))
         if dry:
             print(f"  [dry] volt.html   features={'yes' if nv != v else 'no'}")
         else:
