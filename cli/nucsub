@@ -26,7 +26,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 NUC_SUB_VERSION="2.0.2"
 
 # Every theme known to the project (used to offer on-demand downloads).
-XUI_THEMES=(amber-dark amethyst arctic azure copper cyber-lime cyberpunk emerald forge glass graphite indigo-dark jade lagoon linen magenta matrix minimal navy neon neon-emerald nova onyx pearl royal sapphire slate sunset terracotta violet volt)
+XUI_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
 PG_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
 
 # ------------------------------------------------------- panel detection -------
@@ -200,31 +200,24 @@ download_theme() {  # download_theme <name>
         curl -fsSL -m 60 "$REPO_URL/pasarguard-themes/subscription/$name.html" -o "$dst" || return 1
         ok "Theme '$name' downloaded."
     else
-        local td="$THEMES_DIR/$name"
-        [[ -d "$td" && -f "$td/index.html" ]] && return 0
-        mkdir -p "$td/css" "$td/fonts" "$td/fa"
-        # Fetch the 6 assets in parallel instead of one-after-another: on
-        # high-latency links a sequential download takes 30s+, which made the
-        # web-panel apply feel stuck. install.sh now pre-seeds every theme, so
-        # this path only triggers on demand (e.g. after `nucsub remove`).
-        if ! printf '%s\n' \
-            "$REPO_URL/themes/$name/index.html|$td/index.html" \
-            "$REPO_URL/themes/$name/css/icons.css|$td/css/icons.css" \
-            "$REPO_URL/themes/$name/css/fonts.css|$td/css/fonts.css" \
-            "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2|$td/fonts/IRANSansX-Bold.woff2" \
-            "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2|$td/fonts/IRANSansX-Regular.woff2" \
-            "$REPO_URL/themes/$name/fa/fa-solid-900.woff2|$td/fa/fa-solid-900.woff2" \
-            | xargs -P 6 -n 1 bash -c 'u="${1%%|*}"; f="${1#*|}"; curl -fsSL -m 60 "$u" -o "$f"' _ ; then
-            warn "Parallel fetch failed — retrying sequentially..."
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/css/icons.css" -o "$td/css/icons.css" || return 1
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/css/fonts.css" -o "$td/css/fonts.css" || return 1
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || return 1
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || return 1
-            curl -fsSL -m 60 "$REPO_URL/themes/$name/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || return 1
-        fi
-        ok "Theme '$name' downloaded."
+    local td="$THEMES_DIR/$name"
+    [[ -d "$td" && -f "$td/index.html" ]] && return 0
+    mkdir -p "$td/css" "$td/fonts" "$td/fa"
+    # Fetch index.html first (the only required asset — the pg-derived themes
+    # are self-contained single-file templates). css/fonts/fa are legacy
+    # extras that only the original native xui themes shipped; fetch them
+    # best-effort so both layouts can be pulled on demand.
+    curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
+    if ! printf '%s\n' \
+        "$REPO_URL/themes/$name/css/icons.css|$td/css/icons.css" \
+        "$REPO_URL/themes/$name/css/fonts.css|$td/css/fonts.css" \
+        "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2|$td/fonts/IRANSansX-Bold.woff2" \
+        "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2|$td/fonts/IRANSansX-Regular.woff2" \
+        "$REPO_URL/themes/$name/fa/fa-solid-900.woff2|$td/fa/fa-solid-900.woff2" \
+        | xargs -P 6 -n 1 bash -c 'u="${1%%|*}"; f="${1#*|}"; curl -fsSL -m 60 "$u" -o "$f" || true' _ ; then
+        :
     fi
+    ok "Theme '$name' downloaded."
     return 0
 }
 

@@ -175,9 +175,9 @@ if [[ "$PANEL" == "3xui" ]]; then
         for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
         td="$THEMES_DIR/$DEFAULT_THEME"
         mkdir -p "$td/css" "$td/fonts" "$td/fa"
-        if curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/index.html" -o "$td/index.html" \
-           && curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/icons.css" -o "$td/css/icons.css" \
-           && curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/fonts.css" -o "$td/css/fonts.css"; then
+        if curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/index.html" -o "$td/index.html"; then
+            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/icons.css" -o "$td/css/icons.css" || true
+            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/fonts.css" -o "$td/css/fonts.css" || true
             curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || true
             curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || true
             curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || true
