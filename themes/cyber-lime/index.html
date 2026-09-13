@@ -10,7 +10,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#09090b">
-<title>{{ .subTitle }} - اکانت</title>
+<title>{{ if .subTitle }}{{ .subTitle }} - {{ end }}اکانت</title>
 <style>
 /* ============================================================
    ONYX DESIGN SYSTEM - CYBER MINIMALISM
@@ -679,8 +679,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
           <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
         </svg>
       </div>
-      <img src="@@BRAND_LOGO@@" alt="" class="nuc-brand-logo">
-      <span class="brand-name">@@BRAND_NAME@@</span>
+      <span class="brand-name">Cyber Lime</span>
     </div>
     <div class="controls">
       <button class="icon-btn" id="langBtn" aria-label="Language">
@@ -765,7 +764,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span data-i18n="username">کاربری</span>
       </span>
-      <span class="info-value muted" style="direction:ltr">{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
+      <span class="info-value muted" style="direction:ltr" data-nuc-emails>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
     </div>
     <div class="info-card">
       <span class="info-label">
@@ -902,7 +901,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
 
   const i18n = {
     fa: {
-      st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+      st_active: 'فعال', st_exhausted: 'اتمام حجم', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
       traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل',
       expiry: 'تاریخ انقضا', status: 'وضعیت', device_limit: 'محدودیت دستگاه', username: 'نام کاربری',
       qr_code: 'کد QR', copy_all: 'کپی همه',
@@ -910,7 +909,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
       qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
     },
     en: {
-      st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+      st_active: 'Active', st_exhausted: 'Data Exhausted', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
       traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total',
       expiry: 'Expiry Date', status: 'Status', device_limit: 'Device Limit', username: 'Username',
       qr_code: 'QR Code', copy_all: 'Copy All',
@@ -3354,8 +3353,13 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="nuc-qr-helper">
+(function(){ if(window.nucQrDataURL) return; window.nucQrDataURL=function(encoded){ try{ var text=decodeURIComponent(encoded); }catch(e){ var text=encoded; } var q=window.NucQR(0,'M'); q.addData(text); q.make(); return q.createDataURL(6,0); }; })();
+</script>
+
 <script data-nuc="dynamize">(function(){
 var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+window._D=D;
 function pad(n){return String(n).length<2?'0'+n:n;}
 function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
 var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
@@ -3369,5 +3373,56 @@ fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);
 fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
 fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
 })();</script>
+
+<script data-nuc="nuc-fixes">
+(function(){
+  function dedupe(runNow){
+    document.querySelectorAll('[data-nuc-emails]').forEach(function(el){
+      var parts=el.textContent.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      el.textContent=parts.filter(function(v,i){ return parts.indexOf(v)===i; }).join(', ');
+    });
+    if(runNow && window.qrAllWired) return;
+    var ca=document.getElementById('copyAllBtn');
+    var modal=document.getElementById('qrModal');
+    if(ca && modal && window.nucQrDataURL && !document.getElementById('qrAllBtn')){
+      var btn=document.createElement('button');
+      btn.type='button'; btn.id='qrAllBtn';
+      btn.className=ca.className;
+      btn.textContent='اسکن QR';
+      ca.parentNode.insertBefore(btn, ca.nextSibling);
+      btn.addEventListener('click', function(){
+        var url=(location.origin+location.pathname).replace(/\/+$/,'');
+        var img=document.getElementById('qrImg');
+        if(img){ try{ img.src=window.nucQrDataURL(url); }catch(e){} if(img.style) img.style.display=''; }
+        modal.classList.add('active');
+      });
+      window.qrAllWired=true;
+    }
+  }
+  if(window.addEventReload){ var f=function(){ dedupe(true); }; window.addEventReload(f); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ dedupe(true); }, 0); }); }
+  else setTimeout(function(){ dedupe(true); }, 0);
+(function(){
+var Dn=window._D; if(!Dn) return;
+var lg='fa'; try{ lg=localStorage.getItem('ember_lang')||localStorage.getItem('stark_lang')||localStorage.getItem('nuc-lang')||'fa'; }catch(e){}
+var st='active';
+if(!Dn.enabled) st='disabled';
+else if(Dn.expire>0 && Dn.expire*1000<Date.now()) st='expired';
+else if(Dn.total>0 && Dn.used>=Dn.total) st='exhausted';
+var ft={active:'فعال',disabled:'غیرفعال',expired:'منقضی',exhausted:'اتمام حجم'};
+var et={active:'Active',disabled:'Inactive',expired:'Expired',exhausted:'Data Exhausted'};
+var txt=(lg==='en'?et:ft)[st];
+document.querySelectorAll('[data-i18n="st_active"]').forEach(function(el){
+  el.textContent=txt;
+  el.setAttribute('data-i18n','st_'+st);
+  if(st==='exhausted'){
+    var p=el.closest('.detail-value,.info-item-value,.info-value')||el.parentElement;
+    if(p){ try{ p.classList.remove('success','ok'); p.classList.add('danger'); }catch(e){} }
+    el.style.color='#ef4444';
+  }
+});
+})();
+})();
+</script>
 </body>
 </html>

@@ -809,7 +809,7 @@ html[lang="en"] { direction: ltr; }
 
   const i18n = {
     fa: {
-      st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+      st_active: 'فعال', st_exhausted: 'اتمام حجم', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
       used: 'مصرف شده', remaining: 'باقیمانده', total: 'کل', of_total: 'از {{ user.data_limit | bytesformat }}',
       details: 'جزئیات', expiry: 'تاریخ انقضا', status: 'وضعیت', device_limit: 'محدودیت دستگاه',
       qr_code: 'کد QR', copy_all: 'کپی همه',
@@ -817,7 +817,7 @@ html[lang="en"] { direction: ltr; }
       qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
     },
     en: {
-      st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+      st_active: 'Active', st_exhausted: 'Data Exhausted', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
       used: 'Used', remaining: 'Remaining', total: 'Total', of_total: 'of {{ user.data_limit | bytesformat }}',
       details: 'Details', expiry: 'Expiry Date', status: 'Status', device_limit: 'Device Limit',
       qr_code: 'QR Code', copy_all: 'Copy All',
@@ -3456,5 +3456,31 @@ var qrcode = function() {
   });
 })();
 </script>
-</body>
+<i data-nuc-used style="display:none">{{ user.used_traffic }}</i><i data-nuc-limit style="display:none">{{ user.data_limit }}</i>
+<style data-nuc="pg-exhausted-style">
+[data-nuc-exhausted]{color:#ef4444!important}
+.status-badge-inline[data-nuc-exhausted]{background:rgba(239,68,68,.18)!important}
+</style>
+<script data-nuc="pg-status">
+(function(){
+  function pgStatus(){
+    var u=parseFloat((document.querySelector('[data-nuc-used]')||{textContent:''}).textContent);
+    var l=parseFloat((document.querySelector('[data-nuc-limit]')||{textContent:''}).textContent);
+    if(!(isFinite(u)&&isFinite(l)&&l>0&&u>=l))return;
+    var el=null;
+    el=document.querySelector('[data-i18n="st_active"]');
+    if(!el){var c=document.querySelectorAll('.info-value.success,.detail-value.success,b.ok,.status-badge-inline');for(var i=0;i<c.length;i++){var t=(c[i].textContent||'').trim();if(t==='فعال'||t==='Active'){el=c[i];break;}}}
+    if(!el){var d=document.querySelectorAll('*');for(var i=0;i<d.length;i++){var n=d[i];if(n.children.length===0){var t=(n.textContent||'').trim();if(t==='فعال'||t==='Active'){el=n;break;}}}}
+    if(!el)return;
+    var isEn=/^[A-Za-z]/.test((el.textContent||'').trim());
+    el.setAttribute('data-i18n','st_exhausted');
+    el.setAttribute('data-nuc-exhausted','1');
+    el.textContent=isEn?'Data Exhausted':'اتمام حجم';
+    try{el.style.color='#ef4444';el.classList.remove('ok','success');el.classList.add('danger');}catch(e){}
+  }
+  pgStatus();
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
+})();
+</script>
+\n</body>
 </html>

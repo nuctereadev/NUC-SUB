@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ .subTitle }} - اکانت</title>
+<title>{{ if .subTitle }}{{ .subTitle }} - {{ end }}اکانت</title>
 </head>
 <style id="nucFonts" data-nuc="local-fonts">
 /* nuc-local fonts: IranSansX 400/700 embedded (offline) */
@@ -852,7 +852,7 @@
           </div>
           <span class="detail-label" data-i18n="username">نام کاربری</span>
         </div>
-        <span class="detail-value muted" style="direction:ltr">{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
+        <span class="detail-value muted" style="direction:ltr" data-nuc-emails>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
       </div>
     </div>
 
@@ -986,7 +986,7 @@
       template: 'PlumPop Template',
       greeting: 'سلام، پلن پرمیوم',
       subtitle: 'اشتراک شما فعال و آماده استفاده است',
-      st_active: 'فعال',
+      st_active: 'فعال', st_exhausted: 'اتمام حجم',
       gb_used: 'گیگابایت مصرف شده',
       remaining: 'باقیمانده:',
       total: 'کل حجم:',
@@ -1011,7 +1011,7 @@
       template: 'PlumPop Template',
       greeting: 'Hello, Premium Plan',
       subtitle: 'Your subscription is active and ready',
-      st_active: 'Active',
+      st_active: 'Active', st_exhausted: 'Data Exhausted',
       gb_used: 'GB Used',
       remaining: 'Remaining:',
       total: 'Total:',
@@ -3460,8 +3460,13 @@ var qrcode = function() {
 })();
 
 </script>
+<script data-nuc="nuc-qr-helper">
+(function(){ if(window.nucQrDataURL) return; window.nucQrDataURL=function(encoded){ try{ var text=decodeURIComponent(encoded); }catch(e){ var text=encoded; } var q=window.NucQR(0,'M'); q.addData(text); q.make(); return q.createDataURL(6,0); }; })();
+</script>
+
 <script data-nuc="dynamize">(function(){
 var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+window._D=D;
 function pad(n){return String(n).length<2?'0'+n:n;}
 function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
 var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
@@ -3475,5 +3480,56 @@ fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);
 fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
 fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
 })();</script>
+
+<script data-nuc="nuc-fixes">
+(function(){
+  function dedupe(runNow){
+    document.querySelectorAll('[data-nuc-emails]').forEach(function(el){
+      var parts=el.textContent.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      el.textContent=parts.filter(function(v,i){ return parts.indexOf(v)===i; }).join(', ');
+    });
+    if(runNow && window.qrAllWired) return;
+    var ca=document.getElementById('copyAllBtn');
+    var modal=document.getElementById('qrModal');
+    if(ca && modal && window.nucQrDataURL && !document.getElementById('qrAllBtn')){
+      var btn=document.createElement('button');
+      btn.type='button'; btn.id='qrAllBtn';
+      btn.className=ca.className;
+      btn.textContent='اسکن QR';
+      ca.parentNode.insertBefore(btn, ca.nextSibling);
+      btn.addEventListener('click', function(){
+        var url=(location.origin+location.pathname).replace(/\/+$/,'');
+        var img=document.getElementById('qrImg');
+        if(img){ try{ img.src=window.nucQrDataURL(url); }catch(e){} if(img.style) img.style.display=''; }
+        modal.classList.add('active');
+      });
+      window.qrAllWired=true;
+    }
+  }
+  if(window.addEventReload){ var f=function(){ dedupe(true); }; window.addEventReload(f); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ dedupe(true); }, 0); }); }
+  else setTimeout(function(){ dedupe(true); }, 0);
+(function(){
+var Dn=window._D; if(!Dn) return;
+var lg='fa'; try{ lg=localStorage.getItem('ember_lang')||localStorage.getItem('stark_lang')||localStorage.getItem('nuc-lang')||'fa'; }catch(e){}
+var st='active';
+if(!Dn.enabled) st='disabled';
+else if(Dn.expire>0 && Dn.expire*1000<Date.now()) st='expired';
+else if(Dn.total>0 && Dn.used>=Dn.total) st='exhausted';
+var ft={active:'فعال',disabled:'غیرفعال',expired:'منقضی',exhausted:'اتمام حجم'};
+var et={active:'Active',disabled:'Inactive',expired:'Expired',exhausted:'Data Exhausted'};
+var txt=(lg==='en'?et:ft)[st];
+document.querySelectorAll('[data-i18n="st_active"]').forEach(function(el){
+  el.textContent=txt;
+  el.setAttribute('data-i18n','st_'+st);
+  if(st==='exhausted'){
+    var p=el.closest('.detail-value,.info-item-value,.info-value')||el.parentElement;
+    if(p){ try{ p.classList.remove('success','ok'); p.classList.add('danger'); }catch(e){} }
+    el.style.color='#ef4444';
+  }
+});
+})();
+})();
+</script>
 </body>
 </html>

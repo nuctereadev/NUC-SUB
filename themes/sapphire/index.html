@@ -10,7 +10,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#1c1c1e">
-    <title>{{ .subTitle }} - اکانت</title>
+    <title>{{ if .subTitle }}{{ .subTitle }} - {{ end }}اکانت</title>
     <style>
         /* ============================================================
            MINIMAL THEME — CLEAN, SIMPLE, NO GRADIENTS
@@ -182,6 +182,7 @@
         }
         .detail-value.success { color: var(--success); }
         .detail-value.warn { color: var(--warning); }
+        .detail-value.danger { color: #ef4444; }
 
         /* Traffic card */
         .traffic-header {
@@ -498,29 +499,29 @@
 
         <!-- DETAILS CARD -->
         <div class="card details-card">
-            <div class="details-header">جزئیات اشتراک</div>
+            <div class="details-header" data-i18n="subscription_details">جزئیات اشتراک</div>
             <div class="detail-row">
-                <span class="detail-label">تاریخ انقضا</span>
+                <span class="detail-label" data-i18n="expiry">تاریخ انقضا</span>
                 <span class="detail-value warn"><i data-nuc-expire></i></span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">وضعیت</span>
-                <span class="detail-value success">فعال</span>
+                <span class="detail-label" data-i18n="status">وضعیت</span>
+                <span class="detail-value success"><span data-i18n="st_active">فعال</span></span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">محدودیت دستگاه</span>
+                <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
                 <span class="detail-value">{{ len .emails }}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">نام کاربری</span>
-                <span class="detail-value" style="direction:ltr">{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
+                <span class="detail-label" data-i18n="username">نام کاربری</span>
+                <span class="detail-value" style="direction:ltr" data-nuc-emails>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</span>
             </div>
         </div>
 
         <!-- TRAFFIC CARD -->
         <div class="card">
             <div class="traffic-header">
-                <span class="traffic-title">مصرف ترافیک</span>
+                <span class="traffic-title" data-i18n="traffic_usage">مصرف ترافیک</span>
                 <span class="traffic-percent"><i data-nuc-pct></i>%</span>
             </div>
             <div class="traffic-bar">
@@ -528,15 +529,15 @@
             </div>
             <div class="traffic-stats">
                 <div class="stat-item">
-                    <span class="stat-label">مصرف شده</span>
+                    <span class="stat-label" data-i18n="used">مصرف شده</span>
                     <span class="stat-value">{{ .used }}</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">باقیمانده</span>
+                    <span class="stat-label" data-i18n="remaining">باقیمانده</span>
                     <span class="stat-value">{{ .remained }}</span>
                 </div>
                 <div class="stat-item">
-                    <span class="stat-label">حجم کل</span>
+                    <span class="stat-label" data-i18n="total">حجم کل</span>
                     <span class="stat-value">{{ .total }}</span>
                 </div>
             </div>
@@ -547,14 +548,14 @@
             <div class="callout">
                 <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
                 <div class="callout-content">
-                    <div class="callout-title">اعلان</div>
+                    <div class="callout-title" data-i18n="announcement">اعلان</div>
                     <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
                 
             </div>
             <div class="callout note">
                 <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
                 <div class="callout-content">
-                    <div class="callout-title">یادداشت</div>
+                    <div class="callout-title" data-i18n="admin_note">یادداشت</div>
                     <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
                 
             </div>
@@ -564,17 +565,17 @@
         <div class="actions">
             <button class="action-btn" id="qrBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
-                <span>کد QR</span>
+                <span data-i18n="qr_code">کد QR</span>
             </button>
             <button class="action-btn primary" id="copyAllBtn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                <span>کپی همه</span>
+                <span data-i18n="copy_all">کپی همه</span>
             </button>
         </div>
 
         <!-- CONFIGS -->
         <div class="configs-header">
-            <span class="configs-title">کانفیگ‌ها</span>
+            <span class="configs-title" data-i18n="configurations">کانفیگ‌ها</span>
             <span class="configs-count">6</span>
         </div>
         <div class="configs-list">
@@ -583,7 +584,7 @@
                 <div class="proto-badge proto-vless">VLES</div>
                 <div class="config-info">
                     <div class="config-name">VLESS-Reality</div>
-                    <div class="config-meta"><span>VLESS</span><span class="sep"></span><span>کلیک برای کپی</span></div>
+                    <div class="config-meta"><span>VLESS</span><span class="sep"></span><span data-i18n="tap_to_copy">کلیک برای کپی</span></div>
                 </div>
                 <button class="config-copy" title="Copy"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>
             </div>
@@ -2910,6 +2911,7 @@ window.nucQrDataURL=function(t){var Q=window.NucQR,d;if(!Q)return '';try{d=decod
 </script>
 <script data-nuc="dynamize">(function(){
 var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
+window._D=D;
 function pad(n){return String(n).length<2?'0'+n:n;}
 function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
 var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
@@ -2923,5 +2925,51 @@ fill('[data-nuc-int]',function(el){el.textContent=Math.floor(D.used/1073741824);
 fill('[data-nuc-dec]',function(el){var g=D.used/1073741824;el.textContent=pad(Math.round((g-Math.floor(g))*100));});
 fill('[data-nuc-gauge]',function(el){var dsa=parseFloat(el.getAttribute('stroke-dasharray'));if(!dsa)dsa=263.89;el.style.strokeDashoffset=String(dsa*(1-pct/100));});
 })();</script>
+
+<script data-nuc="i18n">
+(function(){
+var lang='fa';try{lang=localStorage.getItem('nuc-lang')||'fa';}catch(e){}
+var i18n={
+fa:{subscription_details:'جزئیات اشتراک',expiry:'تاریخ انقضا',status:'وضعیت',device_limit:'محدودیت دستگاه',username:'نام کاربری',traffic_usage:'مصرف ترافیک',used:'مصرف شده',remaining:'باقیمانده',total:'حجم کل',announcement:'اعلان',admin_note:'یادداشت',qr_code:'کد QR',copy_all:'کپی همه',configurations:'کانفیگ‌ها',tap_to_copy:'کلیک برای کپی',scan_qr:'اسکن QR',st_active:'فعال',st_limited:'محدود',st_expired:'منقضی',st_disabled:'غیرفعال',st_hold:'در انتظار',st_exhausted:'اتمام حجم'},
+en:{subscription_details:'Subscription Details',expiry:'Expiry Date',status:'Status',device_limit:'Device Limit',username:'Username',traffic_usage:'Traffic Usage',used:'Used',remaining:'Remaining',total:'Total',announcement:'Announcement',admin_note:'Note',qr_code:'QR Code',copy_all:'Copy All',configurations:'Configs',tap_to_copy:'Click to Copy',scan_qr:'Scan QR',st_active:'Active',st_limited:'Limited',st_expired:'Expired',st_disabled:'Disabled',st_hold:'On Hold',st_exhausted:'Data Exhausted'}
+};
+function applyLanguage(l){lang=l||'fa';var t=i18n[lang]||i18n.fa;try{document.documentElement.setAttribute('lang',lang);document.documentElement.setAttribute('dir',lang==='fa'?'rtl':'ltr');}catch(e){}document.querySelectorAll('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n');if(t[k])el.textContent=t[k];});}
+window.applyLanguage=applyLanguage;window.NUC_CUR=lang;
+var lb=document.getElementById('langBtn');
+if(lb){lb.addEventListener('click',function(){applyLanguage(lang==='fa'?'en':'fa');try{localStorage.setItem('nuc-lang',lang);}catch(e){}});}
+applyLanguage(lang);
+(function(){var Dn=window._D;if(!Dn)return;var st='active';if(!Dn.enabled)st='disabled';else if(Dn.expire>0&&Dn.expire*1000<Date.now())st='expired';else if(Dn.total>0&&Dn.used>=Dn.total)st='exhausted';var ft={active:'فعال',disabled:'غیرفعال',expired:'منقضی',exhausted:'اتمام حجم'};var et={active:'Active',disabled:'Inactive',expired:'Expired',exhausted:'Data Exhausted'};var txt=(lang==='en'?et:ft)[st];document.querySelectorAll('[data-i18n="st_active"]').forEach(function(el){el.textContent=txt;el.setAttribute('data-i18n','st_'+st);if(st==='exhausted'){var p=el.closest('.detail-value,.info-item-value,.info-value')||el.parentElement;if(p){try{p.classList.remove('success','ok');p.classList.add('danger');}catch(e){}}el.style.color='#ef4444';}});})();
+})();
+</script>
+<script data-nuc="nuc-fixes">
+(function(){
+  function dedupe(runNow){
+    document.querySelectorAll('[data-nuc-emails]').forEach(function(el){
+      var parts=el.textContent.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      el.textContent=parts.filter(function(v,i){ return parts.indexOf(v)===i; }).join(', ');
+    });
+    if(runNow && window.qrAllWired) return;
+    var ca=document.getElementById('copyAllBtn');
+    var modal=document.getElementById('qrModal');
+    if(ca && modal && window.nucQrDataURL && !document.getElementById('qrAllBtn')){
+      var btn=document.createElement('button');
+      btn.type='button'; btn.id='qrAllBtn';
+      btn.className=ca.className;
+      btn.setAttribute('data-i18n','scan_qr'); btn.textContent='اسکن QR'; if(window.applyLanguage) window.applyLanguage(window.NUC_CUR||'fa');
+      ca.parentNode.insertBefore(btn, ca.nextSibling);
+      btn.addEventListener('click', function(){
+        var url=(location.origin+location.pathname).replace(/\/+$/,'');
+        var img=document.getElementById('qrImg');
+        if(img){ try{ img.src=window.nucQrDataURL(url); }catch(e){} if(img.style) img.style.display=''; }
+        modal.classList.add('active');
+      });
+      window.qrAllWired=true;
+    }
+  }
+  if(window.addEventReload){ var f=function(){ dedupe(true); }; window.addEventReload(f); }
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', function(){ setTimeout(function(){ dedupe(true); }, 0); }); }
+  else setTimeout(function(){ dedupe(true); }, 0);
+})();
+</script>
 </body>
 </html>

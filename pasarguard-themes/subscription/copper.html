@@ -621,14 +621,14 @@
 
             const i18n = {
                 fa: {
-                    subscription: 'اشتراک', st_active: 'فعال', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
+                    subscription: 'اشتراک', st_active: 'فعال', st_exhausted: 'اتمام حجم', st_limited: 'محدود', st_expired: 'منقضی', st_hold: 'در انتظار', st_disabled: 'غیرفعال',
                     account_subtitle: 'حساب کاربری شما', traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل',
                     subscription_details: 'جزئیات اشتراک', expiry: 'تاریخ انقضا', unlimited: 'نامحدود', status: 'وضعیت', device_limit: 'محدودیت دستگاه',
                     username: 'نام کاربری', announcement: 'اعلان', admin_note: 'یادداشت', telegram: 'تلگرام', qr_code: 'کد QR', copy_all: 'کپی همه',
                     configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی', qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند'
                 },
                 en: {
-                    subscription: 'Subscription', st_active: 'Active', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
+                    subscription: 'Subscription', st_active: 'Active', st_exhausted: 'Data Exhausted', st_limited: 'Limited', st_expired: 'Expired', st_hold: 'On Hold', st_disabled: 'Disabled',
                     account_subtitle: 'Your account', traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total',
                     subscription_details: 'Subscription Details', expiry: 'Expiry Date', unlimited: 'Unlimited', status: 'Status', device_limit: 'Device Limit',
                     username: 'Username', announcement: 'Announcement', admin_note: 'Note', telegram: 'Telegram', qr_code: 'QR Code', copy_all: 'Copy All',
@@ -3271,5 +3271,31 @@ var qrcode = function() {
   });
 })();
 </script>
-</body>
+<i data-nuc-used style="display:none">{{ user.used_traffic }}</i><i data-nuc-limit style="display:none">{{ user.data_limit }}</i>
+<style data-nuc="pg-exhausted-style">
+[data-nuc-exhausted]{color:#ef4444!important}
+.status-badge-inline[data-nuc-exhausted]{background:rgba(239,68,68,.18)!important}
+</style>
+<script data-nuc="pg-status">
+(function(){
+  function pgStatus(){
+    var u=parseFloat((document.querySelector('[data-nuc-used]')||{textContent:''}).textContent);
+    var l=parseFloat((document.querySelector('[data-nuc-limit]')||{textContent:''}).textContent);
+    if(!(isFinite(u)&&isFinite(l)&&l>0&&u>=l))return;
+    var el=null;
+    el=document.querySelector('[data-i18n="st_active"]');
+    if(!el){var c=document.querySelectorAll('.info-value.success,.detail-value.success,b.ok,.status-badge-inline');for(var i=0;i<c.length;i++){var t=(c[i].textContent||'').trim();if(t==='فعال'||t==='Active'){el=c[i];break;}}}
+    if(!el){var d=document.querySelectorAll('*');for(var i=0;i<d.length;i++){var n=d[i];if(n.children.length===0){var t=(n.textContent||'').trim();if(t==='فعال'||t==='Active'){el=n;break;}}}}
+    if(!el)return;
+    var isEn=/^[A-Za-z]/.test((el.textContent||'').trim());
+    el.setAttribute('data-i18n','st_exhausted');
+    el.setAttribute('data-nuc-exhausted','1');
+    el.textContent=isEn?'Data Exhausted':'اتمام حجم';
+    try{el.style.color='#ef4444';el.classList.remove('ok','success');el.classList.add('danger');}catch(e){}
+  }
+  pgStatus();
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
+})();
+</script>
+\n</body>
 </html>

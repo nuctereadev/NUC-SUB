@@ -583,8 +583,8 @@
     <script>
         (function() {
             const i18n = {
-                fa: { subscription: 'اشتراک', st_active: 'فعال', traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل', expiry: 'تاریخ انقضا', status: 'وضعیت', device_limit: 'محدودیت دستگاه', username: 'نام کاربری', announcement: 'اعلان', admin_note: 'یادداشت', qr_code: 'کد QR', copy_all: 'کپی همه', configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی', qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند' },
-                en: { subscription: 'Subscription', st_active: 'Active', traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total', expiry: 'Expiry Date', status: 'Status', device_limit: 'Device Limit', username: 'Username', announcement: 'Announcement', admin_note: 'Note', qr_code: 'QR Code', copy_all: 'Copy All', configurations: 'Configurations', tap_to_copy: 'Tap to copy', qr_title: 'Subscription QR', close: 'Close', copied: 'Copied', all_copied: 'All copied' }
+                fa: { subscription: 'اشتراک', st_active: 'فعال', st_exhausted: 'اتمام حجم', traffic_usage: 'مصرف ترافیک', used: 'مصرف شده', remaining: 'باقیمانده', total: 'حجم کل', expiry: 'تاریخ انقضا', status: 'وضعیت', device_limit: 'محدودیت دستگاه', username: 'نام کاربری', announcement: 'اعلان', admin_note: 'یادداشت', qr_code: 'کد QR', copy_all: 'کپی همه', configurations: 'کانفیگ‌ها', tap_to_copy: 'کلیک برای کپی', qr_title: 'کد QR اشتراک', close: 'بستن', copied: 'کپی شد', all_copied: 'همه کپی شدند' },
+                en: { subscription: 'Subscription', st_active: 'Active', st_exhausted: 'Data Exhausted', traffic_usage: 'Traffic Usage', used: 'Used', remaining: 'Remaining', total: 'Total', expiry: 'Expiry Date', status: 'Status', device_limit: 'Device Limit', username: 'Username', announcement: 'Announcement', admin_note: 'Note', qr_code: 'QR Code', copy_all: 'Copy All', configurations: 'Configurations', tap_to_copy: 'Tap to copy', qr_title: 'Subscription QR', close: 'Close', copied: 'Copied', all_copied: 'All copied' }
             };
 
             const html = document.documentElement;
@@ -3129,5 +3129,31 @@ var qrcode = function() {
   });
 })();
 </script>
-</body>
+<i data-nuc-used style="display:none">{{ user.used_traffic }}</i><i data-nuc-limit style="display:none">{{ user.data_limit }}</i>
+<style data-nuc="pg-exhausted-style">
+[data-nuc-exhausted]{color:#ef4444!important}
+.status-badge-inline[data-nuc-exhausted]{background:rgba(239,68,68,.18)!important}
+</style>
+<script data-nuc="pg-status">
+(function(){
+  function pgStatus(){
+    var u=parseFloat((document.querySelector('[data-nuc-used]')||{textContent:''}).textContent);
+    var l=parseFloat((document.querySelector('[data-nuc-limit]')||{textContent:''}).textContent);
+    if(!(isFinite(u)&&isFinite(l)&&l>0&&u>=l))return;
+    var el=null;
+    el=document.querySelector('[data-i18n="st_active"]');
+    if(!el){var c=document.querySelectorAll('.info-value.success,.detail-value.success,b.ok,.status-badge-inline');for(var i=0;i<c.length;i++){var t=(c[i].textContent||'').trim();if(t==='فعال'||t==='Active'){el=c[i];break;}}}
+    if(!el){var d=document.querySelectorAll('*');for(var i=0;i<d.length;i++){var n=d[i];if(n.children.length===0){var t=(n.textContent||'').trim();if(t==='فعال'||t==='Active'){el=n;break;}}}}
+    if(!el)return;
+    var isEn=/^[A-Za-z]/.test((el.textContent||'').trim());
+    el.setAttribute('data-i18n','st_exhausted');
+    el.setAttribute('data-nuc-exhausted','1');
+    el.textContent=isEn?'Data Exhausted':'اتمام حجم';
+    try{el.style.color='#ef4444';el.classList.remove('ok','success');el.classList.add('danger');}catch(e){}
+  }
+  pgStatus();
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
+})();
+</script>
+\n</body>
 </html>
