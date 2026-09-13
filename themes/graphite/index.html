@@ -253,7 +253,7 @@ html[lang="en"]{direction:ltr}
           <div class="d-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
           <span class="d-label" data-i18n="device_limit">دستگاه</span>
         </div>
-        <span class="d-val">{{ len .emails }}</span>
+        <span class="d-val">{{ if .hwidLimit }}{{ .hwidLimit }}{{ else }}{{ len .emails }}{{ end }}</span>
       </div>
       <div class="detail-item">
         <div class="d-left">
@@ -281,6 +281,13 @@ html[lang="en"]{direction:ltr}
   <div class="card configs-card">
     <div class="section-title" data-i18n="configurations">کانفیگ‌ها (6)</div>
     <div class="config-list">
+<style>
+.nuc-strip{display:flex;flex-direction:column;gap:8px;margin:14px 0;width:100%}
+.nuc-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius,12px);background:var(--surface,var(--card,var(--bg,#131218)));border:1px solid var(--border,var(--line,#ffffff1f));color:var(--text,var(--text-primary,var(--fg,#e6e6eb)));font-size:13px;line-height:1.6;text-decoration:none;word-break:break-word;box-sizing:border-box}
+.nuc-chip b{color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));font-weight:700;white-space:nowrap}
+.nuc-chip .nuc-tg{font-weight:700;color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));text-decoration:none}
+</style><div class="nuc-strip">{{ if .note }}<div class="nuc-chip"><b>یادداشت:</b><span>{{ .note }}</span></div>{{ end }}{{ if .subSupportUrl }}<a class="nuc-chip" href="{{ .subSupportUrl }}" target="_blank" rel="noopener"><b class="nuc-tg">کانال تلگرام</b><span style="direction:ltr;unicode-bidi:embed">{{ .subSupportUrl }}</span></a>{{ end }}</div>
+
       <div class="config-item" data-link="vless://4f4f2f5a-9b15-4f2c-8db4-56cd11c3d34b@demo-main.example.com:443?type=tcp&security=reality&pbk=DDBCriX8SVdGQEnPfozTtMCOnVej1CSZhk4MY9b1u3A&fp=chrome&sni=cdn.example.com&sid=6ba85179e30d4fc2&spx=%2F&flow=xtls-rprx-vision#VLESS-Reality">
         <div class="p-icon vless">VLES</div><div class="c-info"><div class="c-name">VLESS-Reality</div><div class="c-meta"><span>VLESS</span><span class="sep"></span><span data-i18n="tap_to_copy">کلیک برای کپی</span></div></div>
         <button class="copy-btn" aria-label="Copy"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>

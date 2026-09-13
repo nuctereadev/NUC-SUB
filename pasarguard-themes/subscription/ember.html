@@ -1073,7 +1073,7 @@ html[lang="en"] .detail-value { text-align: right; }
           <div class="progress-stat-label" data-i18n="used">مصرف</div>
         </div>
         <div class="progress-stat">
-          <div class="progress-stat-value">{ (user.data_limit - user.used_traffic) | bytesformat }</div>
+          <div class="progress-stat-value">{{ (user.data_limit - user.used_traffic) | bytesformat }}</div>
           <div class="progress-stat-label" data-i18n="remaining">باقیمانده</div>
         </div>
         <div class="progress-stat">

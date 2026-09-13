@@ -579,6 +579,13 @@
 
         <!-- CONFIGS -->
         <div class="configs-header fade-in">
+<style>
+.nuc-strip{display:flex;flex-direction:column;gap:8px;margin:14px 0;width:100%}
+.nuc-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius,12px);background:var(--surface,var(--card,var(--bg,#131218)));border:1px solid var(--border,var(--line,#ffffff1f));color:var(--text,var(--text-primary,var(--fg,#e6e6eb)));font-size:13px;line-height:1.6;text-decoration:none;word-break:break-word;box-sizing:border-box}
+.nuc-chip b{color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));font-weight:700;white-space:nowrap}
+.nuc-chip .nuc-tg{font-weight:700;color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));text-decoration:none}
+</style><div class="nuc-strip">{{ if .note }}<div class="nuc-chip"><b>یادداشت:</b><span>{{ .note }}</span></div>{{ end }}{{ if .hwidLimit }}<div class="nuc-chip"><b>محدودیت دستگاه:</b><span>{{ .hwidLimit }} دستگاه</span></div>{{ end }}{{ if .subSupportUrl }}<a class="nuc-chip" href="{{ .subSupportUrl }}" target="_blank" rel="noopener"><b class="nuc-tg">کانال تلگرام</b><span style="direction:ltr;unicode-bidi:embed">{{ .subSupportUrl }}</span></a>{{ end }}</div>
+
             <span class="configs-title">کانفیگ‌ها</span>
             <span class="configs-count">6</span>
         </div>

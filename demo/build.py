@@ -104,6 +104,8 @@ XUI_CONTEXT = {
     "enabled": True,
     "downloadByte": int(31.5 * 1024 ** 3),
     "uploadByte": int(12.25 * 1024 ** 3),
+    "note": "سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.",
+    "hwidLimit": 3,
 }
 
 
@@ -268,7 +270,7 @@ def _fill_demo_tokens(html):
     return (
         html.replace("@@BRAND_NAME@@", demo_brand_name)
         .replace("@@BRAND_LOGO@@", demo_brand_logo)
-        .replace("@@TG_CHANNEL@@", "")
+        .replace("@@TG_CHANNEL@@", "https://t.me/nuctereadev")
     )
 
 

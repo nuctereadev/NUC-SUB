@@ -134,6 +134,10 @@ body{
 
 /* -------------------------------- countdown -------------------------------- */
 .countdown-widget{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:28px}
+.device-widget{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:16px}
+.device-body{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.device-value{font-size:34px;font-weight:800;color:var(--accent);line-height:1}
+.device-desc{font-size:13px;color:var(--text-tertiary)}
 .countdown-header{display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .countdown-icon{width:36px;height:36px;background:var(--accent-glow);border-radius:10px;display:flex;align-items:center;justify-content:center}
 .countdown-icon svg{width:20px;height:20px;fill:var(--accent)}
@@ -252,12 +256,12 @@ html[dir="ltr"] .info-banner{border-left:1px solid var(--border);border-right-wi
 
 @media(max-width:640px){
   body{padding:12px}
-  .dashboard{gap:16px}
+  .dashboard{gap:16px;grid-template-columns:minmax(0,1fr)}
   .gauge-container{width:160px;height:160px}
   .gauge-percent{font-size:36px}
   .countdown-grid{gap:8px}
   .countdown-value{font-size:24px}
-  .configs-grid{grid-template-columns:1fr}
+  .configs-grid{grid-template-columns:minmax(0,1fr)}
   .action-btn{min-width:120px;font-size:13px}
 }
 
@@ -374,6 +378,25 @@ html[dir="ltr"] .info-banner{border-left:1px solid var(--border);border-right-wi
 
   {{ if .announce }}
   <div class="info-banner full-width">{{ .announce }}</div>
+  {{ end }}
+
+  {{ if .note }}
+  <div class="info-banner full-width"><strong data-i18n="note">یادداشت:</strong> {{ .note }}</div>
+  {{ end }}
+
+  {{ if .hwidLimit }}
+  <div class="device-widget full-width">
+    <div class="widget-header">
+      <div class="widget-icon">
+        <svg viewBox="0 0 24 24"><path d="M7 1h10a1 1 0 0 1 1 1v20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm1 3v2h8V4H8zm0 11h8v-2H8v2zm0 5h8v-2H8v2z"/></svg>
+      </div>
+      <div class="widget-title" data-i18n="device_limit">محدودیت دستگاه</div>
+    </div>
+    <div class="device-body">
+      <span class="device-value">{{ .hwidLimit }}</span>
+      <span class="device-desc" data-i18n="devices">دستگاه</span>
+    </div>
+  </div>
   {{ end }}
 
   <!-- Actions -->
@@ -2749,7 +2772,7 @@ var D = {
   up: {{ .downloadByte }}, down: {{ .uploadByte }}
 };
 
-var i18n={fa:{service_status:'وضعیت سرویس',active:'فعال',inactive:'غیرفعال',expired:'منقضی',exhausted:'اتمام حجم',your_subscription:'اشتراک اختصاصی شما',used:'مصرف شده',used_stat:'مصرف',total:'کل',remaining:'باقی',remaining_time:'زمان باقی\u200cمانده',days:'روز',hours:'ساعت',minutes:'دقیقه',seconds:'ثانیه',expiry_date:'تاریخ انقضا:',unlimited:'∞ نامحدود',protocol_distribution:'توزیع پروتکل\u200cها',telegram_channel:'کانال تلگرام',scan_qr:'اسکن QR',copy_all:'کپی همه',configs:'کانفیگ\u200cها',qr_code:'کد QR',config_qr_title:'کد QR کانفیگ',subscription_qr_title:'کد QR اشتراک',designed_by:'طراحی شده توسط',copied:'کپی شد!'},en:{service_status:'Service Status',active:'Active',inactive:'Inactive',expired:'Expired',exhausted:'Data Exhausted',your_subscription:'Your Personal Subscription',used:'Used',used_stat:'Used',total:'Total',remaining:'Remaining',remaining_time:'Remaining Time',days:'Days',hours:'Hours',minutes:'Minutes',seconds:'Seconds',expiry_date:'Expiry Date:',unlimited:'∞ Unlimited',protocol_distribution:'Protocol Distribution',telegram_channel:'Telegram',scan_qr:'Scan QR',copy_all:'Copy All',configs:'Configs',qr_code:'QR Code',config_qr_title:'Config QR',subscription_qr_title:'Subscription QR',designed_by:'Designed by',copied:'Copied!'}};
+var i18n={fa:{service_status:'وضعیت سرویس',active:'فعال',inactive:'غیرفعال',expired:'منقضی',exhausted:'اتمام حجم',your_subscription:'اشتراک اختصاصی شما',used:'مصرف شده',used_stat:'مصرف',total:'کل',remaining:'باقی',remaining_time:'زمان باقی\u200cمانده',days:'روز',hours:'ساعت',minutes:'دقیقه',seconds:'ثانیه',expiry_date:'تاریخ انقضا:',unlimited:'∞ نامحدود',protocol_distribution:'توزیع پروتکل\u200cها',telegram_channel:'کانال تلگرام',note:'یادداشت:',device_limit:'محدودیت دستگاه',devices:'دستگاه',scan_qr:'اسکن QR',copy_all:'کپی همه',configs:'کانفیگ\u200cها',qr_code:'کد QR',config_qr_title:'کد QR کانفیگ',subscription_qr_title:'کد QR اشتراک',designed_by:'طراحی شده توسط',copied:'کپی شد!'},en:{service_status:'Service Status',active:'Active',inactive:'Inactive',expired:'Expired',exhausted:'Data Exhausted',your_subscription:'Your Personal Subscription',used:'Used',used_stat:'Used',total:'Total',remaining:'Remaining',remaining_time:'Remaining Time',days:'Days',hours:'Hours',minutes:'Minutes',seconds:'Seconds',expiry_date:'Expiry Date:',unlimited:'∞ Unlimited',protocol_distribution:'Protocol Distribution',telegram_channel:'Telegram',note:'Note:',device_limit:'Device Limit',devices:'Devices',scan_qr:'Scan QR',copy_all:'Copy All',configs:'Configs',qr_code:'QR Code',config_qr_title:'Config QR',subscription_qr_title:'Subscription QR',designed_by:'Designed by',copied:'Copied!'}};
 var currentLang='fa';try{currentLang=localStorage.getItem('nuc-lang')||'fa';}catch(e){}
 function t(k){return(i18n[currentLang]&&i18n[currentLang][k])||(i18n['fa']&&i18n['fa'][k])||k;}
 function applyLang(l){

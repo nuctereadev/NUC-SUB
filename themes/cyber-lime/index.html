@@ -757,7 +757,7 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span data-i18n="device_limit">دستگاه</span>
       </span>
-      <span class="info-value">{{ len .emails }}</span>
+      <span class="info-value">{{ if .hwidLimit }}{{ .hwidLimit }}{{ else }}{{ len .emails }}{{ end }}</span>
     </div>
     <div class="info-card">
       <span class="info-label">
@@ -794,6 +794,13 @@ html[lang="en"] .config-item:hover { transform: translateX(2px); }
 
   <!-- CONFIGS -->
   <div class="configs-section">
+<style>
+.nuc-strip{display:flex;flex-direction:column;gap:8px;margin:14px 0;width:100%}
+.nuc-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius,12px);background:var(--surface,var(--card,var(--bg,#131218)));border:1px solid var(--border,var(--line,#ffffff1f));color:var(--text,var(--text-primary,var(--fg,#e6e6eb)));font-size:13px;line-height:1.6;text-decoration:none;word-break:break-word;box-sizing:border-box}
+.nuc-chip b{color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));font-weight:700;white-space:nowrap}
+.nuc-chip .nuc-tg{font-weight:700;color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));text-decoration:none}
+</style><div class="nuc-strip">{{ if .note }}<div class="nuc-chip"><b>یادداشت:</b><span>{{ .note }}</span></div>{{ end }}{{ if .subSupportUrl }}<a class="nuc-chip" href="{{ .subSupportUrl }}" target="_blank" rel="noopener"><b class="nuc-tg">کانال تلگرام</b><span style="direction:ltr;unicode-bidi:embed">{{ .subSupportUrl }}</span></a>{{ end }}</div>
+
     <div class="section-head">
       <span class="section-title" data-i18n="configurations">کانفیگ‌ها</span>
       <span class="section-count">6</span>

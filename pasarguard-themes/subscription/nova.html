@@ -684,7 +684,7 @@ html[lang="en"] { direction: ltr; }
 html[lang="en"] .detail-value { text-align: right; }
 
 @media (max-width: 768px) {
-  .app { grid-template-columns: 1fr; padding: 16px; }
+  .app { grid-template-columns: minmax(0, 1fr); padding: 16px; }
   .card-traffic, .card-details, .card-announce, .card-note, .card-configs, .action-row {
     grid-column: 1 / -1;
   }

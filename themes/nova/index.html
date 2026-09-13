@@ -1027,7 +1027,7 @@ html[lang="en"] .detail-value { text-align: right; }
         </div>
         <span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span>
       </div>
-      <span class="detail-value">{{ len .emails }}</span>
+      <span class="detail-value">{{ if .hwidLimit }}{{ .hwidLimit }}{{ else }}{{ len .emails }}{{ end }}</span>
     </div>
 
     <div class="detail-row">
@@ -1054,10 +1054,11 @@ html[lang="en"] .detail-value { text-align: right; }
     </div>
     <div class="callout-content">
       <div class="callout-title" data-i18n="announcement">اعلان</div>
-      <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+      <div class="callout-text">{{ if .note }}{{ .note }}{{ end }}</div>
     
   </div>
 
+  </div>
   <!-- ===== ADMIN NOTE ===== -->
   <div class="callout note">
     <div class="callout-icon">
@@ -1070,8 +1071,9 @@ html[lang="en"] .detail-value { text-align: right; }
     </div>
     <div class="callout-content">
       <div class="callout-title" data-i18n="admin_note">یادداشت</div>
-      <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+      <div class="callout-text">{{ if .note }}{{ .note }}{{ end }}</div>
     
+  </div>
   </div>
 
   <!-- ===== ACTION BUTTONS ===== -->
@@ -1096,6 +1098,13 @@ html[lang="en"] .detail-value { text-align: right; }
 
   <!-- ===== CONFIGS SECTION ===== -->
   <div class="configs-section">
+<style>
+.nuc-strip{display:flex;flex-direction:column;gap:8px;margin:14px 0;width:100%}
+.nuc-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius,12px);background:var(--surface,var(--card,var(--bg,#131218)));border:1px solid var(--border,var(--line,#ffffff1f));color:var(--text,var(--text-primary,var(--fg,#e6e6eb)));font-size:13px;line-height:1.6;text-decoration:none;word-break:break-word;box-sizing:border-box}
+.nuc-chip b{color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));font-weight:700;white-space:nowrap}
+.nuc-chip .nuc-tg{font-weight:700;color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));text-decoration:none}
+</style><div class="nuc-strip">{{ if .subSupportUrl }}<a class="nuc-chip" href="{{ .subSupportUrl }}" target="_blank" rel="noopener"><b class="nuc-tg">کانال تلگرام</b><span style="direction:ltr;unicode-bidi:embed">{{ .subSupportUrl }}</span></a>{{ end }}</div>
+
     <div class="section-header">
       <span class="section-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
@@ -3861,5 +3870,6 @@ document.querySelectorAll('[data-i18n="st_active"]').forEach(function(el){
 })();
 })();
 </script>
+</div>
 </body>
 </html>

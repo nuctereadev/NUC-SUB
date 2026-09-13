@@ -553,14 +553,15 @@
                 <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 8a5 5 0 0 1 0 8"/></svg></div>
                 <div class="callout-content">
                     <div class="callout-title">اعلان</div>
-                    <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+                    <div class="callout-text">{{ if .note }}{{ .note }}{{ end }}</div>
                 
+            </div>
             </div>
             <div class="callout note">
                 <div class="callout-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
                 <div class="callout-content">
                     <div class="callout-title">یادداشت</div>
-                    <div class="callout-text">{{ if .announce }}{{ .announce }}{{ end }}</div>
+                    <div class="callout-text">{{ if .note }}{{ .note }}{{ end }}</div>
                 
             </div>
         </div>
@@ -579,6 +580,13 @@
 
         <!-- CONFIGS -->
         <div class="configs-header">
+<style>
+.nuc-strip{display:flex;flex-direction:column;gap:8px;margin:14px 0;width:100%}
+.nuc-chip{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius,12px);background:var(--surface,var(--card,var(--bg,#131218)));border:1px solid var(--border,var(--line,#ffffff1f));color:var(--text,var(--text-primary,var(--fg,#e6e6eb)));font-size:13px;line-height:1.6;text-decoration:none;word-break:break-word;box-sizing:border-box}
+.nuc-chip b{color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));font-weight:700;white-space:nowrap}
+.nuc-chip .nuc-tg{font-weight:700;color:var(--accent,var(--neon-purple,var(--primary,#8b5cf6)));text-decoration:none}
+</style><div class="nuc-strip">{{ if .hwidLimit }}<div class="nuc-chip"><b>محدودیت دستگاه:</b><span>{{ .hwidLimit }} دستگاه</span></div>{{ end }}{{ if .subSupportUrl }}<a class="nuc-chip" href="{{ .subSupportUrl }}" target="_blank" rel="noopener"><b class="nuc-tg">کانال تلگرام</b><span style="direction:ltr;unicode-bidi:embed">{{ .subSupportUrl }}</span></a>{{ end }}</div>
+
             <span class="configs-title">کانفیگ‌ها</span>
             <span class="configs-count">6</span>
         </div>
@@ -3166,5 +3174,6 @@ document.querySelectorAll('[data-i18n="st_active"]').forEach(function(el){
 })();
 })();
 </script>
+</div>
 </body>
 </html>

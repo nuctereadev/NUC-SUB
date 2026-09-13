@@ -13,7 +13,7 @@ small.
 
 ## Features
 
-- Ready-made themes: 33 for Pasarguard (Jinja2) and 23 for 3x-ui (Go), from
+- Ready-made themes: 33 for Pasarguard (Jinja2) and 31 for 3x-ui (Go), from
   the classic `gradient` / `volt` / `arctic` designs to dozens of modern ones
   (`indigo`, `zenith`, `ocean`, `command`, ...).
 - Two rendering engines: Go `html/template` for 3x-ui (via `subThemeDir`) and
@@ -196,9 +196,9 @@ NUC-SUB/
 │   ├── css/                   # Local font/icon stylesheets
 │   ├── fonts/                 # IRANSansX font files
 │   └── fa/                    # FontAwesome glyphs
-├── themes/                    # 3x-ui themes (Go html/template), 8 themes
+├── themes/                    # 3x-ui themes (Go html/template), 31 themes
 ├── pasarguard-themes/
-│   └── subscription/          # Pasarguard themes (Jinja2), 8 files
+│   └── subscription/          # Pasarguard themes (Jinja2), 33 files
 ├── LICENSE                    # MIT
 └── README.md
 ```

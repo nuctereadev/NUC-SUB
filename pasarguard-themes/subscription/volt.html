@@ -740,12 +740,12 @@ html[dir="ltr"] .info-banner {
 
 @media (max-width: 640px) {
   body { padding: 12px; }
-  .dashboard { gap: 16px; }
+  .dashboard { gap: 16px; grid-template-columns: minmax(0, 1fr); }
   .gauge-container { width: 160px; height: 160px; }
   .gauge-percent { font-size: 36px; }
   .countdown-grid { gap: 8px; }
   .countdown-value { font-size: 24px; }
-  .configs-grid { grid-template-columns: 1fr; }
+  .configs-grid { grid-template-columns: minmax(0, 1fr); }
   .action-btn { min-width: 120px; font-size: 13px; }
 }
 </style>
