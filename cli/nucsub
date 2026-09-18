@@ -217,6 +217,7 @@ download_theme() {  # download_theme <name>
         | xargs -P 6 -n 1 bash -c 'u="${1%%|*}"; f="${1#*|}"; curl -fsSL -m 60 "$u" -o "$f" || true' _ ; then
         :
     fi
+    fi
     ok "Theme '$name' downloaded."
     return 0
 }
