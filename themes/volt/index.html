@@ -116,6 +116,16 @@ body {
   margin-bottom: 2px;
 }
 
+.brand-text h1 .nuc-sub-id {
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.brand-text h1 .nuc-sub-sep {
+  opacity: 0.5;
+  font-weight: 400;
+}
+
 .brand-text p {
   font-size: 12px;
   color: var(--text-secondary);
@@ -759,7 +769,7 @@ html[dir="ltr"] .info-banner {
     <div class="brand">
       <div class="brand-icon">N</div>
       <div class="brand-text">
-        <h1><i data-nuc-user>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</i></h1>
+        <h1><span class="nuc-sub-id" data-nuc-subid></span><i data-nuc-user>{{ range $i, $e := .emails }}{{ if $i }}{{ ", " }}{{ end }}{{ $e }}{{ end }}</i></h1>
         <p class="nuc-brand-name">Volt</p>
         <p>NUC-SUB Dashboard</p>
       </div>
@@ -3754,6 +3764,7 @@ window.nucQrDataURL=function(t){var Q=window.NucQR,d;if(!Q)return '';try{d=decod
 var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
 function pad(n){return String(n).length<2?'0'+n:n;}
 function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}
+fill('[data-nuc-subid]',function(el){var p=(location.pathname||'/').split('/').filter(Boolean);var s=p.length?decodeURIComponent(p[p.length-1]):'';if(s){el.textContent='';el.insertAdjacentHTML('beforeend',s+'<span class="nuc-sub-sep"> - </span>');}});
 var pct=D.total>0?Math.min(100,D.used/D.total*100):0;
 fill('[data-nuc-expire]',function(el){if(D.expire>0){var d=new Date(D.expire*1000);el.textContent=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}else{el.textContent="\u221E";}});
 fill('[data-nuc-days]',function(el){if(D.expire>0){var n=Math.ceil((D.expire*1000-Date.now())/86400000);el.textContent=n>0?String(n).toLocaleString('fa-IR'):'0';}else{el.textContent="\u221E";}});
