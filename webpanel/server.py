@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 """
-NUC-SUB web panel — ultra-lightweight web panel for nucsub (3x-ui theme engine).
+NUC-SUB web panel — ultra-lightweight web panel for nucsub (3x-ui / Pasarguard theme engine).
 
 A dependency-free Python3 stdlib HTTP server that:
   * serves the static SPA in --base (index.html, app.js, style.css)
   * guards every /api/* route with a bearer token (query ?token= or header)
   * shells out to the nucsub script for privileged actions
-  * manages per-install settings (telegram channel, etc.) via config.json
+  * manages per-install settings (telegram channel, brand name, brand logo)
+    via config.json — the SAME single source of truth the CLI uses
 
 Usage:
   python3 server.py --port 8080 --token <tok> --base <webpanel>
                    --cli <path/to/nucsub> --themes <themesDir> --db <xui.db>
 """
 import argparse
+import base64
 import hmac
 import json
+import logging
 import mimetypes
 import os
 import re
 import socket
 import subprocess
-import sys
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -29,14 +30,27 @@ ARGS = None
 HOST_PORT = 8080
 SETTINGS = {}
 SETTINGS_FILE = ""
+INSTALL_DIR = ""
+
+LOG = logging.getLogger("nuc-sub-webpanel")
+
+# ---------------------------------------------------------------------------
+# Settings persistence (config.json in install dir — shared with the CLI)
+# ---------------------------------------------------------------------------
+SAFE_SETTINGS_KEYS = {"telegram_channel", "brand_name", "brand_logo"}
+BRAND_NAME_MAX = 30
+MAX_LOGO_BYTES = 1_048_576            # 1 MiB of decoded image payload
+MAX_POST_BODY = 2_400_000             # room for base64(1 MiB) + other fields
+TELEGRAM_RE = re.compile(r"^https://t\.me/[A-Za-z0-9_]{5,}$")
+# brand name is injected into a single-quoted JS string in themes, and rendered
+# via textContent — so no quotes/backslashes/control characters are allowed.
+BRAND_NAME_BAD = re.compile(r"['\"\\\x00-\x1f]")
 
 if mimetypes.guess_type("x.woff2")[0] is None:
     mimetypes.add_type("font/woff2", ".woff2")
 
-# ---------------------------------------------------------------------------
-# Settings persistence (config.json in install dir)
-# ---------------------------------------------------------------------------
-SAFE_SETTINGS_KEYS = {"telegram_channel", "brand_name", "brand_logo"}
+def _log(msg, *args):
+    LOG.warning("[nuc-sub] %s", msg % args if args else msg)
 
 def _settings_path():
     return SETTINGS_FILE
@@ -61,7 +75,7 @@ def save_settings():
     if d and not os.path.isdir(d):
         os.makedirs(d, mode=0o700, exist_ok=True)
     tmp = path + ".tmp"
-    with open(tmp, "w") as f:
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(SETTINGS, f, indent=2, ensure_ascii=False)
         f.flush()
         os.fsync(f.fileno())
@@ -69,7 +83,59 @@ def save_settings():
     os.chmod(path, 0o600)
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Validation helpers
+# ---------------------------------------------------------------------------
+def sniff_image_bytes(raw):
+    """Return the real image MIME from magic bytes, or '' if none match."""
+    if raw[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if raw[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if raw[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if len(raw) >= 12 and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        return "image/webp"
+    return ""
+
+ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+
+def validate_logo_data_url(value):
+    """Validate a data:image/...;base64,... logo URL. Returns (ok, err_index, raw_len)."""
+    if not value:
+        return True, "", 0
+    if not value.startswith("data:image/"):
+        return False, "invalid", len(value)
+    m = re.match(r"^data:(image/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)$", value)
+    if not m:
+        return False, "invalid", len(value)
+    declared, b64part = m.group(1), m.group(2)
+    try:
+        raw = base64.b64decode(b64part, validate=True)
+    except Exception:  # noqa: BLE001
+        return False, "invalid", len(value)
+    if not raw:
+        return False, "invalid", 0
+    if len(raw) > MAX_LOGO_BYTES:
+        return False, "too_large", len(raw)
+    real = sniff_image_bytes(raw)
+    if not real:
+        return False, "not_image", len(raw)
+    if declared not in ALLOWED_IMAGE_MIMES or declared != real:
+        return False, "mime_mismatch", len(raw)
+    return True, "", len(raw)
+
+def is_valid_url(url):
+    """Basic URL validation for telegram channel."""
+    if not url:
+        return True  # empty is allowed (clears)
+    return bool(TELEGRAM_RE.match(url.strip()))
+
+def is_valid_theme_name(name):
+    """Reject anything not a safe bare identifier."""
+    return bool(re.match(r'^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$', name))
+
+# ---------------------------------------------------------------------------
+# CLI helper
 # ---------------------------------------------------------------------------
 def run_cli(args, input_data=None):
     """Run nucsub CLI and return structured result. Validates args for safety."""
@@ -87,17 +153,8 @@ def run_cli(args, input_data=None):
             "stderr": out.stderr or "",
         }
     except Exception as e:  # noqa: BLE001
+        _log("cli %s raised: %r", args, e)
         return {"ok": False, "code": -1, "stdout": "", "stderr": str(e)}
-
-def is_valid_theme_name(name):
-    """Reject anything not a safe bare identifier."""
-    return bool(re.match(r'^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$', name))
-
-def is_valid_url(url):
-    """Basic URL validation for telegram channel."""
-    if not url:
-        return True  # empty is allowed (clears)
-    return bool(re.match(r'^https://t\.me/[A-Za-z0-9_]{5,}$', url.strip()))
 
 def find_free_port(start=8080, end=9999):
     """Find a free TCP port in range [start, end)."""
@@ -116,7 +173,7 @@ def find_free_port(start=8080, end=9999):
 # HTTP Handler
 # ---------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = "nuc-sub-webpanel/2.1.0"
+    server_version = "nuc-sub-webpanel/2.2.0"
 
     def log_message(self, *a):
         pass
@@ -125,11 +182,9 @@ class Handler(BaseHTTPRequestHandler):
     def _authorized(self, qs):
         if not ARGS.token:
             return True
-        # header:  Authorization: Bearer <tok>
         auth = self.headers.get("Authorization", "")
         if hmac.compare_digest(auth[:7], "Bearer ") and hmac.compare_digest(auth[7:], ARGS.token):
             return True
-        # cookie:  token=<tok>  OR  query:  ?token=<tok>
         cookie = self.headers.get("Cookie", "")
         if self._cookie_token(cookie):
             return True
@@ -234,69 +289,95 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"error": "unknown api"}, 404)
 
     def _handle_settings_post(self):
-        """Handle POST /api/settings — update settings dict."""
-        content_len = int(self.headers.get("Content-Length", 0))
-        if content_len > 4096:
-            self._send_json({"error": "payload too large"}, 413)
+        """Handle POST /api/settings — atomically persists shared settings.
+
+        Logs real failure causes to stderr (debug), returns only sanitized
+        codes/messages to the client, and keeps the saved values as the single
+        source of truth. A theme refresh is *requested* afterwards but a CLI
+        hiccup never fails the save itself."""
+        content_len = int(self.headers.get("Content-Length", 0) or 0)
+        if content_len > MAX_POST_BODY:
+            _log("settings POST rejected: payload %dB > %dB", content_len, MAX_POST_BODY)
+            self._send_json({"error": "payload_too_large"}, 413)
+            return
+        if content_len < 1:
+            self._send_json({"error": "empty_body"}, 400)
             return
         body = self.rfile.read(content_len)
         try:
             data = json.loads(body)
-        except (json.JSONDecodeError, ValueError):
-            self._send_json({"error": "invalid json"}, 400)
+        except (json.JSONDecodeError, ValueError) as e:
+            _log("settings POST invalid JSON: %r", e)
+            self._send_json({"error": "invalid_json"}, 400)
             return
         if not isinstance(data, dict):
-            self._send_json({"error": "expected object"}, 400)
+            self._send_json({"error": "expected_object"}, 400)
             return
 
+        remove_logo = data.get("remove_logo") is True
         updated = {}
         for k, v in data.items():
             if k not in SAFE_SETTINGS_KEYS:
                 continue
             if k == "telegram_channel":
                 v = str(v).strip()
-                if v and not is_valid_url(v):
-                    self._send_json({"error": "invalid telegram URL (must be https://t.me/username)"}, 400)
+                if not v:
+                    continue  # empty = no change (save must never wipe other fields)
+                if not is_valid_url(v):
+                    _log("settings POST rejected telegram_channel: %r", v[:200])
+                    self._send_json({"error": "invalid_telegram_url"}, 400)
                     return
                 SETTINGS[k] = v
                 updated[k] = v
             elif k == "brand_name":
                 v = str(v).strip()
-                if len(v) > 64:
-                    self._send_json({"error": "brand name too long (max 64 chars)"}, 400)
+                if not v:
+                    continue  # empty = no change
+                if len(v) > BRAND_NAME_MAX:
+                    _log("settings POST rejected brand_name: %d chars (max %d)",
+                         len(v), BRAND_NAME_MAX)
+                    self._send_json({"error": "brand_name_too_long"}, 400)
+                    return
+                if BRAND_NAME_BAD.search(v):
+                    _log("settings POST rejected brand_name: invalid characters")
+                    self._send_json({"error": "brand_name_invalid"}, 400)
                     return
                 SETTINGS[k] = v
                 updated[k] = v
             elif k == "brand_logo":
                 v = str(v).strip()
-                if v and not v.startswith("data:image/"):
-                    self._send_json({"error": "brand logo must be a data:image URL"}, 400)
-                    return
-                if len(v) > 1_050_000:
-                    self._send_json({"error": "brand logo too large (max ~1 MiB)"}, 413)
+                if not v:
+                    # empty logo = no change UNLESS removal was explicitly requested
+                    if remove_logo:
+                        SETTINGS[k] = ""
+                        updated[k] = ""
+                    continue
+                ok, err, rawlen = validate_logo_data_url(v)
+                if not ok:
+                    _log("settings POST rejected brand_logo (%s): %d bytes", err, rawlen)
+                    self._send_json({"error": "brand_logo_" + err}, 400)
                     return
                 SETTINGS[k] = v
                 updated[k] = v
-            else:
-                SETTINGS[k] = v
-                updated[k] = v
 
-        save_settings()
+        try:
+            save_settings()
+        except OSError as e:
+            _log("settings POST save failed: %r", e)
+            self._send_json({"error": "save_failed"}, 500)
+            return
 
-        # Refresh the active theme so the channel/branding appears immediately.
-        if "telegram_channel" in updated:
-            if updated["telegram_channel"]:
-                run_cli(["telegram", "set", updated["telegram_channel"]])
-            else:
-                run_cli(["telegram", "clear"])
-        if "brand_name" in updated or "brand_logo" in updated:
-            run_cli(["brand", "set-name", updated.get("brand_name", "") or ""])
-            if updated.get("brand_logo"):
-                run_cli(["brand", "set-logo-data", updated["brand_logo"]])
-            else:
-                run_cli(["brand", "clear-logo"])
+        # One shared re-sync: the CLI reads the same config.json, so a single
+        # `refresh` is enough (no per-field CLI writes that could drift).
+        warn = None
+        if updated:
+            res = run_cli(["refresh"])
+            if not res["ok"]:
+                _log("refresh after save failed: %r", res)
+                warn = "theme_refresh_failed"
 
-        self._send_json({"ok": True, "settings": SETTINGS, "updated": updated})
+        self._send_json({"ok": True, "settings": SETTINGS, "updated": updated,
+                         "warn": warn})
 
     # -- HTTP methods -------------------------------------------------------
     def do_GET(self):
@@ -319,20 +400,55 @@ class Handler(BaseHTTPRequestHandler):
         super().send_error(code, message, explain)
 
 
+def _resolve_install_dir(base):
+    """The install dir is the directory that CONTAINS the webpanel dir.
+
+    (e.g. /opt/nuc-sub when base is /opt/nuc-sub/webpanel) — fall back to the
+    base dir itself when base points straight at the install dir."""
+    base = os.path.realpath(base)
+    if os.path.basename(base) == "webpanel":
+        return os.path.dirname(base)
+    if os.path.isfile(os.path.join(base, "config.json")):
+        return base
+    return os.path.dirname(base)
+
+
 def main():
-    global ARGS, SETTINGS_FILE, HOST_PORT
+    global ARGS, SETTINGS_FILE, HOST_PORT, INSTALL_DIR
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--token")
     ap.add_argument("--base", default=".")
-    ap.add_argument("--cli", default="/opt/nuc-sub/cli/nucsub")
+    ap.add_argument("--cli", default="")
     ap.add_argument("--themes")
     ap.add_argument("--db")
     ARGS = ap.parse_args()
 
-    # Load settings from config.json (sibling to --base or in install dir)
-    install_dir = os.path.dirname(os.path.dirname(os.path.realpath(ARGS.base)))
-    SETTINGS_FILE = os.path.join(install_dir, "config.json")
+    INSTALL_DIR = _resolve_install_dir(ARGS.base)
+    if not ARGS.cli:
+        ARGS.cli = os.path.join(INSTALL_DIR, "cli", "nucsub")
+
+    # config.json sits beside the CLI install — the SAME file the CLI reads.
+    SETTINGS_FILE = os.path.join(INSTALL_DIR, "config.json")
+
+    # Migrate any legacy settings that used to land one level up (fixes the
+    # historical split where CLI+webpanel wrote different files).
+    legacy = os.path.join(os.path.dirname(INSTALL_DIR.rstrip(os.sep)) or os.sep,
+                          "config.json")
+    if (not os.path.isfile(SETTINGS_FILE)
+            and os.path.isfile(legacy)
+            and os.path.dirname(legacy) != INSTALL_DIR):
+        try:
+            with open(legacy, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                os.chmod(SETTINGS_FILE, 0o600)
+            _log("migrated legacy settings from %s", legacy)
+        except Exception as e:  # noqa: BLE001
+            _log("legacy migration skipped: %r", e)
+
     load_settings()
 
     # Find a free port if the requested one is occupied
@@ -348,7 +464,7 @@ def main():
 
     # Persist the effective port so the CLI/menus report the real running port.
     try:
-        with open(os.path.join(install_dir, ".webport"), "w") as f:
+        with open(os.path.join(INSTALL_DIR, ".webport"), "w") as f:
             f.write(str(port))
     except OSError:
         pass

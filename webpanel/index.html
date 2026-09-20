@@ -121,15 +121,16 @@
             Workspace
           </div>
 
-          <button class="nav-item active" type="button">
+          <button class="nav-item active" type="button" data-view="themes" onclick="switchView('themes')">
             <i class="fa-solid fa-layer-group"></i>
             <span data-i18n="nav.themes">مدیریت قالب</span>
             <span class="nav-active-indicator"></span>
           </button>
 
-          <button class="nav-item" type="button" onclick="$('tg-input').focus()">
+          <button class="nav-item" type="button" data-view="settings" onclick="switchView('settings')">
             <i class="fa-solid fa-gear"></i>
             <span data-i18n="nav.settings">تنظیمات</span>
+            <span class="nav-active-indicator"></span>
           </button>
 
         </nav>
@@ -164,17 +165,17 @@
 
     <nav class="m-bottom-nav" aria-label="Mobile navigation">
 
-      <a class="m-nav-item" href="#statusbar" data-m-nav="system">
+      <a class="m-nav-item" href="#statusbar" data-m-nav="system" data-view="themes" onclick="return navMobile(this)">
         <i class="fa-solid fa-gauge-high"></i>
         <span data-i18n="nav.tab.system">سیستم</span>
       </a>
 
-      <a class="m-nav-item active" href="#themes-grid" data-m-nav="themes">
+      <a class="m-nav-item active" href="#themes-grid" data-m-nav="themes" data-view="themes" onclick="return navMobile(this)">
         <i class="fa-solid fa-palette"></i>
         <span data-i18n="nav.tab.themes">قالب</span>
       </a>
 
-      <a class="m-nav-item" href="#tg-input" data-m-nav="settings">
+      <a class="m-nav-item" href="#view-settings" data-m-nav="settings" data-view="settings" onclick="return navMobile(this)">
         <i class="fa-solid fa-gear"></i>
         <span data-i18n="nav.tab.settings">تنظیمات</span>
       </a>
@@ -239,7 +240,7 @@
 
             <i class="fa-solid fa-chevron-left"></i>
 
-            <strong data-i18n="nav.themes">مدیریت قالب</strong>
+            <strong data-i18n="nav.themes" id="crumb-title">مدیریت قالب</strong>
 
           </div>
 
@@ -270,6 +271,13 @@
            ===================================================== -->
 
       <div class="workspace">
+
+
+        <!-- ===================================================
+             VIEW: THEMES  (template management)
+             =================================================== -->
+
+        <div id="view-themes">
 
 
         <!-- ===================================================
@@ -493,14 +501,53 @@
 
         </section>
 
+        </div><!-- /view-themes -->
+
 
         <!-- ===================================================
-             TELEGRAM SETTINGS
+             VIEW: SETTINGS  (independent settings page)
              =================================================== -->
 
-        <section class="settings-section">
+        <div id="view-settings" style="display:none">
 
-          <div class="settings-header">
+          <section class="page-header">
+
+            <div class="page-header-main">
+
+              <div class="page-kicker">
+                <span class="kicker-line"></span>
+                <span data-i18n="set.kicker">BRANDING &amp; TELEGRAM</span>
+              </div>
+
+              <h2 data-i18n="set.heading">تنظیمات</h2>
+
+              <p data-i18n="set.desc">
+                این تنظیمات یک‌جا در تمام قالب‌ها از یک منبع واحد اعمال می‌شود.
+              </p>
+
+            </div>
+
+
+            <div class="page-header-actions">
+
+              <button
+                class="btn btn-secondary"
+                onclick="loadSettings(true)"
+                type="button"
+                data-i18n-title="page.refresh"
+                title="تازه‌سازی"
+                aria-label="تازه‌سازی"
+              >
+                <i class="fa-solid fa-rotate-right"></i>
+                <span data-i18n="page.refresh">تازه‌سازی</span>
+              </button>
+
+            </div>
+
+          </section>
+
+
+          <section class="settings-card">
 
             <div class="settings-heading">
 
@@ -515,131 +562,145 @@
                 </span>
 
                 <h3 data-i18n="set.title">
-                  تنظیمات کانال تلگرام
+                  تنظیمات برندینگ و تلگرام
                 </h3>
 
-                <p data-i18n="set.desc">
-                  لینک کانال تلگرام در قالب‌های سابسکریپشن نمایش داده خواهد شد.
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="settings-form">
-
-            <div class="field settings-field">
-
-              <label for="tg-input" data-i18n="set.tg.label">
-                لینک کانال تلگرام
-              </label>
-
-              <div class="input-shell">
-
-                <i class="fa-solid fa-link"></i>
-
-                <input
-                  id="tg-input"
-                  type="text"
-                  data-i18n-ph="set.tg.ph"
-                  placeholder="https://t.me/your_channel"
-                  autocomplete="off"
-                  dir="ltr"
-                  spellcheck="false"
-                >
-
               </div>
 
             </div>
 
 
-            <div class="field settings-field">
+            <form id="settings-form" class="sv-form" novalidate>
 
-              <label for="brand-name-input" data-i18n="set.brand.label">
-                نام برند
-              </label>
+              <div class="sv-row">
 
-              <div class="input-shell">
+                <div class="field sv-field">
 
-                <i class="fa-solid fa-tag"></i>
+                  <label for="tg-input" data-i18n="set.tg.label">
+                    لینک کانال تلگرام
+                  </label>
 
-                <input
-                  id="brand-name-input"
-                  type="text"
-                  data-i18n-ph="set.brand.ph"
-                  placeholder="NUCTEREA"
-                  autocomplete="off"
-                  dir="ltr"
-                  spellcheck="false"
-                  maxlength="64"
-                >
+                  <div class="input-shell">
 
-              </div>
+                    <i class="fa-solid fa-link"></i>
 
-            </div>
+                    <input
+                      id="tg-input"
+                      type="text"
+                      data-i18n-ph="set.tg.ph"
+                      placeholder="https://t.me/your_channel"
+                      autocomplete="off"
+                      dir="ltr"
+                      spellcheck="false"
+                    >
 
+                  </div>
 
-            <div class="field settings-field">
+                  <div class="field-error" id="tg-err" role="alert"></div>
 
-              <label data-i18n="set.logo.label">
-                لوگوی برند
-              </label>
-
-              <div class="brand-logo-row">
-
-                <div class="brand-logo-preview" id="brand-logo-preview" hidden>
-                  <img id="brand-logo-img" alt="" src="">
                 </div>
 
-                <div class="input-shell">
 
-                  <i class="fa-solid fa-upload"></i>
+                <div class="field sv-field">
 
-                  <input
-                    id="brand-logo-input"
-                    type="file"
-                    accept="image/*"
-                    data-i18n-ph="set.logo.ph"
-                    title="Upload logo"
-                  >
+                  <label for="brand-name-input">
+                    <span data-i18n="set.brand.label">نام برند</span>
+                    <span class="char-counter"><b id="brand-count">0</b>/30</span>
+                  </label>
+
+                  <div class="input-shell">
+
+                    <i class="fa-solid fa-tag"></i>
+
+                    <input
+                      id="brand-name-input"
+                      type="text"
+                      data-i18n-ph="set.brand.ph"
+                      placeholder="NUCTEREA"
+                      autocomplete="off"
+                      dir="auto"
+                      spellcheck="false"
+                      maxlength="30"
+                    >
+
+                  </div>
+
+                  <div class="field-error" id="brand-err" role="alert"></div>
 
                 </div>
 
               </div>
-              <div class="field-hint" data-i18n="set.logo.hint">
-                حداکثر ~1 مگابایت — PNG / JPG / SVG / WebP
+
+
+              <div class="field sv-field sv-field--logo">
+
+                <label data-i18n="set.logo.label">
+                  لوگوی برند
+                </label>
+
+                <div class="brand-logo-row">
+
+                  <div class="brand-logo-preview" id="brand-logo-preview">
+                    <i class="fa-solid fa-image brand-logo-empty" id="brand-logo-empty"></i>
+                    <img id="brand-logo-img" alt="" src="" style="display:none">
+                  </div>
+
+                  <div class="input-shell">
+
+                    <i class="fa-solid fa-upload"></i>
+
+                    <input
+                      id="brand-logo-input"
+                      type="file"
+                      accept=".png,.jpg,.jpeg,.webp,.gif"
+                      data-i18n-ph="set.logo.ph"
+                      title="Upload logo"
+                    >
+
+                  </div>
+
+                </div>
+
+                <div class="field-hint" data-i18n="set.logo.hint">
+                  حداکثر ~1 مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF
+                </div>
+
+                <div class="field-error" id="logo-err" role="alert"></div>
+
               </div>
 
-            </div>
 
+              <div class="sv-footer">
 
-            <button
-              class="btn btn-primary save-settings-btn"
-              onclick="saveBrand()"
-              type="button"
-            >
-              <i class="fa-solid fa-check"></i>
-              <span data-i18n="set.saveBrand">ذخیره برندینگ</span>
-            </button>
+                <button
+                  class="btn btn-primary save-settings-btn"
+                  id="settings-save-btn"
+                  onclick="saveSettings()"
+                  type="button"
+                >
+                  <i class="fa-solid fa-check"></i>
+                  <span data-i18n="set.saveAll">ذخیره</span>
+                </button>
 
-            <button
-              class="btn btn-secondary save-settings-btn"
-              onclick="saveTelegram()"
-              type="button"
-            >
-              <i class="fa-solid fa-check"></i>
-              <span data-i18n="set.save">ذخیره تغییرات</span>
-            </button>
+                <button
+                  class="btn btn-secondary save-settings-btn"
+                  id="settings-remove-logo-btn"
+                  onclick="removeLogo()"
+                  type="button"
+                >
+                  <i class="fa-solid fa-trash-can"></i>
+                  <span data-i18n="set.removeLogo">حذف لوگو</span>
+                </button>
 
-          </div>
+                <div class="setting-feedback" id="settings-feedback" role="status"></div>
 
+              </div>
 
-          <div class="setting-feedback" id="tg-status"></div>
+            </form>
 
-        </section>
+          </section>
+
+        </div><!-- /view-settings -->
 
 
         <!-- ===================================================
@@ -693,6 +754,42 @@
 >
   <i class="fa-solid fa-heart"></i>
 </a>
+
+
+<!-- ===========================================================
+     LOGO EDITOR MODAL
+     =========================================================== -->
+
+<div class="logo-editor" id="logo-editor" aria-hidden="true">
+  <div class="logo-editor-card" role="dialog" aria-modal="true" aria-label="Edit logo">
+
+    <div class="logo-editor-head">
+      <h3 data-i18n="ed.title">ویرایش لوگو</h3>
+      <button class="ed-close" onclick="cancelLogoEdit()" type="button" aria-label="close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="logo-editor-stage">
+      <canvas id="logo-canvas" width="512" height="512"></canvas>
+      <span class="ed-hint" data-i18n="ed.hint">برای جابه‌جایی بکشید — اسکرول یا اسلایدر برای زوم</span>
+    </div>
+
+    <div class="ed-zoom-row">
+      <i class="fa-solid fa-minus"></i>
+      <input type="range" id="logo-zoom" min="0" max="300" value="100" step="1" aria-label="zoom">
+      <i class="fa-solid fa-plus"></i>
+      <span class="ed-zoom-label" id="logo-zoom-label">100%</span>
+    </div>
+
+    <div class="ed-actions">
+      <button class="btn btn-secondary" onclick="resetLogoView()" type="button" data-i18n="ed.reset">بازنشانی</button>
+      <button class="btn btn-secondary" onclick="cancelLogoEdit()" type="button" data-i18n="ed.cancel">لغو</button>
+      <button class="btn btn-primary" onclick="confirmLogoEdit()" type="button" data-i18n="ed.confirm">تأیید</button>
+    </div>
+
+  </div>
+</div>
 
 
 <!-- ===========================================================
@@ -751,8 +848,8 @@ const I18N={fa:{
   'status.protected':'محافظت‌شده',
   'status.value.default':'پیش‌فرض پنل',
   'set.eyebrow':'پیکربندی',
-  'set.title':'تنظیمات کانال تلگرام',
-  'set.desc':'لینک کانال تلگرام در قالب‌های سابسکریپشن نمایش داده خواهد شد.',
+  'set.title':'تنظیمات برندینگ و تلگرام',
+  'set.desc':'این تنظیمات یک‌جا در تمام قالب‌ها از یک منبع واحد اعمال می‌شود.',
   'set.tg.label':'لینک کانال تلگرام',
   'set.tg.ph':'https://t.me/your_channel',
   'set.save':'ذخیره تغییرات',
@@ -760,8 +857,12 @@ const I18N={fa:{
   'set.brand.ph':'NUCTEREA',
   'set.logo.label':'لوگوی برند',
   'set.logo.ph':'انتخاب فایل لوگو',
-  'set.logo.hint':'حداکثر ~1 مگابایت — PNG / JPG / SVG / WebP',
+  'set.logo.hint':'حداکثر ~1 مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF',
   'set.saveBrand':'ذخیره برندینگ',
+  'set.saveAll':'ذخیره',
+  'set.removeLogo':'حذف لوگو',
+  'set.kicker':'برندینگ و تلگرام',
+  'set.heading':'تنظیمات',
   'foot.left':'ساخته‌شده توسط تیم NUCTEREA',
   'foot.right':'گیت‌هاب',
   'foot.license':'MIT',
@@ -790,6 +891,26 @@ const I18N={fa:{
   'js.saved':'ذخیره شد',
   'js.saveErrInvalid':'لینک تلگرام معتبر نیست',
   'js.saveErr':'خطا در ذخیره',
+  'js.warnRefresh':'تنظیمات ذخیره شد؛ همگام‌سازی قالب‌ها در حال انجام است.',
+  'js.errRefresh':'خطا در دریافت تنظیمات',
+  'js.telInvalid':'لینک تلگرام معتبر نیست — https://t.me/username',
+  'js.brandTooLong':'نام برند حداکثر ۳۰ کاراکتر است',
+  'js.brandInvalid':'نام برند نباید شامل گیومه یا بک‌اسلش باشد',
+  'js.logoInvalid':'لوگوی واردشده نامعتبر است',
+  'js.logoNotImage':'فایل انتخاب‌شده تصویر واقعی نیست (PNG/JPG/WEBP/GIF)',
+  'js.logoTooLarge':'لوگو بیش از حد بزرگ است (حداکثر ۱ مگابایت)',
+  'js.payloadTooLarge':'حجم درخواست بیش از حد مجاز است',
+  'js.saveFailed':'خطای داخلی در ذخیره‌سازی',
+  'js.logoRemoved':'لوگو حذف شد',
+  'js.themeSync':'همگام‌سازی قالب با تأخیر انجام می‌شود',
+  'ed.title':'ویرایش لوگو',
+  'ed.hint':'برای جابه‌جایی بکشید — اسکرول یا اسلایدر برای زوم',
+  'ed.reset':'بازنشانی',
+  'ed.cancel':'لغو',
+  'ed.confirm':'تأیید',
+  'ed.done':'لوگو آماده است',
+  'ed.tooBig':'حجم فایل بیش از حد مجاز است (حداکثر ۲ مگابایت)',
+  'ed.notImage':'فایل انتخاب‌شده تصویر معتبر نیست (PNG/JPG/WEBP/GIF)',
   'lang.btnTitle':'تغییر زبان'
 },en:{
   'app.title':'NUC-SUB | Subscription Theme Engine',
@@ -844,8 +965,12 @@ const I18N={fa:{
   'set.brand.ph':'NUCTEREA',
   'set.logo.label':'Brand logo',
   'set.logo.ph':'Choose logo file',
-  'set.logo.hint':'Max ~1 MiB — PNG / JPG / SVG / WebP',
+  'set.logo.hint':'Max ~1 MiB after editing — PNG / JPG / WEBP / GIF',
   'set.saveBrand':'Save branding',
+  'set.saveAll':'Save',
+  'set.removeLogo':'Remove logo',
+  'set.kicker':'BRANDING &amp; TELEGRAM',
+  'set.heading':'Settings',
   'foot.left':'Made by the NUCTEREA team',
   'foot.right':'GitHub',
   'foot.license':'MIT',
@@ -874,6 +999,26 @@ const I18N={fa:{
   'js.saved':'Saved',
   'js.saveErrInvalid':'Invalid Telegram link',
   'js.saveErr':'Failed to save',
+  'js.warnRefresh':'Settings saved; theme sync is finishing.',
+  'js.errRefresh':'Failed to load settings',
+  'js.telInvalid':'Invalid Telegram link — https://t.me/username',
+  'js.brandTooLong':'Brand name must be max 30 characters',
+  'js.brandInvalid':'Brand name must not contain quotes or backslashes',
+  'js.logoInvalid':'Invalid logo',
+  'js.logoNotImage':'Selected file is not a real image (PNG/JPG/WEBP/GIF)',
+  'js.logoTooLarge':'Logo too large (max 1 MiB)',
+  'js.payloadTooLarge':'Request too large',
+  'js.saveFailed':'Internal save error',
+  'js.logoRemoved':'Logo removed',
+  'js.themeSync':'Theme sync will complete shortly',
+  'ed.title':'Edit logo',
+  'ed.hint':'Drag to move — scroll or slider to zoom',
+  'ed.reset':'Reset',
+  'ed.cancel':'Cancel',
+  'ed.confirm':'Confirm',
+  'ed.done':'Logo is ready',
+  'ed.tooBig':'File too large (max 2 MiB)',
+  'ed.notImage':'Selected file is not a valid image (PNG/JPG/WEBP/GIF)',
   'lang.btnTitle':'Switch language'
 }}; 
 
@@ -901,8 +1046,8 @@ async function api(path,opts){
   if(r.status===401){showLogin();throw new Error('unauthorized')} 
   return data; 
 } 
-function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'} 
-function showMain(){$('view-login').style.display='none';$('view-main').style.display='';loadSettings();bindLogoUpload()} 
+function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'}
+function showMain(){$('view-login').style.display='none';$('view-main').style.display='';switchView('themes');loadSettings()}
 function showLoginError(msg){ 
   const el=$('login-error'); 
   if(el){el.textContent=msg;el.classList.add('show')} 
@@ -1058,109 +1203,296 @@ async function resetTheme(){
   }else showToast(t('js.resetErr'),true) 
 } 
 
-async function loadSettings(){ 
-  try{ 
-    const res=await api('settings'); 
-    if(res.ok&&res.settings){ 
-      $('tg-input').value=res.settings.telegram_channel||''; 
-      $('brand-name-input').value=res.settings.brand_name||''; 
-      const logo=res.settings.brand_logo||''; 
-      if(logo){ 
-        const pv=$('brand-logo-preview'); 
-        $('brand-logo-img').src=logo; 
-        pv.hidden=false; 
-      } 
-    } 
-  }catch(e){} 
-} 
+let VIEW='themes';
+function switchView(name){
+  if(name!=='themes'&&name!=='settings')return;
+  VIEW=name;
+  const showThemes=name==='themes';
+  $('view-themes').style.display=showThemes?'':'none';
+  $('view-settings').style.display=showThemes?'none':'';
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>{
+    b.classList.toggle('active',b.getAttribute('data-view')===name);
+  });
+  const crumb=$('crumb-title'),tKey=name==='settings'?'nav.settings':'nav.themes';
+  if(crumb){crumb.textContent=t(tKey)}
+  const mt=$('m-topbar-title');
+  if(mt){mt.textContent=t(tKey)}
+  if(name==='settings'){const fi=$('tg-input');if(fi&&document.activeElement&&document.activeElement!==fi)fi.focus()}
+  window.scrollTo(0,0);
+  mbtSync();
+}
 
-async function saveBrand(){ 
-  const name=$('brand-name-input').value.trim(); 
-  const logo=$('brand-logo-input')._dataUrl||''; 
-  const st=$('tg-status'); 
-  const payload={brand_name:name}; 
-  if(logo)payload.brand_logo=logo; 
-  try{ 
-    const res=await api('settings',{ 
-      method:'POST', 
-      headers:{ 
-        'Authorization':'Bearer '+token, 
-        'Content-Type':'application/json' 
-      }, 
-      body:JSON.stringify(payload) 
-    }); 
-    if(res.ok){ 
-      st.style.color='var(--green)'; 
-      st.textContent=t('js.saved'); 
-      showToast(t('js.saved')); 
-      setTimeout(()=>{st.textContent=''},2000) 
-      if(logo){ 
-        const pv=$('brand-logo-preview'); 
-        $('brand-logo-img').src=logo; 
-        pv.hidden=false; 
-      } 
-    } 
-    else{ 
-      st.style.color='var(--red)'; 
-      st.textContent=res.error||t('js.saveErr'); 
-      showToast(res.error||t('js.saveErr'),true); 
-    } 
-  }catch(e){ 
-    st.style.color='var(--red)'; 
-    st.textContent=t('js.saveErr'); 
-    showToast(t('js.saveErr'),true); 
-  } 
-} 
+// ---------- shared settings state (single source shown in this view) ---------
+let ST={logo:'',logoDirty:false,logoRemoved:false};
+const SET_ERR_MAP={
+  invalid_telegram_url:'js.telInvalid',
+  invalid_json:'js.saveFailed',
+  expected_object:'js.saveFailed',
+  empty_body:'js.saveFailed',
+  brand_name_too_long:'js.brandTooLong',
+  brand_name_invalid:'js.brandInvalid',
+  brand_logo_invalid:'js.logoInvalid',
+  brand_logo_not_image:'js.logoNotImage',
+  brand_logo_mime_mismatch:'js.logoNotImage',
+  brand_logo_too_large:'js.logoTooLarge',
+  payload_too_large:'js.payloadTooLarge',
+  save_failed:'js.saveFailed'
+};
 
-// --- brand logo upload: read file -> resize-ish check -> data URL (<=1 MiB) ---
+function updateBrandCount(){
+  const el=$('brand-count');
+  if(el)el.textContent=($('brand-name-input').value||'').length;
+}
+function showPreview(url){
+  const im=$('brand-logo-img'),emptyEl=$('brand-logo-empty');
+  const has=!!url;
+  if(im){im.style.display=has?'':'none';if(has)im.src=url}
+  if(emptyEl)emptyEl.style.display=has?'none':'';
+  const rm=$('settings-remove-logo-btn');
+  if(rm)rm.disabled=!has&&!ST.logo;
+}
+function clearErr(id){const el=document.getElementById(id);if(el)el.textContent=''}
+
+async function loadSettings(manual){
+  try{
+    const res=await api('settings');
+    if(res.ok&&res.settings){
+      const s=res.settings;
+      $('tg-input').value=s.telegram_channel||'';
+      $('brand-name-input').value=s.brand_name||'';
+      updateBrandCount();
+      ST.logo=s.brand_logo||'';
+      ST.logoDirty=false;ST.logoRemoved=false;
+      showPreview(ST.logo);
+      if(manual)showToast(t('js.saved'));
+    }
+  }catch(e){
+    if(manual)showToast(t('js.errRefresh'),true);
+  }
+}
+
+// ------------------------------------------------------------- single save ----
+async function saveSettings(){
+  ['tg-err','brand-err','logo-err'].forEach(clearErr);
+  const tg=$('tg-input').value.trim();
+  const brand=($('brand-name-input').value||'').trim();
+  let invalid=false;
+  if(tg&&!/^https:\/\/t\.me\/[A-Za-z0-9_]{5,}$/.test(tg)){
+    $('tg-err').textContent=t('js.telInvalid');invalid=true;
+  }
+  if(brand.length>30){
+    $('brand-err').textContent=t('js.brandTooLong');invalid=true;
+  }
+  if(brand&&/[\\'"]/.test(brand)){
+    $('brand-err').textContent=t('js.brandInvalid');invalid=true;
+  }
+  if(invalid)return;
+  const btn=$('settings-save-btn'),feed=$('settings-feedback');
+  btn.disabled=true;btn.classList.add('loading');
+  const payload={telegram_channel:tg,brand_name:brand};
+  if(ST.logoDirty)payload.brand_logo=ST.logo;
+  else if(ST.logoRemoved){payload.brand_logo='';payload.remove_logo=true}
+  try{
+    const res=await api('settings',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    if(res.ok){
+      const key=res.warn?'js.themeSync':'js.saved';
+      feed.style.color=res.warn?'var(--accent)':'var(--green)';
+      feed.textContent=t(key);
+      showToast(t('js.saved'));
+      setTimeout(()=>{feed.textContent=''},3200);
+      if(res.settings)applySettings(res.settings);
+    }else{
+      const key=SET_ERR_MAP[res.error]||'js.saveFailed';
+      feed.style.color='var(--red)';
+      feed.textContent=t(key);
+      showToast(t(key),true);
+      console.debug('[nuc-sub] settings save rejected:',res);
+    }
+  }catch(e){
+    feed.style.color='var(--red)';
+    feed.textContent=t('js.saveFailed');
+    showToast(t('js.saveFailed'),true);
+    console.debug('[nuc-sub] settings save raised:',e);
+  }finally{
+    btn.disabled=false;btn.classList.remove('loading');
+  }
+}
+function applySettings(s){
+  $('tg-input').value=s.telegram_channel||'';
+  $('brand-name-input').value=s.brand_name||'';
+  updateBrandCount();
+  ST.logo=s.brand_logo||'';
+  ST.logoDirty=false;ST.logoRemoved=false;
+  showPreview(ST.logo);
+}
+function removeLogo(){
+  if(!ST.logo&&!ST.logoDirty)return;
+  ST.logo='';
+  ST.logoDirty=false;ST.logoRemoved=true;
+  showPreview('');
+  $('brand-logo-input').value='';
+  showToast(t('js.logoRemoved'));
+}
+
+// ------------------------------------------------- logo pick -> editor modal --
+function sniffImgType(buf){
+  if(buf.length>=8&&buf[0]===0x89&&buf[1]===0x50&&buf[2]===0x4e&&buf[3]===0x47&&
+     buf[4]===0x0d&&buf[5]===0x0a&&buf[6]===0x1a&&buf[7]===0x0a)return'image/png';
+  if(buf.length>=3&&buf[0]===0xff&&buf[1]===0xd8&&buf[2]===0xff)return'image/jpeg';
+  if(buf.length>=6&&buf[0]===0x47&&buf[1]===0x49&&buf[2]===0x46&&buf[3]===0x38)return'image/gif';
+  if(buf.length>=12&&buf[0]===0x52&&buf[1]===0x49&&buf[2]===0x46&&buf[3]===0x46&&
+     buf[8]===0x57&&buf[9]===0x45&&buf[10]===0x42&&buf[11]===0x50)return'image/webp';
+  return'';
+}
 function bindLogoUpload(){
   const inp=$('brand-logo-input');
   if(!inp)return;
   inp.addEventListener('change',()=>{
     const f=inp.files&&inp.files[0];
     if(!f)return;
-    if(f.size>1048576){showToast('Logo too large (max ~1 MiB)',true);inp.value='';delete inp._dataUrl;return}
-    const fr=new FileReader();
-    fr.onload=()=>{
-      inp._dataUrl=fr.result;
-      const pv=$('brand-logo-preview');
-      $('brand-logo-img').src=fr.result;
-      pv.hidden=false;
-      showToast('Logo ready — click Save branding')
-    };
-    fr.readAsDataURL(f);
+    clearErr('logo-err');
+    if(f.size>2*1048576){
+      $('logo-err').textContent=t('ed.tooBig');showToast(t('ed.tooBig'),true);
+      inp.value='';return;
+    }
+    f.arrayBuffer().then(buf=>{
+      if(!sniffImgType(new Uint8Array(buf))){
+        $('logo-err').textContent=t('ed.notImage');showToast(t('ed.notImage'),true);
+        inp.value='';return;
+      }
+      const fr=new FileReader();
+      fr.onload=()=>openLogoEditor(fr.result);
+      fr.readAsDataURL(f);
+    }).catch(()=>{
+      $('logo-err').textContent=t('ed.notImage');inp.value='';
+    });
   });
-} 
+}
 
-async function saveTelegram(){ 
-  const url=$('tg-input').value.trim(); 
-  const st=$('tg-status'); 
-  try{ 
-    const res=await api('settings',{ 
-      method:'POST', 
-      headers:{ 
-        'Authorization':'Bearer '+token, 
-        'Content-Type':'application/json' 
-      }, 
-      body:JSON.stringify({telegram_channel:url}) 
-    }); 
-    if(res.ok){ 
-      st.style.color='var(--green)'; 
-      st.textContent=t('js.saved'); 
-      showToast(t('js.saved')); 
-      setTimeout(()=>{st.textContent=''},2000) 
-    } 
-    else{ 
-      st.style.color='var(--red)'; 
-      st.textContent=res.error||t('js.saveErr'); 
-      showToast(res.error||t('js.saveErr'),true); 
-    } 
-  }catch(e){ 
-    st.style.color='var(--red)'; 
-    st.textContent=t('js.saveErr'); 
-    showToast(t('js.saveErr'),true); 
-  } 
-} 
+// ------------------------------------------------------------ editor canvas ----
+let ED=null,ED_DRAG=null;
+function clampNum(v,a,b){return Math.max(a,Math.min(b,v))}
+function openLogoEditor(dataUrl){
+  const img=new Image();
+  img.onload=()=>{
+    const S=512;
+    const fit=Math.max(S/img.naturalWidth,S/img.naturalHeight);
+    ED={img,fit,scale:fit,ox:0,oy:0};
+    $('logo-zoom').value=100;
+    $('logo-editor').classList.add('show');
+    $('logo-editor').setAttribute('aria-hidden','false');
+    drawLogoEditor();
+    updateZoomLabel();
+  };
+  img.onerror=()=>{
+    $('logo-err').textContent=t('ed.notImage');
+    showToast(t('ed.notImage'),true);
+    $('brand-logo-input').value='';
+  };
+  img.src=dataUrl;
+}
+function closeLogoEditor(){
+  $('logo-editor').classList.remove('show');
+  $('logo-editor').setAttribute('aria-hidden','true');
+  ED=null;ED_DRAG=null;
+}
+function drawLogoEditorAt(S){
+  const c=$('logo-canvas');
+  c.width=S;c.height=S;
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,S,S);
+  ctx.save();
+  ctx.beginPath();ctx.rect(0,0,S,S);ctx.clip();
+  const iw=ED.img.naturalWidth,ih=ED.img.naturalHeight,k=S/512;
+  const w=iw*ED.scale*k,h=ih*ED.scale*k;
+  ctx.drawImage(ED.img,(S-w)/2+ED.ox*k,(S-h)/2+ED.oy*k,w,h);
+  ctx.restore();
+}
+function drawLogoEditor(){if(ED)drawLogoEditorAt(512)}
+function clampLogoPan(){
+  const S=512,w=ED.img.naturalWidth*ED.scale,h=ED.img.naturalHeight*ED.scale;
+  const loX=(S-w)/2,hiX=(w-S)/2,loY=(S-h)/2,hiY=(h-S)/2;
+  ED.ox=(w>=S)?clampNum(ED.ox,loX,hiX):0;
+  ED.oy=(h>=S)?clampNum(ED.oy,loY,hiY):0;
+}
+function syncZoomSlider(){const z=$('logo-zoom');if(z)z.value=Math.round((ED.scale/ED.fit)*100)}
+function updateZoomLabel(){
+  const el=$('logo-zoom-label');
+  if(el)el.textContent=Math.round((ED.scale/ED.fit)*100)+'%';
+}
+function bindLogoEditor(){
+  const z=$('logo-zoom'),cvs=$('logo-canvas');
+  if(!z||!cvs)return;
+  z.addEventListener('input',()=>{
+    if(!ED)return;
+    ED.scale=clampNum(ED.fit*(Number(z.value)/100),ED.fit*0.35,ED.fit*3);
+    clampLogoPan();drawLogoEditor();updateZoomLabel();
+  });
+  cvs.addEventListener('pointerdown',e=>{
+    if(!ED)return;
+    ED_DRAG={x:e.clientX,y:e.clientY};cvs.setPointerCapture(e.pointerId);
+  });
+  cvs.addEventListener('pointermove',e=>{
+    if(!ED_DRAG||!ED)return;
+    const r=cvs.getBoundingClientRect(),k=512/Math.max(r.width,1);
+    ED.ox+=(e.clientX-ED_DRAG.x)*k;
+    ED.oy+=(e.clientY-ED_DRAG.y)*k;
+    ED_DRAG={x:e.clientX,y:e.clientY};
+    clampLogoPan();drawLogoEditor();
+  });
+  cvs.addEventListener('pointerup',()=>{ED_DRAG=null});
+  cvs.addEventListener('pointercancel',()=>{ED_DRAG=null});
+  cvs.addEventListener('wheel',e=>{
+    if(!ED)return;
+    e.preventDefault();
+    ED.scale=clampNum(ED.scale*(e.deltaY<0?1.05:0.95),ED.fit*0.35,ED.fit*3);
+    clampLogoPan();syncZoomSlider();drawLogoEditor();updateZoomLabel();
+  },{passive:false});
+}
+function resetLogoView(){
+  if(!ED)return;
+  ED.scale=ED.fit;ED.ox=0;ED.oy=0;
+  syncZoomSlider();clampLogoPan();drawLogoEditor();updateZoomLabel();
+}
+function cancelLogoEdit(){
+  closeLogoEditor();
+  const inp=$('brand-logo-input');
+  if(inp)inp.value='';
+}
+function confirmLogoEdit(){
+  if(!ED)return cancelLogoEdit();
+  let sizes=[512,448,384,320,256,192,128];
+  let url='',i=0;
+  const c=$('logo-canvas');
+  for(i=0;i<sizes.length;i++){
+    drawLogoEditorAt(sizes[i]);
+    url=c.toDataURL('image/png');
+    const comma=url.indexOf(','),b64=comma>=0?url.slice(comma+1):'';
+    if(Math.floor(b64.length*3/4)<=1048576)break;
+  }
+  ST.logo=url;
+  ST.logoDirty=true;ST.logoRemoved=false;
+  showPreview(url);
+  const inp=$('brand-logo-input');
+  if(inp)inp.value='';
+  closeLogoEditor();
+  showToast(t('ed.done'));
+}
+
+// ------------------------------------------------------------- mobile nav -----
+function navMobile(el){
+  const view=el.getAttribute('data-view')||'themes';
+  const href=el.getAttribute('href')||'';
+  event.preventDefault();
+  if(view==='settings'){switchView('settings');return false}
+  switchView('themes');
+  if(href&&href!=='#'){const target=$(href.slice(1));if(target)setTimeout(()=>target.scrollIntoView({behavior:'smooth'}),60)}
+  return false;
+}
 
 // --- additive: mobile bottom-nav active state + top-bar title sync ---------
 const MBT={show:window.matchMedia&&window.matchMedia('(max-width:820px)').matches};
@@ -1168,25 +1500,23 @@ const MBT_TITLES={system:'sidebar.status.title',themes:'nav.themes',settings:'na
 function mbtSync(){
   const items=Array.prototype.slice.call(document.querySelectorAll('.m-nav-item'));
   if(!items.length)return;
-  const byId={system:$('statusbar'),themes:$('themes-grid'),settings:$('tg-input')};
-  let cur='themes';
-  for(const key in byId){const el=byId[key];if(el&&el.getBoundingClientRect().top<=90)cur=key}
+  let cur=VIEW;
+  if(cur!=='settings'){
+    const zones={system:($('statusbar')||{}).getBoundingClientRect?$('statusbar').getBoundingClientRect().top:9999,
+                 themes:($('themes-grid')||{}).getBoundingClientRect?$('themes-grid').getBoundingClientRect().top:9999};
+    const sorted=[['themes',zones.themes],['system',zones.system]].sort((a,b)=>a[1]-b[1]);
+    cur=(sorted[0]&&sorted[0][1]<=90)?sorted[0][0]:'system';
+  }
   items.forEach(it=>it.classList.toggle('active',it.getAttribute('data-m-nav')===cur));
   const tt=$('m-topbar-title');
   if(tt){const k=MBT_TITLES[cur];if(k)tt.textContent=t(k)}
 }
-function mbtBind(){
-  document.querySelectorAll('.m-nav-item').forEach(a=>{
-    a.addEventListener('click',()=>{
-      const id=a.getAttribute('href').slice(1);
-      if(id==='tg-input'){setTimeout(()=>{$('tg-input').focus()},220)}
-      mbtSync()
-    })
-  });
-  document.addEventListener('scroll',()=>{if(MBT.show)mbtSync()},{passive:true});
-}
-if(MBT.show){mbtBind();mbtSync()}
 const _mbtStatic=(window.requestAnimationFrame?requestAnimationFrame:setTimeout)(()=>{if(MBT.show)mbtSync()});
+
+bindLogoUpload();
+bindLogoEditor();
+$('brand-name-input').addEventListener('input',updateBrandCount);
+document.addEventListener('scroll',()=>{if(MBT.show&&VIEW==='themes')mbtSync()},{passive:true});
 
 applyLang();
 

@@ -206,7 +206,8 @@ html[lang="en"] .detail-value,.usage-side{direction:ltr;text-align:right}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M20 14v3M14 20h3M20 20v.01"/></svg>
           <span data-i18n="qr_code">کد QR</span>
         </button>
-        <button class="action primary" id="copyAllBtn">
+        <a id="tgBtn" class="action primary" href="@@TG_CHANNEL@@" target="_blank" rel="noopener" style="display:none;grid-column:1/-1" aria-label="Telegram"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.6c.3-1.2-.9-2.2-2-1.7L2.7 9.7c-1.2.5-1.1 2.2.1 2.5l4.8 1.3 1.8 5.7c.3 1 1.6 1.3 2.3.5l2.5-2.7 4.6 3.4c.9.6 2.2.2 2.4-.9l2.7-14.9z"/></svg><span data-i18n="nuc_telegram">کانال تلگرام</span></a>
+<button class="action primary" id="copyAllBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           <span data-i18n="copy_all">کپی همه</span>
         </button>
@@ -253,8 +254,8 @@ html[lang="en"] .detail-value,.usage-side{direction:ltr;text-align:right}
 (function(){
 'use strict';
 const i18n={
- fa:{account_subtitle:'حساب کاربری شما',st_active:'فعال',traffic_usage:'مصرف ترافیک',subscription_details:'جزئیات اشتراک',expiry:'تاریخ انقضا',status:'وضعیت',device_limit:'محدودیت دستگاه',username:'نام کاربری',announcement:'اعلان',admin_note:'یادداشت',qr_code:'کد QR',copy_all:'کپی همه',configurations:'کانفیگ‌ها',tap_to_copy:'کلیک برای کپی',qr_title:'کد QR اشتراک',close:'بستن',copied:'کپی شد',all_copied:'همه کپی شدند'},
- en:{account_subtitle:'Your account',st_active:'Active',traffic_usage:'Traffic Usage',subscription_details:'Subscription Details',expiry:'Expiry Date',status:'Status',device_limit:'Device Limit',username:'Username',announcement:'Announcement',admin_note:'Note',qr_code:'QR Code',copy_all:'Copy All',configurations:'Configurations',tap_to_copy:'Tap to copy',qr_title:'Subscription QR',close:'Close',copied:'Copied',all_copied:'All copied'}
+ fa:{account_subtitle:'حساب کاربری شما',st_active:'فعال',traffic_usage:'مصرف ترافیک',subscription_details:'جزئیات اشتراک',expiry:'تاریخ انقضا',status:'وضعیت',device_limit:'محدودیت دستگاه',username:'نام کاربری',announcement:'اعلان',admin_note:'یادداشت',qr_code:'کد QR',copy_all:'کپی همه', nuc_telegram:'کانال تلگرام',configurations:'کانفیگ‌ها',tap_to_copy:'کلیک برای کپی',qr_title:'کد QR اشتراک',close:'بستن',copied:'کپی شد',all_copied:'همه کپی شدند'},
+ en:{account_subtitle:'Your account',st_active:'Active',traffic_usage:'Traffic Usage',subscription_details:'Subscription Details',expiry:'Expiry Date',status:'Status',device_limit:'Device Limit',username:'Username',announcement:'Announcement',admin_note:'Note',qr_code:'QR Code',copy_all:'Copy All', nuc_telegram:'Telegram',configurations:'Configurations',tap_to_copy:'Tap to copy',qr_title:'Subscription QR',close:'Close',copied:'Copied',all_copied:'All copied'}
 };
 const html=document.documentElement;
 let lang=localStorage.getItem('pg_lang')||'fa';
@@ -2878,5 +2879,55 @@ var qrcode = function() {
 })();
 </script>
 </div>
+<!-- nuc-bs -->
+<script>
+(function(){
+  var T='@@TG_CHANNEL@@',N='@@BRAND_NAME@@',L='@@BRAND_LOGO@@';
+  function ok(v){return !!v&&v.indexOf('@@')===-1;}
+  var lang=(document.documentElement.lang||'fa').toLowerCase();
+  var en=lang==='en';
+  var lbl=en?'Telegram':'کانال تلگرام';
+  var tBtn=document.getElementById('tgBtn');
+  if(tBtn&&ok(T)){
+    try{tBtn.href=T}catch(e){}
+    tBtn.removeAttribute('hidden');tBtn.classList.remove('hidden');
+    tBtn.style.display='';
+    var s=tBtn.querySelector('span');if(s&&!s.getAttribute('data-dyn'))s.textContent=lbl;
+  }
+  var nameEl=document.querySelector('.brand-name,.subscription-brand,.brand-title,.site-name');
+  var nameOk=ok(N);
+  if(nameEl&&nameOk)nameEl.textContent=N;
+  var mk=document.querySelector('.brand-mark,.brand-logo,.app-logo,.top-logo,.logo-img,.brand-icon');
+  if(mk&&ok(L)&&!mk.firstElementChild){
+    mk.innerHTML='';
+    var im=document.createElement('img');
+    im.src=L;im.alt=nameOk?N:'logo';
+    im.style.cssText='width:100%;height:100%;object-fit:contain;display:block';
+    mk.appendChild(im);
+  }
+  var needChip=(!mk&&ok(L))||(!nameEl&&nameOk);
+  if(needChip){
+    var chip=document.getElementById('nuc-brand-chip');
+    if(!chip){
+      chip=document.createElement('div');chip.id='nuc-brand-chip';
+      if(ok(L)){
+        var cim=document.createElement('img');cim.src=L;cim.alt='logo';
+        cim.style.cssText='width:auto;height:100%;max-height:36px;display:inline-block;vertical-align:middle';
+        chip.appendChild(cim);
+      }
+      if(nameOk){
+        var csp=document.createElement('span');csp.textContent=N;
+        csp.style.cssText='vertical-align:middle;font-weight:800;font-size:13px;line-height:36px';
+        chip.appendChild(csp);
+      }
+      chip.style.cssText='display:inline-flex;align-items:center;gap:8px;padding:2px 12px;border-radius:10px;border:1px solid var(--line,#2a2a2a);background:var(--panel,#141414);color:var(--text,#eee);box-shadow:0 4px 14px rgba(0,0,0,.18)';
+      var chd=document.querySelector('.controls,.top-actions,.header-actions,.top-buttons,.toolbar,.navbar');
+      if(chd){chd.insertBefore(chip,chd.firstChild)}
+      else{document.body.appendChild(chip);chip.style.position='fixed';chip.style.top='12px';chip.style.zIndex='9000';chip.style[document.documentElement.dir==='rtl'?'right':'left']='12px'}
+    }
+  }
+})();
+</script>
+
 </body>
 </html>
