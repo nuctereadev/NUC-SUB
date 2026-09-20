@@ -202,21 +202,10 @@ download_theme() {  # download_theme <name>
     else
     local td="$THEMES_DIR/$name"
     [[ -d "$td" && -f "$td/index.html" ]] && return 0
-    mkdir -p "$td/css" "$td/fonts" "$td/fa"
-    # Fetch index.html first (the only required asset — the pg-derived themes
-    # are self-contained single-file templates). css/fonts/fa are legacy
-    # extras that only the original native xui themes shipped; fetch them
-    # best-effort so both layouts can be pulled on demand.
+    mkdir -p "$td"
+    # index.html is the only required asset — the pg-derived themes are
+    # self-contained single-file templates (fonts/icons are base64-embedded).
     curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
-    if ! printf '%s\n' \
-        "$REPO_URL/themes/$name/css/icons.css|$td/css/icons.css" \
-        "$REPO_URL/themes/$name/css/fonts.css|$td/css/fonts.css" \
-        "$REPO_URL/themes/$name/fonts/IRANSansX-Bold.woff2|$td/fonts/IRANSansX-Bold.woff2" \
-        "$REPO_URL/themes/$name/fonts/IRANSansX-Regular.woff2|$td/fonts/IRANSansX-Regular.woff2" \
-        "$REPO_URL/themes/$name/fa/fa-solid-900.woff2|$td/fa/fa-solid-900.woff2" \
-        | xargs -P 6 -n 1 bash -c 'u="${1%%|*}"; f="${1#*|}"; curl -fsSL -m 60 "$u" -o "$f" || true' _ ; then
-        :
-    fi
     fi
     ok "Theme '$name' downloaded."
     return 0

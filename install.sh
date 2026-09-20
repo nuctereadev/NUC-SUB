@@ -174,13 +174,11 @@ if [[ "$PANEL" == "3xui" ]]; then
     else
         for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
         td="$THEMES_DIR/$DEFAULT_THEME"
-        mkdir -p "$td/css" "$td/fonts" "$td/fa"
+        mkdir -p "$td"
+        # Themes are single-file: index.html is the only asset. The css/fonts/fa
+        # subdirs were only a legacy layout that is gone from the repo, so they
+        # are intentionally not fetched (they would 404).
         if curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/index.html" -o "$td/index.html"; then
-            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/icons.css" -o "$td/css/icons.css" || true
-            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/css/fonts.css" -o "$td/css/fonts.css" || true
-            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Bold.woff2" -o "$td/fonts/IRANSansX-Bold.woff2" || true
-            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fonts/IRANSansX-Regular.woff2" -o "$td/fonts/IRANSansX-Regular.woff2" || true
-            curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/fa/fa-solid-900.woff2" -o "$td/fa/fa-solid-900.woff2" || true
             echo -e "${GREEN}  ✓ theme '$DEFAULT_THEME'${NC}"
         else
             echo -e "${RED}  ✗ failed to fetch default theme '$DEFAULT_THEME'${NC}"
