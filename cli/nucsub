@@ -73,6 +73,9 @@ PG_TEMPLATE_BASE="$(dirname "$PG_TEMPLATES_DIR")/"
 
 # ------------------------------------------------------------------ helpers ---
 die() { echo -e "${RED}✗ $*${NC}" >&2; exit 1; }
+# soft-fail used inside command functions: prints the error and returns
+# non-zero WITHOUT exiting, so the interactive menu survives a failed command.
+fail() { echo -e "${RED}✗ $*${NC}" >&2; return 1; }
 ok()  { echo -e "${GREEN}✓ $*${NC}"; }
 info(){ echo -e "${BLUE}ℹ $*${NC}"; }
 warn(){ echo -e "${YELLOW}⚠ $*${NC}"; }
@@ -195,28 +198,64 @@ download_theme() {  # download_theme <name>
     valid_theme_name "$name" || return 1
     if [[ "$PANEL" == "pasarguard" ]]; then
         local dst="$PG_THEMES_DIR/$name.html"
-        [[ -f "$dst" ]] && return 0
+        [[ -s "$dst" ]] && return 0
         mkdir -p "$PG_THEMES_DIR"
-        curl -fsSL -m 60 "$REPO_URL/pasarguard-themes/subscription/$name.html" -o "$dst" || return 1
+        # atomic: fetch to a temp file then move into place only if valid
+        local tmp
+        tmp="$(mktemp "$PG_THEMES_DIR/.$name.XXXXXX.html")"
+        if ! curl -fsSL -m 60 "$REPO_URL/pasarguard-themes/subscription/$name.html" -o "$tmp"; then
+            rm -f "$tmp"
+            warn "Failed to download theme '$name' ($REPO_URL/pasarguard-themes/subscription/$name.html)"
+            return 1
+        fi
+        if ! validate_download "$tmp"; then
+            rm -f "$tmp"
+            warn "Downloaded theme '$name' is empty or invalid — won't deploy it."
+            return 1
+        fi
+        chmod 644 "$tmp"
+        mv -f "$tmp" "$dst"
         ok "Theme '$name' downloaded."
-    else
-    local td="$THEMES_DIR/$name"
-    [[ -d "$td" && -f "$td/index.html" ]] && return 0
-    mkdir -p "$td"
-    # index.html is the only required asset — the pg-derived themes are
-    # self-contained single-file templates (fonts/icons are base64-embedded).
-    curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$td/index.html" || return 1
+        return 0
     fi
+    local td="$THEMES_DIR/$name"
+    [[ -d "$td" && -s "$td/index.html" ]] && return 0
+    mkdir -p "$td"
+    # only index.html is required — the pg-derived themes are self-contained
+    # single-file templates (fonts/icons are base64-embedded). Fetch atomically.
+    local tmp
+    tmp="$(mktemp "$td/.index.XXXXXX.html")"
+    if ! curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$tmp"; then
+        rm -f "$tmp"
+        warn "Failed to download theme '$name' ($REPO_URL/themes/$name/index.html)"
+        return 1
+    fi
+    if ! validate_download "$tmp"; then
+        rm -f "$tmp"
+        warn "Downloaded theme '$name' is empty or invalid — won't deploy it."
+        return 1
+    fi
+    chmod 644 "$tmp"
+    mv -f "$tmp" "$td/index.html"
     ok "Theme '$name' downloaded."
+    return 0
+}
+
+# A freshly-downloaded theme must be non-empty and look like real HTML.
+validate_download() {  # validate_download <file>
+    local f="${1:-}"
+    [[ -f "$f" && -s "$f" ]] || return 1
+    # must actually be an HTML page (not a GitHub 404 body / error JSON)
+    grep -qiE '<!DOCTYPE html|<html|<head|<body' "$f" || return 1
     return 0
 }
 
 theme_is_runnable() {
     local name="$1"
     if [[ "$PANEL" == "pasarguard" ]]; then
-        [[ -f "$PG_THEMES_DIR/$name.html" ]]
+        [[ -s "$PG_THEMES_DIR/$name.html" ]]
     else
-        [[ -f "$THEMES_DIR/$name/index.html" ]] || [[ -f "$THEMES_DIR/$name/sub.html" ]]
+        [[ -s "$THEMES_DIR/$name/index.html" ]] || [[ -s "$THEMES_DIR/$name/sub.html" ]]
     fi
 }
 
@@ -627,9 +666,10 @@ pg_sync() {  # pg_sync <theme-name | __builtin__ | ""> — sync every admin's su
     return 1
 }
 
-# --------------------------------------------------------------- UI helpers ---
+# ------------------------------------------------------------------- UI helpers ---
+clr() { clear 2>/dev/null || true; }
 print_header() {
-    clear
+    clr
     echo -e "${BOLD}${YELLOW}"
     echo "  _   _  _   _   ____   ____   _   _   ____  "
     echo " | \\ | || | | | / ___| / ___| | | | | | __ ) "
@@ -673,7 +713,7 @@ draw_menu() {
     echo -ne "  ${BOLD}Select option [0-7]: ${NC}"
 }
 
-pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r; }
+pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r || true; }
 
 # --------------------------------------------------------------- commands ----
 cmd_list() {
@@ -706,40 +746,44 @@ cmd_apply() {
     if [[ -z "$name" ]]; then
         local themes=()
         while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(available_themes)
-        [[ ${#themes[@]} -eq 0 ]] && die "No themes available."
+        [[ ${#themes[@]} -eq 0 ]] && { fail "No themes available."; return 1; }
         title "Select theme to apply"; sep
         select t in "${themes[@]}" "Cancel"; do
             [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
-            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return 0; }
             warn "Invalid selection."
         done
     fi
-    valid_theme_name "$name" || die "Invalid theme name: '$name'"
-    download_theme "$name" || die "Failed to download theme '$name' ($REPO_URL)."
+    valid_theme_name "$name" || { fail "Invalid theme name: '$name'"; return 1; }
+
+    # Download (if needed). Fail loudly but non-fatally so the menu survives.
+    download_theme "$name" || { fail "Failed to download theme '$name' ($REPO_URL)."; return 1; }
+
     if [[ "$PANEL" == "pasarguard" ]]; then
-        [[ -f "$PG_THEMES_DIR/$name.html" ]] || die "Theme '$name' not found."
+        [[ -s "$PG_THEMES_DIR/$name.html" ]] || { fail "Theme '$name' not found or empty."; return 1; }
+        validate_download "$PG_THEMES_DIR/$name.html" || { fail "Theme '$name' source is invalid."; return 1; }
         mkdir -p "$PG_TEMPLATES_DIR"
-        cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"
+        if ! cp -f "$PG_THEMES_DIR/$name.html" "$PG_TEMPLATES_DIR/$name.html"; then
+            fail "Could not copy theme '$name' into $PG_TEMPLATES_DIR/."
+            return 1
+        fi
         chmod -R a+rX "$PG_TEMPLATES_DIR/$name.html"
         pg_inject_tg "$PG_TEMPLATES_DIR/$name.html"
         # The panel shows the admin's own sub_template live (no restart needed
         # when the DB/API is reachable). Restart only as a fallback so the .env
         # default is picked up.
-        local env_ok=0 sync_ok=0 restarted=0
+        local env_ok=0 sync_ok=0
         pg_env_apply "$name" && env_ok=1 || true
         pg_sync "$name" && sync_ok=1 || true
         # Restart the panel ONLY when its live SUBSCRIPTION_PAGE_TEMPLATE doesn't
         # already match the .env we just wrote (avoids downtime on every apply).
         if [[ $env_ok -eq 1 ]] && ! pg_env_effective "$name"; then
-            pg_restart_panel && restarted=1 || true
+            pg_restart_panel || warn "Panel restart failed — run it manually later."
         fi
         if [[ $sync_ok -eq 1 ]]; then
             ok "Theme '$name' deployed and activated ($PG_TEMPLATES_DIR/$name.html)"
         elif [[ $env_ok -eq 1 ]]; then
             ok "Theme '$name' deployed and activated via .env ($PG_TEMPLATES_DIR/$name.html)"
-            if [[ $restarted -eq 0 ]]; then
-                warn "Panel env not synced — restart Pasarguard manually to apply the .env default."
-            fi
         else
             warn "Theme copied to $PG_TEMPLATES_DIR/$name.html"
             warn "Activation needs the panel .env (PASARGUARD_ENV) or working DB access."
@@ -756,25 +800,30 @@ cmd_apply() {
                 warn "The file must be readable by the panel at: $(pg_theme_host_file "$name")"
             fi
         fi
-        return
+        return 0
     fi
     local src="$THEMES_DIR/$name"
-    [[ -d "$src" ]] || die "Theme '$name' not found."
-    theme_is_runnable "$name" || die "Theme '$name' has no index.html/sub.html."
+    [[ -d "$src" ]] || { fail "Theme '$name' not found."; return 1; }
+    theme_is_runnable "$name" || { fail "Theme '$name' has no (non-empty) index.html/sub.html."; return 1; }
+    validate_download "$THEMES_DIR/$name/index.html" || { fail "Theme '$name' source is invalid."; return 1; }
 
-    mkdir -p "$DEPLOY_DIR/$name"
-    cd "$src"
-    find . -maxdepth 3 -type f \( -name 'index.html' -o -name 'sub.html' -o -name '*.css' -o -name '*.js' -o -name '*.woff2' \) -exec cp -f --parents {} "$DEPLOY_DIR/$name/" \;
-    cd - >/dev/null
-    chmod -R a+rX "$DEPLOY_DIR/$name"
+    # Atomic-ish deploy: copy into a temp staging dir and swap in only after a
+    # successful copy + validation, so a half-copied theme never reaches deploy.
+    local stage="$DEPLOY_DIR/.$name.staging"
+    mkdir -p "$DEPLOY_DIR"
+    rm -rf "$stage"
+    if ! mkdir -p "$stage" || ! cp -r "$src"/. "$stage/"; then
+        rm -rf "$stage"
+        fail "Could not stage theme '$name' for deploy."
+        return 1
+    fi
+    chmod -R a+rX "$stage"
 
     # inject Telegram channel placeholder from config into deployed theme
-    if [[ -f "$THEMES_DIR/$name/index.html" && -f "$DEPLOY_DIR/$name/index.html" ]]; then
-        inject_tg "$THEMES_DIR/$name/index.html" "$DEPLOY_DIR/$name/index.html"
-    elif [[ -f "$DEPLOY_DIR/$name/index.html" ]]; then
+    if [[ -f "$stage/index.html" ]]; then
         local tg
         tg="$(config_get telegram_channel)"
-        python3 - "$DEPLOY_DIR/$name/index.html" "$tg" <<'PY'
+        python3 - "$stage/index.html" "$tg" <<'PY'
 import sys
 p,chan=sys.argv[1],sys.argv[2]
 s=open(p,encoding='utf-8').read()
@@ -783,14 +832,44 @@ open(p,'w',encoding='utf-8').write(s)
 PY
     fi
 
-    if [[ -f "$DEPLOY_DIR/$name/index.html" ]]; then
-        db_set_subthemedir "$DEPLOY_DIR/$name"
-        ok "Theme '$name' deployed to $DEPLOY_DIR/$name"
-    else warn "No index.html copied."; return 1; fi
+    if [[ ! -s "$stage/index.html" ]]; then
+        rm -rf "$stage"
+        fail "No valid index.html staged for '$name' — deploy aborted."
+        return 1
+    fi
+    # as a final safety check, re-inject from pristine source too (inject_tg does)
+    if [[ -f "$THEMES_DIR/$name/index.html" ]]; then
+        inject_tg "$THEMES_DIR/$name/index.html" "$stage/index.html" || true
+    fi
 
+    # atomic swap
+    rm -rf "$DEPLOY_DIR/$name"
+    if ! mv "$stage" "$DEPLOY_DIR/$name"; then
+        fail "Deploy move failed for '$name' — panel NOT changed."
+        return 1
+    fi
+    chmod -R a+rX "$DEPLOY_DIR/$name"
+
+    if [[ -f "$DEPLOY_DIR/$name/index.html" ]] && [[ -s "$DEPLOY_DIR/$name/index.html" ]]; then
+        db_set_subthemedir "$DEPLOY_DIR/$name" || { fail "Could not set subThemeDir."; return 1; }
+        ok "Theme '$name' deployed to $DEPLOY_DIR/$name"
+    else
+        fail "Deploy incomplete (no index.html at $DEPLOY_DIR/$name/index.html) — panel NOT changed."
+        return 1
+    fi
+
+    # Restart the panel; report failure but never crash the caller.
     if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
-        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 && ok "Panel restarted."
-    else command -v "$XUI_SERVICE" >/dev/null 2>&1 && "$XUI_SERVICE" restart || true; fi
+        if systemctl restart "$XUI_SERVICE" >/dev/null 2>&1; then
+            ok "Panel restarted."
+        else
+            warn "Panel restart failed — theme is deployed, but the panel may not have reloaded it yet."
+            warn "Run 'systemctl restart $XUI_SERVICE' manually, or re-run this apply."
+        fi
+    elif command -v "$XUI_SERVICE" >/dev/null 2>&1; then
+        "$XUI_SERVICE" restart >/dev/null 2>&1 || warn "Panel restart failed (systemctl not used)."
+    fi
+    return 0
 }
 
 cmd_reset() {
@@ -798,18 +877,25 @@ cmd_reset() {
     if [[ "$PANEL" == "pasarguard" ]]; then
         if pg_env_apply "__builtin__"; then
             pg_sync "" || true
-            pg_restart_panel || true
+            pg_restart_panel || warn "Panel restart failed — run it manually later."
             ok "Pasarguard back to the built-in default subscription page."
         else
             warn "Panel .env not found — open the panel .env and set SUBSCRIPTION_PAGE_TEMPLATE=subscription/index.html"
         fi
-        return
+        return 0
     fi
-    db_set_subthemedir ""
+    db_set_subthemedir "" || { fail "Could not clear subThemeDir."; return 1; }
     ok "subThemeDir cleared — panel back to built-in default."
     if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
-        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 && ok "Panel restarted."
-    else command -v "$XUI_SERVICE" >/dev/null 2>&1 && "$XUI_SERVICE" restart || true; fi
+        if systemctl restart "$XUI_SERVICE" >/dev/null 2>&1; then
+            ok "Panel restarted."
+        else
+            warn "Panel restart failed — run 'systemctl restart $XUI_SERVICE' later."
+        fi
+    elif command -v "$XUI_SERVICE" >/dev/null 2>&1; then
+        "$XUI_SERVICE" restart >/dev/null 2>&1 || warn "Panel restart failed (systemctl not used)."
+    fi
+    return 0
 }
 
 cmd_remove() {
@@ -818,39 +904,40 @@ cmd_remove() {
     if [[ -z "$name" ]]; then
         local themes=()
         while IFS= read -r t; do [[ -n "$t" ]] && themes+=("$t"); done < <(list_theme_folders)
-        [[ ${#themes[@]} -eq 0 ]] && die "No themes installed."
+        [[ ${#themes[@]} -eq 0 ]] && { fail "No themes installed."; return 1; }
         title "Select theme to remove"; sep
         select t in "${themes[@]}" "Cancel"; do
             [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
-            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return 0; }
             warn "Invalid selection."
         done
     fi
-    valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    valid_theme_name "$name" || { fail "Invalid theme name: '$name'"; return 1; }
     if [[ "$PANEL" == "pasarguard" ]]; then
-        [[ -f "$PG_THEMES_DIR/$name.html" ]] || die "Theme '$name' not found."
+        [[ -s "$PG_THEMES_DIR/$name.html" ]] || { fail "Theme '$name' not found."; return 1; }
         rm -f "$PG_TEMPLATES_DIR/$name.html" "$PG_THEMES_DIR/$name.html"
         if [[ "$(current_theme_dir)" == "$name" ]]; then
             warn "Theme '$name' was active — panel returns to default."
             pg_env_apply "__builtin__" || true
             pg_sync "" || true
-            pg_restart_panel || true
+            pg_restart_panel || warn "Panel restart failed — run it manually later."
         fi
         ok "Removed theme '$name'."
-        return
+        return 0
     fi
-    [[ -d "$THEMES_DIR/$name" ]] || die "Theme '$name' not found."
+    [[ -d "$THEMES_DIR/$name" ]] || { fail "Theme '$name' not found."; return 1; }
     local cur
     cur="$(basename "$(current_theme_dir 2>/dev/null)" 2>/dev/null || true)"
     if [[ "$cur" == "$name" ]]; then
         warn "Theme '$name' is active — panel will return to default."
-        db_set_subthemedir ""
+        db_set_subthemedir "" || true
     fi
     rm -rf "$THEMES_DIR/$name" "$DEPLOY_DIR/$name"
     ok "Removed theme '$name'."
     if systemctl list-unit-files "$XUI_SERVICE.service" >/dev/null 2>&1; then
-        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 || true
+        systemctl restart "$XUI_SERVICE" >/dev/null 2>&1 || warn "Panel restart failed."
     fi
+    return 0
 }
 
 cmd_download() {
@@ -862,16 +949,16 @@ cmd_download() {
         title "Select theme to download"; sep
         select t in "${themes[@]}" "Cancel"; do
             [[ "$REPLY" -ge 1 && "$REPLY" -le ${#themes[@]} ]] && { name="${themes[$((REPLY-1))]}"; break; }
-            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return; }
+            [[ "$REPLY" -eq $(( ${#themes[@]} + 1 )) ]] && { info "Cancelled."; return 0; }
             warn "Invalid selection."
         done
     fi
-    valid_theme_name "$name" || die "Invalid theme name: '$name'"
+    valid_theme_name "$name" || { fail "Invalid theme name: '$name'"; return 1; }
     if theme_is_runnable "$name"; then
         info "Theme '$name' is already downloaded."
-        return
+        return 0
     fi
-    download_theme "$name" || die "Failed to download theme '$name' ($REPO_URL)."
+    download_theme "$name" || { fail "Failed to download theme '$name' ($REPO_URL)."; return 1; }
     ok "Theme '$name' downloaded — use 'nucsub apply $name' to activate it."
 }
 
@@ -1027,7 +1114,7 @@ cmd_webpanel() {
                 chmod 600 "$WEB_TOKEN_FILE"
             fi
             echo "$port" > "$WEB_PORT_FILE"
-            if ! command -v python3 >/dev/null 2>&1; then die "python3 required (install it first: apt install -y python3)."; fi
+            if ! command -v python3 >/dev/null 2>&1; then warn "python3 required (install it first: apt install -y python3)."; return 1; fi
             local dbpath=""
             [[ "$PANEL" == "3xui" ]] && dbpath="$XUI_DB"
             # prefer a real systemd service (auto-start on boot); nohup is the fallback
@@ -1084,7 +1171,7 @@ cmd_webpanel() {
 # ------------------------------------------------------------- Web panel menu ---
 web_panel_menu() {
     while true; do
-        clear
+        clr
         print_header
         title "Web Panel Management"
         sep
@@ -1099,14 +1186,14 @@ web_panel_menu() {
         echo -e "  ${GREEN}0)${NC} Back to main menu"
         sep
         echo -ne "  ${BOLD}Select option [0-6]: ${NC}"
-        read -r choice
+        read -r choice || return 0
         case "$choice" in
-            1) cmd_webpanel start; pause_enter ;;
-            2) cmd_webpanel stop; pause_enter ;;
-            3) cmd_webpanel restart; pause_enter ;;
-            4) cmd_webpanel token; pause_enter ;;
-            5) telegram_menu ;;
-            6) brand_menu ;;
+            1) ( cmd_webpanel start ) || true; pause_enter ;;
+            2) ( cmd_webpanel stop ) || true; pause_enter ;;
+            3) ( cmd_webpanel restart ) || true; pause_enter ;;
+            4) ( cmd_webpanel token ) || true; pause_enter ;;
+            5) ( telegram_menu ) || true ;;
+            6) ( brand_menu ) || true ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1115,7 +1202,7 @@ web_panel_menu() {
 
 telegram_menu() {
     while true; do
-        clear
+        clr
         print_header
         title "Telegram Channel"
         sep
@@ -1127,10 +1214,10 @@ telegram_menu() {
         echo -e "  ${GREEN}0)${NC} Back to web panel menu"
         sep
         echo -ne "  ${BOLD}Select option [0-2]: ${NC}"
-        read -r choice
+        read -r choice || return 0
         case "$choice" in
-            1) cmd_telegram set; pause_enter ;;
-            2) cmd_telegram clear; pause_enter ;;
+            1) ( cmd_telegram set ) || true; pause_enter ;;
+            2) ( cmd_telegram clear ) || true; pause_enter ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1168,9 +1255,9 @@ cmd_telegram() {
                 echo -ne "  Telegram channel URL (https://t.me/...): "
                 read -r val
             fi
-            [[ -z "$val" ]] && die "No URL provided."
+            [[ -z "$val" ]] && fail "No URL provided."
             if [[ ! "$val" =~ ^https://t\.me/[A-Za-z0-9_]{5,}$ ]]; then
-                die "Invalid Telegram URL — expected: https://t.me/username"
+                fail "Invalid Telegram URL — expected: https://t.me/username"
             fi
             config_set telegram_channel "$val"
             ok "Telegram channel set: $val"
@@ -1204,9 +1291,9 @@ cmd_brand() {
         set-logo-data)
             require_root
             val="${2:-}"
-            [[ -n "$val" ]] || die "No logo data URL provided."
-            [[ "$val" == data:image/* ]] || die "Logo must be a data:image URL."
-            [[ "${#val}" -le 1050000 ]] || die "Logo too large (max ~1 MiB)."
+            [[ -n "$val" ]] || fail "No logo data URL provided."
+            [[ "$val" == data:image/* ]] || fail "Logo must be a data:image URL."
+            [[ "${#val}" -le 1050000 ]] || fail "Logo too large (max ~1 MiB)."
             config_set brand_logo "$val"
             ok "Brand logo set (${#val} chars)."
             reapply_active
@@ -1224,7 +1311,7 @@ cmd_brand() {
                 echo -ne "  Brand name: "
                 read -r val
             fi
-            [[ -z "$val" ]] && die "No brand name provided."
+            [[ -z "$val" ]] && fail "No brand name provided."
             config_set brand_name "$val"
             ok "Brand name set: $val"
             reapply_active
@@ -1236,7 +1323,7 @@ cmd_brand() {
                 echo -ne "  Path to brand logo (png/svg/jpeg/webp): "
                 read -r val
             fi
-            [[ -n "$val" && -f "$val" ]] || die "Logo file not found: ${val:-<empty>}"
+            [[ -n "$val" && -f "$val" ]] || fail "Logo file not found: ${val:-<empty>}"
             local size mime b64
             size="$(stat -c%s "$val" 2>/dev/null || wc -c < "$val")"
             if [[ "$size" -gt 1048576 ]]; then
@@ -1269,7 +1356,7 @@ cmd_brand() {
 
 brand_menu() {
     while true; do
-        clear
+        clr
         print_header
         title "Branding"
         sep
@@ -1282,11 +1369,11 @@ brand_menu() {
         echo -e "  ${GREEN}0)${NC} Back to web panel menu"
         sep
         echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
-        read -r choice
+        read -r choice || return 0
         case "$choice" in
-            1) cmd_brand set; pause_enter ;;
-            2) cmd_brand set-logo; pause_enter ;;
-            3) cmd_brand clear; pause_enter ;;
+            1) ( cmd_brand set ) || true; pause_enter ;;
+            2) ( cmd_brand set-logo ) || true; pause_enter ;;
+            3) ( cmd_brand clear ) || true; pause_enter ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1305,7 +1392,7 @@ cmd_pglogin() {
     [[ -z "$user" ]] && user="admin"
     echo -ne "  Pasarguard admin password: "
     read -rs pass; echo
-    [[ -n "$pass" ]] || die "Password empty."
+    [[ -n "$pass" ]] || fail "Password empty."
     config_set pg_api_url "$url"
     pg_creds_store "$user" "$pass"
     ok "Pasarguard credentials stored ($url)."
@@ -1398,23 +1485,23 @@ cmd_menu() {
     [[ "$PANEL" == "3xui" ]] && find_sqlite
     while true; do
         draw_menu
-        read -r choice
+        read -r choice || { echo -e "\n${DIM}Goodbye!${NC}\n"; return 0; }
         case "$choice" in
-            1) clear; cmd_apply; pause_enter ;;
-            2) clear; cmd_reset; pause_enter ;;
-            3) clear; cmd_remove; pause_enter ;;
-            4) clear; web_panel_menu ;;
-            5) clear; cmd_update; pause_enter ;;
+            1) clr; ( cmd_apply ) || true; pause_enter ;;
+            2) clr; ( cmd_reset ) || true; pause_enter ;;
+            3) clr; ( cmd_remove ) || true; pause_enter ;;
+            4) clr; ( web_panel_menu ) || true ;;
+            5) clr; ( cmd_update ) || true; pause_enter ;;
             6)
-                clear
-                if cmd_uninstall; then
+                clr
+                if ( cmd_uninstall ); then
                     echo ""
                     echo -e "${DIM}  NUC-SUB removed. Goodbye!${NC}\n"
                     exit 0
                 fi
                 pause_enter
                 ;;
-            7) clear; cmd_status; pause_enter ;;
+            7) clr; ( cmd_status ) || true; pause_enter ;;
             0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
