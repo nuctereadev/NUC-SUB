@@ -23,7 +23,7 @@ WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
 PANEL_CONF="$INSTALL_DIR/panel.conf"
-NUC_SUB_VERSION="2.0.2"
+NUC_SUB_VERSION="2.1.0"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
@@ -708,9 +708,10 @@ draw_menu() {
     echo -e "  ${GREEN}5)${NC} Update NUC-SUB    ${DIM}— pull latest from GitHub${NC}"
     echo -e "  ${GREEN}6)${NC} Uninstall         ${DIM}— remove everything${NC}"
     echo -e "  ${GREEN}7)${NC} Status & info     ${DIM}— panel DB, service, paths${NC}"
+    echo -e "  ${GREEN}8)${NC} Diagnose          ${DIM}— adaptive check, zero credentials${NC}"
     echo -e "  ${GREEN}0)${NC} Exit\n"
     sep
-    echo -ne "  ${BOLD}Select option [0-7]: ${NC}"
+    echo -ne "  ${BOLD}Select option [0-8]: ${NC}"
 }
 
 pause_enter() { echo -ne "\n${DIM}Press Enter to continue...${NC}"; read -r || true; }
@@ -1398,6 +1399,558 @@ cmd_pglogin() {
     ok "Pasarguard credentials stored ($url)."
 }
 
+# ============================================================= Diagnostic layer ===
+# Adaptive detection & validation (zero-credential by design):
+#   * never assumes server IP == subscription address, panel port == sub port,
+#     or install domain == subscription domain
+#   * reads only what already lives on the box (sqlite settings / panel .env /
+#     container env) and probes the network with plain HTTP(S) requests
+#   * if no endpoint can be proven, asks ONLY for one test Subscription URL
+#     (never for panel/SSH credentials) and maps the response onto the active
+#     theme's dynamic fields
+#   * every run is logged under $INSTALL_DIR/diag/ for reporting
+#
+# Commands:
+#   nucsub diagnose [url|--auto|--json]   run the adaptive diagnostic
+#   nucsub diag-report [N]                print the latest diagnostic log
+
+DIAG_DIR="$INSTALL_DIR/diag"
+
+DIAG_FIELDS=(data-nuc-used data-nuc-limit data-nuc-pct data-nuc-bar-rem data-nuc-status data-link data-i18n data-nuc-gated qr copy-all copyAllBtn)
+
+dgn_server_ip() { web_panel_host; }
+
+dgn_xui_bin() {
+    local b
+    for b in /usr/local/x-ui/x-ui /usr/local/3x-ui/x-ui $(command -v x-ui 2>/dev/null || true); do
+        [[ -x "$b" ]] && { echo "$b"; return 0; }
+    done
+    return 0
+}
+
+dgn_normalize_path() {  # ensure leading slash, keep "/" as root, strip trailing slash
+    local p="${1:-/}"
+    [[ "$p" == /* ]] || p="/$p"
+    if [[ "$p" != "/" ]]; then p="${p%/}"; fi
+    printf '%s' "$p"
+}
+
+dgn_add_cand() {  # dedup + append
+    local u="$1"
+    for _c in "${CANDIDATES[@]:-}"; do [[ "$_c" == "$u" ]] && return 0; done
+    CANDIDATES+=("$u")
+}
+
+dgn_discover_xui() {
+    CANDIDATES=()
+    local ip scheme host port p
+    ip="$(dgn_server_ip)"
+    webPort="$(db_panel_setting webPort)"; if [[ -z "$webPort" ]]; then webPort="54321"; fi
+    webBase="$(db_panel_setting webBasePath)"
+    subPath="$(db_panel_setting subPath)"; if [[ -z "$subPath" ]]; then subPath="/sub/"; fi
+    subDomain="$(db_panel_setting subDomain)"
+    subPort="$(db_panel_setting subPort)"
+    subCert="$(db_panel_setting subCertFile)"
+    scheme="http"; if [[ -n "$subCert" ]]; then scheme="https"; fi
+    host="$ip"; if [[ -n "$subDomain" ]]; then host="$subDomain"; fi
+    path="$(dgn_normalize_path "$subPath")"
+    if [[ -n "$subPort" ]]; then
+        dgn_add_cand "${scheme}://${host}:${subPort}${path}"
+        dgn_add_cand "${scheme}://${ip}:${subPort}${path}"
+    else
+        local dp=80; if [[ "$scheme" == "https" ]]; then dp=443; fi
+        dgn_add_cand "${scheme}://${host}:${dp}${path}"
+        # scheme-reversed standard variants, so a cert/port mismatch still surfaces
+        if [[ "$scheme" == "https" ]]; then dgn_add_cand "http://${host}:80${path}"; else dgn_add_cand "https://${host}:443${path}"; fi
+    fi
+    dgn_add_cand "${scheme}://${ip}:${webPort}${path}"
+    # panel admin itself (identity + reachability)
+    if [[ -n "$webBase" ]]; then dgn_add_cand "${scheme}://${ip}:${webPort}$(dgn_normalize_path "$webBase")"; else dgn_add_cand "${scheme}://${ip}:${webPort}/"; fi
+    # probe only (informational) — ports x-ui actually listens on
+    while IFS= read -r p; do
+        if [[ -n "$p" ]]; then dgn_add_cand "${scheme}://${ip}:${p}/"; fi
+    done < <(sqlite3 "$XUI_DB" "SELECT port FROM inbounds WHERE port IS NOT NULL AND port>0 ORDER BY port;" 2>/dev/null || true)
+    # record facts
+    dgn_put "panel_type" "3x-ui"
+    dgn_put "server_ip" "$ip"
+    dgn_put "panel_version" "$(dgn_version_xui)"
+    dgn_put "web_endpoint" "${scheme}://${ip}:${webPort}${webBase:+$(dgn_normalize_path "$webBase")}"
+    dgn_put "sub_configured" "$([[ -n "$subDomain" ]] && echo "$subDomain" || echo "$ip"):$([[ -n "$subPort" ]] && echo "$subPort" || ( [[ "$scheme" == "https" ]] && echo 443 || echo 80 ))${path}"
+    local suben
+    suben="$(db_panel_setting subEnabled)"
+    if [[ -n "$suben" ]]; then dgn_put "sub_enabled" "$suben"; else dgn_put "sub_enabled" "not-set"; fi
+    if [[ -n "$subCert" ]]; then dgn_put "sub_cert" "set/yes"; else dgn_put "sub_cert" "no"; fi
+}
+
+dgn_version_xui() {
+    local b
+    b="$(dgn_xui_bin)"
+    [[ -n "$b" ]] || return 0
+    "$b" -v 2>/dev/null | head -n1
+}
+
+dgn_pg_env() {  # dgn_pg_env <KEY> — .env file, container env, or systemd unit env
+    local key="$1" c="" raw=""
+    [[ -n "$PG_ENV_FILE" && -f "$PG_ENV_FILE" ]] && { local v; v="$(pg_env_value "$key")"; [[ -n "$v" ]] && { echo "$v"; return 0; }; }
+    c="$(pg_app_container)"
+    if [[ -n "$c" ]]; then
+        raw="$(docker exec "$c" sh -c "printenv ${key}" 2>/dev/null || true)"
+        [[ -n "$raw" ]] && { echo "$raw"; return 0; }
+    fi
+    raw="$(systemctl show pasarguard -p Environment 2>/dev/null | tr ' ' '\n' | sed -n "s/^${key}=//p" | head -n1)"
+    [[ -n "$raw" ]] && echo "$raw" || true
+}
+
+dgn_version_pg() {
+    local c
+    c="$(pg_app_container)"
+    [[ -n "$c" ]] && docker inspect -f '{{.Config.Image}}' "$c" 2>/dev/null || true
+}
+
+dgn_discover_pg() {
+    CANDIDATES=()
+    local ip scheme host port subpath bound
+    ip="$(dgn_server_ip)"
+    scheme="http"
+    if [[ -n "$(dgn_pg_env UVICORN_SSL_CERTFILE)" ]]; then scheme="https"; fi
+    host="$ip"; port="$(dgn_pg_env UVICORN_PORT)"; if [[ -z "$port" ]]; then port=8000; fi
+    local base vh vp
+    base="$(dgn_pg_env VITE_BASE_API)"
+    if [[ "$base" =~ ^(https?)://([^/:]+)(:([0-9]+))? ]]; then
+        scheme="${BASH_REMATCH[1]}"; vh="${BASH_REMATCH[2]}"; vp="${BASH_REMATCH[4]:-}"
+        if [[ -n "$vh" ]]; then host="$vh"; fi
+        if [[ -n "$vp" ]]; then port="$vp"; fi
+    fi
+    subpath="$(dgn_pg_env XRAY_SUBSCRIPTION_PATH)"
+    if [[ -z "$subpath" ]]; then subpath="$(dgn_pg_env SUBSCRIPTION_PATH)"; fi
+    if [[ -z "$subpath" ]]; then subpath="sub"; fi
+    subpath="$(dgn_normalize_path "$subpath")"
+    dgn_add_cand "${scheme}://${host}:${port}${subpath}/<user-token>"
+    dgn_add_cand "${scheme}://${host}:${port}$(dgn_normalize_path "$(dgn_pg_env DASHBOARD_PATH)")"
+    dgn_add_cand "${scheme}://${host}:${port}/"
+    # unix-socket deployments
+    bound="$(dgn_pg_env UVICORN_UDS)"
+    if [[ -n "$bound" ]]; then dgn_add_cand "unix://${bound}${subpath}/<user-token>"; fi
+    dgn_put "panel_type" "pasarguard"
+    dgn_put "server_ip" "$ip"
+    dgn_put "panel_version" "$(dgn_version_pg)"
+    dgn_put "base_url" "${scheme}://${host}:${port}"
+    dgn_put "sub_path" "${subpath}/"
+    dgn_put "sub_template" "$(dgn_pg_env SUBSCRIPTION_PAGE_TEMPLATE)"
+    dgn_put "proxy_headers" "$(dgn_pg_env UVICORN_PROXY_HEADERS)"
+    if [[ -n "$bound" ]]; then dgn_put "uds" "$bound"; else dgn_put "uds" "none"; fi
+}
+
+# ------------------------------------------------ probe + classification -------
+DGN_CODE=""; DGN_TYPE=""; DGN_SIZE=""; DGN_REDIR=""; DGN_SSL=""; DGN_RC=""
+dgn_probe() {  # dgn_probe <url>
+    local u="$1"
+    DGN_BODY="$(mktemp)"; DGN_HDR="${DGN_BODY}.h"
+    set +e
+    curl -skL --max-time 8 \
+        -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 NUC-SUB-diagnostic/1.0" \
+        -H "Accept: text/html,application/xhtml+xml" \
+        -o "$DGN_BODY" -D "$DGN_HDR" \
+        -w '%{http_code}\n%{content_type}\n%{size_download}\n%{redirect_url}\n%{ssl_verify_result}' \
+        "$u" 2>/dev/null > /tmp/dgn.w || DGN_RC=1
+    set -e
+    DGN_RC=0
+    mapfile -t _w < /tmp/dgn.w
+    DGN_CODE="${_w[0]:-000}"; DGN_TYPE="${_w[1]:-}"; DGN_SIZE="${_w[2]:-0}"; DGN_REDIR="${_w[3]:-}"; DGN_SSL="${_w[4]:-}"
+    rm -f /tmp/dgn.w
+    # cap the body for classification (config blobs can be large)
+    [[ "$DGN_SIZE" -gt 2097152 ]] && head -c 2097152 "$DGN_BODY" > "${DGN_BODY}.c" && mv "${DGN_BODY}.c" "$DGN_BODY"
+    return 0
+}
+
+dgn_is_text() { [ "$(file -b --mime-type "$1" 2>/dev/null)" = "text/plain" ]; }
+
+dgn_is_b64config() {  # line-based base64 blob heuristic (content is config for clients)
+    local f="$1" n=0 firstlen=0
+    [[ -s "$f" ]] || return 1
+    head -c 400 "$f" | tr -d '[:space:]' | grep -q '<' && return 1
+    while IFS= read -r ln; do
+        ln="$(printf '%s' "$ln" | tr -d ' \t\r')"
+        [[ -z "$ln" ]] && continue
+        [[ -z "${ln//=}" ]] && continue
+        [[ "$ln" =~ ^[A-Za-z0-9+/=]+$ ]] || return 1
+        if [[ "$n" -eq 0 ]]; then firstlen="${#ln}"; fi
+        n=$((n+1))
+        [[ "$n" -ge 40 ]] && break
+    done < "$f"
+    [[ $n -ge 1 && $firstlen -ge 32 ]] && return 0
+    return 1
+}
+
+dgn_classify() {  # dgn_classify <body-file> — sets DGN_FORMAT DGN_LEFT DGN_THEMEHIT DGN_BUILTIN
+    local body="$1"
+    DGN_TYPE="${DGN_TYPE:-}"
+    DGN_FORMAT="unknown"; DGN_LEFT=""; DGN_THEMEHIT=""; DGN_BUILTIN=""
+    case "$DGN_TYPE" in
+        *html*)
+            DGN_FORMAT="html"
+            if grep -qE '\{\{[. ]{1,2}' "$body"; then DGN_LEFT="raw-template-tokens-in-response"; fi
+            ;;
+        *json*) DGN_FORMAT="json" ;;
+        application/octet-stream*|application/zip*|application/x-tar*|text/plain*|""|*text*)
+            if grep -qiE '(^|[^A-Za-z0-9])(vless|vmess|trojan|ss|tuic|hysteria2?|wireguard|warp)://' "$body"; then
+                DGN_FORMAT="subscription-config"
+            elif dgn_is_b64config "$body"; then
+                DGN_FORMAT="subscription-config"
+            else
+                DGN_FORMAT="text"
+            fi
+            ;;
+    esac
+    # panel-builtin page fingerprints (nuc-sub themes are NOT applied)
+    if [[ "$DGN_FORMAT" == "html" ]]; then
+        if grep -qiE 'data-nuc-[a-z-]+' "$body"; then DGN_THEMEHIT="nuc-sub-theme"
+        elif grep -qiE 'id="copyAllBtn"|subbtn|announce' "$body"; then DGN_BUILTIN="panel-builtin-page"
+        fi
+    fi
+}
+
+dgn_field_report() {  # dgn_field_report <body-file> <theme-file|-> — FOUND/MISSING vs active theme markers
+    local body="$1" tf="$2" m
+    DGN_FOUND=""; DGN_MISSING=""
+    if [[ "$tf" == "-" ]]; then local list; list=("${DIAG_FIELDS[@]}"); else
+        local list=()
+        while IFS= read -r m; do [[ -n "$m" ]] && list+=("$m"); done < <(grep -oE 'data-nuc-[a-z-]+' "$tf" | sort -u)
+        while IFS= read -r m; do [[ -n "$m" ]] && list+=("$m"); done < <(grep -oE 'data-i18n="[a-z-]+"' "$tf" | sed 's/data-i18n=//;s/"//g')
+        [[ ${#list[@]} -eq 0 ]] && list=("${DIAG_FIELDS[@]}")
+    fi
+    for m in "${list[@]}"; do
+        if grep -qF "$m" "$body"; then DGN_FOUND="${DGN_FOUND}${DGN_FOUND:+ }$(printf '%s' "$m" | tr -d '"')"
+        else DGN_MISSING="${DGN_MISSING}${DGN_MISSING:+ }$(printf '%s' "$m" | tr -d '"')"; fi
+    done
+}
+
+dgn_active_theme_file() {
+    local cur
+    cur="$(current_theme_dir)"
+    [[ -z "$cur" ]] && { echo "-"; return 0; }
+    if [[ "$PANEL" == "pasarguard" ]]; then
+        [[ -s "$PG_THEMES_DIR/$cur.html" ]] && echo "$PG_THEMES_DIR/$cur.html" || echo "-"
+    else
+        [[ -s "$THEMES_DIR/$cur/index.html" ]] && echo "$THEMES_DIR/$cur/index.html" || echo "-"
+    fi
+}
+
+# ------------------------------------------------------------- report helpers -----
+dgn_issues=()
+dgn_put() {  # dgn_put <key> <value> — feed the JSON/log facts
+    printf '%s\t%s\n' "$1" "$2" >> "$DGN_FACTS"
+}
+dgn_note() { dgn_issues+=("$1"); }
+
+dgn_theme_state() {
+    local cur tf
+    cur="$(current_theme_dir)"
+    tf="$(dgn_active_theme_file)"
+    dgn_put "active_theme" "${cur:-<built-in>}"
+    if [[ -z "$tf" || "$tf" == "-" ]]; then dgn_put "active_theme_file" "-"
+    else dgn_put "active_theme_file" "$(realpath "$tf" 2>/dev/null || echo "$tf")"; fi
+}
+
+# ---------------------------------------------------- probe-all-over candidates --
+dgn_test_all() {  # probe every candidate; record each test
+    local u
+    for u in "${CANDIDATES[@]}"; do
+        dgn_probe "$u" || true
+        dgn_classify "$DGN_BODY"
+        # strip any <user-token> placeholder before use
+        DGN_PRN="$(printf '%s' "$u" | sed 's#[^ ]*/<user-token>#/SUB-TOKEN#')"
+        printf '%s|%s|%s|%s|%s|%s\n' "$DGN_PRN" "$DGN_CODE" "$DGN_TYPE" "$DGN_SIZE" "$DGN_REDIR" "$DGN_FORMAT" >> "$DGN_TESTS"
+        rm -f "$DGN_BODY" "$DGN_HDR"
+    done
+}
+
+dgn_best_result() {  # find the first non-trivial test line: html/page beats config beats 4xx, conn failures last
+    local best="" score=-1 line
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local url code type size redir fmt s
+        IFS='|' read -r url code type size redir fmt <<< "$line"
+        case "$fmt" in
+            html) s=60 ;;
+            subscription-config) s=50 ;;
+            json) s=40 ;;
+            text) s=30 ;;
+            http-*) s=10 ;;
+            *) s=0 ;;
+        esac
+        if [[ $s -gt $score ]]; then score=$s; best="$line"; fi
+    done < "$DGN_TESTS"
+    echo "$best"
+}
+
+# ------------------------------------------------------- the diagnostic command --
+cmd_diag() {
+    # flags: (none)|<url>|--auto|--json
+    local arg="${1:-}" interactive=1 emit_json=0 test_url=""
+    case "$arg" in
+        --auto|auto|-a) interactive=0 ;;
+        --json|-j) emit_json=1; interactive=0 ;;
+        --url|-u) shift || true; test_url="${2:-}" ;;
+        -*) echo -e "${YELLOW}Usage: nucsub diagnose [<test-subscription-url>|--auto|--json]${NC}"; return 1 ;;
+        *) test_url="$arg" ;;
+    esac
+    require_root
+    mkdir -p "$DIAG_DIR"
+    DGN_FACTS="$(mktemp)"; DGN_TESTS="$(mktemp)"
+    DGN_FORMAT=""; DGN_THEMEHIT=""; DGN_BUILTIN=""; DGN_LEFT=""
+    DGN_FOUND=""; DGN_MISSING=""; DGN_ISSUE=""; DGN_SUGGEST=""; CANDIDATES=()
+    dgn_put "timestamp" "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    dgn_put "nuc_sub_version" "$NUC_SUB_VERSION"
+    dgn_put "mode" "$([[ $emit_json -eq 1 ]] && echo json || echo interactive)"
+    dgn_issues=()
+
+    title "NUC-SUB Diagnostic Mode"; sep
+
+    # --- 1) panel detected
+    dgn_put "panel_detected" "$PANEL"
+    if [[ "$PANEL" == "pasarguard" ]]; then dgn_discover_pg; else dgn_discover_xui; fi
+    dgn_theme_state
+    echo -e "  ${GREEN}✓${NC} Panel detected:        ${BOLD}$PANEL${NC}  (no credentials needed — local config + network probe)"
+    echo -e "  ${GREEN}✓${NC} Panel version:         $(dgn_fact panel_version || echo unknown)"
+
+    # --- 2) subscription endpoints
+    echo -e "  ${GREEN}✓${NC} Subscription endpoint(s):"
+    for u in "${CANDIDATES[@]}"; do
+        echo -e "       ${DIM}$(printf '%-52s' "$u")${NC}"
+    done
+
+    # --- 3) URL validation (test every candidate)
+    sep
+    echo -e "  ${BOLD}URL validation${NC}"
+    dgn_test_all || true
+    local best
+    best="$(dgn_best_result)"
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        local url code type size redir fmt
+        IFS='|' read -r url code type size redir fmt <<< "$line"
+        local txt=""
+        if [[ "$code" == 200 ]]; then txt="${GREEN}${code}${NC}"; else txt="${YELLOW}${code}${NC}"; fi
+        echo -e "       $txt $(printf '%-38s' "$url") $(printf '%-10s' "$fmt") $(printf '%-24s' "$type") ${redir:+→ $redir}"
+    done < "$DGN_TESTS"
+
+    # --- 4) response format + dynamic fields (on the best real page if we found one)
+    sep
+    if [[ -n "$best" ]]; then
+        local purl pcode ptype psize predir pfmt
+        IFS='|' read -r purl pcode ptype psize predir pfmt <<< "$best"
+        echo -e "  ${GREEN}✓${NC} Response format:       $pfmt ($ptype)"
+        if [[ "$pfmt" == "html" ]]; then
+            dgn_probe "$purl" || true
+            dgn_classify "$DGN_BODY"
+            local tf; tf="$(dgn_active_theme_file)"
+            dgn_field_report "$DGN_BODY" "$tf"
+            echo -e "  ${GREEN}✓${NC} Dynamic fields found:  ${DGN_FOUND:-<none>}"
+            echo -e "  ${YELLOW}⚠${NC} Missing fields:        ${DGN_MISSING:-<none>}"
+            [[ -n "$DGN_LEFT" ]] && echo -e "  ${RED}✗${NC} Unrendered template:  ${DGN_LEFT}"
+            echo -e "  ${GREEN}✓${NC} Theme compatibility:   ${DGN_THEMEHIT:-$([[ -n "$DGN_BUILTIN" ]] && echo "PANEL BUILTIN (nuc-sub not active)" || echo "unknown/no-theme-markers")}"
+            dgn_put "sample_url" "${purl}"
+            dgn_put "sample_code" "$pcode"
+            dgn_put "response_format" "$pfmt"
+            dgn_put "fields_found" "${DGN_FOUND:-}"
+            dgn_put "fields_missing" "${DGN_MISSING:-}"
+            [[ -n "$DGN_LEFT" ]] && dgn_put "unrendered_template" "$DGN_LEFT"
+            rm -f "$DGN_BODY" "$DGN_HDR"
+        else
+            echo -e "  ${YELLOW}⚠${NC} Sub page is NOT html (${pfmt}) — this URL serves client config, not the human page."
+            echo -e "       The human subscription page usually needs the panel's own page URL."
+            dgn_note "subscription URL returned config, not the theme page"
+        fi
+    else
+        echo -e "  ${YELLOW}⚠${NC} No endpoint answered with content."
+        dgn_put "response_format" "no-content"
+    fi
+
+    # --- 5) possible issue + fix
+    sep
+    local issue=""
+    dgn_infer_issue; issue="${DGN_ISSUE:-}"
+    echo -e "  ${BOLD}Possible issue${NC}:       ${issue:-<none found — look at the log above>}"
+    if [[ ${#dgn_issues[@]} -gt 0 ]]; then
+        echo -e "  ${DIM}Contributing factors:${NC}"
+        local i
+        for i in "${dgn_issues[@]}"; do echo -e "       • $i"; done
+    fi
+    sep
+
+    # --- interactive fallback: ask ONLY for one test subscription URL
+    if [[ $interactive -eq 1 && -z "$test_url" ]] && [[ "$(dgn_fact panel_type)" != "" ]] && { [[ "$DGN_FORMAT" != "html" ]] || [[ -z "$DGN_THEMEHIT" ]]; }; then
+        echo ""
+        echo -e "${YELLOW}→ No conclusive page detected. To pinpoint the problem, please paste ONE test${NC}"
+        echo -e "  ${YELLOW}  Subscription URL (the link a user opens in a browser):${NC}"
+        echo -ne "  ${GREEN}Test URL > ${NC}"
+        read -r test_url || true
+    fi
+    if [[ -n "$test_url" ]]; then
+        case "$test_url" in
+            http://*|https://*) ;;
+            *) echo -e "${RED}✗ The value does not look like an http(s) URL — skipping deep analysis.${NC}"; test_url="" ;;
+        esac
+    fi
+    if [[ -n "$test_url" ]]; then
+        sep
+        echo -e "  ${BOLD}Deep analysis of the provided Subscription URL${NC}"
+        dgn_probe "$test_url" || true
+        dgn_classify "$DGN_BODY"
+        echo -e "  ✓ URL validation:       HTTP $DGN_CODE  ${DGN_TYPE:-<none>}  (${DGN_SIZE} bytes)"
+        echo -e "  ✓ Response format:      ${DGN_FORMAT}"
+        if [[ -n "$DGN_REDIR" ]]; then echo -e "  → Redirected to:        $DGN_REDIR"; fi
+        if [[ "$DGN_FORMAT" == "html" ]]; then
+            local tf; tf="$(dgn_active_theme_file)"
+            dgn_field_report "$DGN_BODY" "$tf"
+            echo -e "  ✓ Dynamic fields found: ${DGN_FOUND:-<none>}"
+            echo -e "  ✓ Missing fields:       ${DGN_MISSING:-<none>}"
+            [[ -n "$DGN_LEFT" ]] && echo -e "  ✗ Unrendered template:  $DGN_LEFT"
+            echo -e "  ✓ Theme compatibility:  ${DGN_THEMEHIT:-$([[ -n "$DGN_BUILTIN" ]] && echo "PANEL BUILTIN (nuc-sub not active)" || echo "unknown/no-theme-markers")}"
+        elif [[ "$DGN_FORMAT" == "subscription-config" ]]; then
+            echo -e "  ✓ This URL serves client config (vless/vmess/ss/...). The subject is the raw"
+            echo -e "    subscription feed, not the themed page — the panel page lives elsewhere."
+            dgn_put "issue" "url is a config feed, not the themed page"
+        else
+            echo -e "  ✓ No themed page on this URL — see the possible-issue section."
+        fi
+        dgn_put "test_url" "$test_url"
+        dgn_put "test_url_code" "$DGN_CODE"
+        rm -f "$DGN_BODY" "$DGN_HDR"
+    fi
+
+    # --- final issue summary
+    echo ""
+    if [[ ${#dgn_issues[@]} -gt 0 ]]; then
+        echo -e "  ${BOLD}Suggested next steps:${NC}"
+        local i=0
+        for i in "${dgn_issues[@]}"; do echo -e "    • $i"; dgn_put "suggested" "$i"; done
+        dgn_put "diagnosis" "issues-found"
+    else
+        dgn_put "diagnosis" "healthy"
+    fi
+
+    # --- persist run (log + facts) + optional JSON
+    local logf="$DIAG_DIR/diagnostic-$(date +%Y%m%d-%H%M%S).log"
+    {
+        echo "NUC-SUB Diagnostic Mode — $(date)"
+        echo "=================================================="
+        echo "FACTS:"
+        column -t -s $'\t' "$DGN_FACTS" 2>/dev/null || cat "$DGN_FACTS"
+        echo ""
+        echo "TESTS:"
+        cat "$DGN_TESTS"
+    } > "$logf" 2>/dev/null || true
+    chmod 600 "$logf"
+    echo -e "\n  ${DIM}Report saved: $logf${NC}"
+    if [[ $emit_json -eq 1 ]]; then
+        python3 - "$DGN_FACTS" "$DGN_TESTS" <<'PY'
+import json, sys
+facts = {}
+for ln in open(sys.argv[1], encoding="utf-8"):
+    ln = ln.rstrip("\n")
+    if "\t" in ln:
+        k, v = ln.split("\t", 1)
+        facts[k] = v
+tests = []
+for ln in open(sys.argv[2], encoding="utf-8"):
+    ln = ln.rstrip("\n")
+    if "|" in ln:
+        tests.append(ln.split("|"))
+out = dict(facts)
+out["tests"] = tests
+json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
+print()
+PY
+        local jf="${logf%.log}.json"
+        python3 - "$DGN_FACTS" "$DGN_TESTS" "$jf" <<'PY'
+import json, sys
+facts = {}
+for ln in open(sys.argv[1], encoding="utf-8"):
+    if "\t" in ln:
+        k, v = ln.rstrip("\n").split("\t", 1)
+        facts[k] = v
+tests = [ln.rstrip("\n").split("|") for ln in open(sys.argv[2], encoding="utf-8") if ln.strip()]
+json.dump({**facts, "tests": tests}, open(sys.argv[3], "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+PY
+        echo -e "  ${DIM}JSON report: $jf${NC}"
+    fi
+    rm -f "$DGN_FACTS" "$DGN_TESTS"
+    return 0
+}
+
+dgn_fact() {  # dgn_fact <key> — pull a fact from the current run
+    local key="$1"
+    [[ -f "${DGN_FACTS:-}" ]] || return 0
+    sed -n "s/^${key}\t//p" "$DGN_FACTS" | tail -n1
+}
+
+dgn_infer_issue() {
+    local line url code type size redir fmt notable="" cnt200=0 cnt4xx=0 cnt000=0
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        IFS='|' read -r url code type size redir fmt <<< "$line"
+        case "$code" in
+            200) notable="ok"; cnt200=$((cnt200+1)) ;;
+            301|302|307|308) [[ "$notable" != "ok" ]] && notable="redirect" ;;
+            502|503|504) notable="proxy-down" ;;
+            401|403) [[ "$notable" != "ok" ]] && notable="protected" ;;
+            404) [[ "$notable" != "ok" ]] && notable="no-route"; cnt4xx=$((cnt4xx+1)) ;;
+            000) [[ -z "$notable" ]] && notable="refused"; cnt000=$((cnt000+1)) ;;
+        esac
+    done < "$DGN_TESTS"
+    DGN_ISSUE=""
+    if [[ "$notable" == "ok" ]]; then
+        local fmt2
+        fmt2="$(dgn_fact response_format)"
+        if [[ "$fmt2" == "no-content" ]]; then
+            DGN_ISSUE="subscription route responds but is not serving a page (URL token missing / panel sub disabled)"
+        elif [[ "$fmt2" != "html" || "${DGN_THEMEHIT:-}" != "nuc-sub-theme" ]]; then
+            DGN_ISSUE="HTTP 200, but the responding page is not driven by the active nuc-sub theme"
+            if [[ $cnt4xx -gt 0 ]]; then dgn_note "$cnt4xx subscription URL(s) returned 4xx — subscriptions look disabled / token wrong"; fi
+        fi
+        return 0
+    fi
+    case "$notable" in
+        proxy-down)
+            DGN_ISSUE="reverse proxy / upstream is up but returning 5xx (check nginx/caddy/apache or the panel service)"
+            dgn_note "502/503/504 — the panel web service or proxy failed"
+            ;;
+        protected)
+            DGN_ISSUE="endpoint requires credentials or is IP-restricted (401/403)"
+            dgn_note "401/403 — admin/web UI vs subscription path mixture"
+            ;;
+        no-route)
+            DGN_ISSUE="404 on every candidate — the subscription path/token is wrong or subscriptions are disabled in the panel"
+            dgn_note "verify subEnabled / the subscription toggle and get a real Subscription URL (diagnose <url>)"
+            ;;
+        refused)
+            DGN_ISSUE="no listener answered (port closed / wrong scheme) — the configured URL likely does not match the running panel"
+            dgn_note "compare panel settings (subPort/subDomain/IP) with what actually listens"
+            ;;
+        redirect)
+            DGN_ISSUE="every candidate only redirects — the real endpoint lives elsewhere (proxy/CDN/domain change)"
+            dgn_note "follow the redirect or update the subscription domain setting"
+            ;;
+        *) DGN_ISSUE="no conclusive endpoint found — use 'nucsub diagnose <a-real-subscription-url>'"
+            dgn_note "a test Subscription URL will let NUC-SUB map the real response"
+            ;;
+    esac
+}
+
+cmd_diag_report() {  # cmd_diag_report [N] — show the latest/historical diagnostic log
+    local n="${1:-1}"
+    local latest
+    latest="$(ls -1t "$DIAG_DIR"/diagnostic-*.log 2>/dev/null | sed -n "${n}p")"
+    if [[ -z "$latest" ]]; then
+        warn "No diagnostic reports found yet (run: nucsub diagnose)."
+        return 1
+    fi
+    title "Diagnostic report: ${latest##*/}"; sep
+    cat "$latest"
+}
+
 # ----------------------------------------------------------- Update / Uninstall ---
 cmd_update() {
     require_root
@@ -1502,6 +2055,7 @@ cmd_menu() {
                 pause_enter
                 ;;
             7) clr; ( cmd_status ) || true; pause_enter ;;
+            8) clr; ( cmd_diag ) || true; pause_enter ;;
             0) echo -e "\n${DIM}Goodbye!${NC}\n"; exit 0 ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac
@@ -1523,7 +2077,9 @@ case "$cmd" in
     telegram)       cmd_telegram "$@" ;;
     brand)          cmd_brand "$@" ;;
     pglogin)        cmd_pglogin ;;
-    pg-diagnose|diagnose) cmd_pg_diagnose ;;
+    pg-diagnose)    cmd_pg_diagnose ;;
+    diagnose)       cmd_diag "$@" ;;
+    diag-report)    cmd_diag_report "$@" ;;
     update)         cmd_update "$@" ;;
     uninstall)      cmd_uninstall ;;
     menu)           cmd_menu ;;
@@ -1551,6 +2107,12 @@ Commands:
                       View or configure the Telegram channel shown in themes
   pglogin             Store Pasarguard panel API credentials (for theme switching)
   pg-diagnose         Print the Pasarguard template resolution chain (fixes a 500)
+  diagnose [<url>|--auto|--json]
+                      Adaptive diagnostic (zero-credential): discovers the real
+                      subscription endpoint from local panel settings, validates URLs,
+                      maps the response onto the active theme's dynamic fields, and
+                      asks ONLY for one test Subscription URL when nothing is conclusive
+  diag-report [N]     Print the latest (or Nth) saved diagnostic report
   update              Pull latest from GitHub and reinstall
   uninstall           Remove everything (themes, CLI, web panel, DB entry)
   menu                Interactive menu (default when no args given)
