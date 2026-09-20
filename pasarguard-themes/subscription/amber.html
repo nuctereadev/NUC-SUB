@@ -139,11 +139,11 @@ html[lang="en"]{direction:ltr} html[lang="en"] .detail-value{text-align:right}
         <div class="status"><span data-i18n="st_active">فعال</span></div>
       </div>
       <div class="usage">
-        <div><div class="usage-label" data-i18n="traffic_usage">مصرف ترافیک</div><div class="usage-value">{{ (user.used_traffic / 1024 ** 3) | round(2) }}<span>GB</span></div><div class="progress"><div class="progress-fill" data-width="{{ (user.used_traffic / user.data_limit * 100) | round(1) }}"></div></div></div>
+        <div><div class="usage-label" data-i18n="traffic_usage">مصرف ترافیک</div><div class="usage-value">{{ (user.used_traffic / 1024 ** 3) | round(2) }}<span>GB</span></div><div class="progress"><div class="progress-fill" data-width="{% if user.data_limit %}{{ (user.used_traffic / user.data_limit * 100) | round(1) }}{% else %}0{% endif %}"></div></div></div>
         <div class="usage-side">
           <div class="usage-metric"><small data-i18n="used">مصرف شده</small><strong>{{ user.used_traffic | bytesformat }}</strong></div>
-          <div class="usage-metric"><small data-i18n="remaining">باقیمانده</small><strong>{{ (user.data_limit - user.used_traffic) | bytesformat }}</strong></div>
-          <div class="usage-metric"><small data-i18n="total">حجم کل</small><strong>{{ user.data_limit | bytesformat }}</strong></div>
+          <div class="usage-metric"><small data-i18n="remaining">باقیمانده</small><strong>{% if user.data_limit %}{{ (user.data_limit - user.used_traffic) | bytesformat }}{% else %}∞{% endif %}</strong></div>
+          <div class="usage-metric"><small data-i18n="total">حجم کل</small><strong>{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</strong></div>
         </div>
       </div>
     </div>
@@ -152,7 +152,7 @@ html[lang="en"]{direction:ltr} html[lang="en"] .detail-value{text-align:right}
 
   <section class="panel">
     <div class="panel-title" data-i18n="subscription_details">جزئیات اشتراک</div>
-    <div class="detail"><span class="detail-label" data-i18n="expiry">تاریخ انقضا</span><span class="detail-value">{{ user.expire | datetime }}</span></div>
+    <div class="detail"><span class="detail-label" data-i18n="expiry">تاریخ انقضا</span><span class="detail-value">{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</span></div>
     <div class="detail"><span class="detail-label" data-i18n="status">وضعیت</span><span class="detail-value good" data-i18n="st_active">فعال</span></div>
     <div class="detail"><span class="detail-label" data-i18n="device_limit">محدودیت دستگاه</span><span class="detail-value">{{ user.hwid_limit }}</span></div>
     <div class="detail"><span class="detail-label" data-i18n="username">نام کاربری</span><span class="detail-value">{{ user.username }}</span></div>
@@ -161,13 +161,13 @@ html[lang="en"]{direction:ltr} html[lang="en"] .detail-value{text-align:right}
 
 <div class="lower">
   <div class="side-stack">
-    <div class="notice announce"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8"/></svg><span data-i18n="announcement">اعلان</span></div><div class="notice-text">{% if announce %}{{ announce }}{% endif %}</div></div>
+    <div class="notice announce"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 11v2a1 1 0 0 0 1 1h3l4 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8"/></svg><span data-i18n="announcement">اعلان</span></div><div class="notice-text">{% if announce %}{{ announce }}{% if announce_url %}<a href="{{ announce_url }}" target="_blank" style="font-weight:600"> | اطلاعات بیشتر</a>{% endif %}{% endif %}</div></div>
     <div class="notice note"><div class="notice-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg><span data-i18n="admin_note">یادداشت</span></div><div class="notice-text">سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند.</div></div>
     <div class="actions"><button class="action" id="qrBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg><span data-i18n="qr_code">کد QR</span></button><button class="action primary" id="copyAllBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span data-i18n="copy_all">کپی همه</span></button></div>
   </div>
 
   <section class="config-area">
-    <div class="configs-head"><h2 data-i18n="configurations">کانفیگ‌ها</h2><span>6 مورد</span></div>
+    <div class="configs-head"><h2 data-i18n="configurations">کانفیگ‌ها</h2><span>{{ links | length }} مورد</span></div>
     <div class="configs">
       {% for link in links %}
 <div class="config" data-link="{{ link }}"><div class="proto vless"></div><div class="config-main"><div class="config-name"></div><div class="config-meta"><span></span><span class="dot"></span><span data-i18n="tap_to_copy">کلیک برای کپی</span></div></div><button class="copy"><svg class="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><svg class="i-check" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg></button></div>
@@ -2725,5 +2725,78 @@ var qrcode = function() {
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
 })();
 </script>
-\n</body>
+\n<!-- data-nuc-pgcap -->
+<i data-nuc-status style="display:none">{{ user.status.value }}</i>
+<i data-nuc-reset style="display:none">{{ user.data_limit_reset_strategy.value }}</i>
+<i data-nuc-expire style="display:none">{% if user.expire %}{{ user.expire | datetime }}{% endif %}</i>
+<i data-nuc-onhold-dur style="display:none">{% if user.on_hold_expire_duration %}{{ user.on_hold_expire_duration }}{% endif %}</i>
+<i data-nuc-onhold-until style="display:none">{% if user.on_hold_timeout %}{{ user.on_hold_timeout | datetime }}{% endif %}</i>
+<style data-nuc="pgcap">
+#nucCapAnnounce{margin:10px auto;padding:10px 14px;border:1px solid rgba(127,127,127,.3);border-radius:12px;background:rgba(127,127,127,.08);font-size:.85rem;max-width:760px}
+#nucCapAnnounce a{font-weight:600}
+#nucCapSupp{margin:10px auto;border:1px solid rgba(127,127,127,.25);border-radius:10px;padding:8px 12px;font-size:.8rem;line-height:1.9;max-width:760px}
+#nucCapSupp a{font-weight:600}
+[data-nuc-gated]{display:none!important}
+</style>
+<div id="nucCapSupp" dir="rtl" style="display:none">
+  <span data-nuc="cap-reset"></span>
+  <span data-nuc="cap-onhold-dur"></span>
+  <span data-nuc="cap-onhold-until"></span>
+</div>
+{% if apps %}
+<section data-nuc="pgcap-apps" dir="rtl" style="margin:14px auto;max-width:760px">
+  <h2 style="margin:0 0 10px;font-size:1.05rem;font-weight:700">اپلیکیشن‌های پیشنهادی</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px">
+  {% for app in apps %}
+    <div style="border:1px solid rgba(127,127,127,.3);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;align-items:center;gap:10px">
+        {% if app.icon_url %}<img src="{{ app.icon_url }}" alt="{{ app.name }}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex:none" loading="lazy">{% endif %}
+        <div style="min-width:0">
+          <h3 style="margin:0;font-size:.95rem;font-weight:700">{{ app.name }}{% if app.recommended %} <span style="font-weight:400;font-size:.7rem;opacity:.75">(توصیه‌شده)</span>{% endif %}</h3>
+          {% if app.platform %}<span style="font-size:.7rem;opacity:.75">{{ app.platform.value }}</span>{% endif %}
+        </div>
+      </div>
+      {% if app.description and app.description["en"] %}<p style="margin:0;font-size:.8rem;opacity:.85">{{ app.description["en"] }}</p>{% endif %}
+      {% if app.download_links %}
+      <div style="font-size:.78rem;opacity:.9">
+        {% for link in app.download_links %}{% if link.language.value == 'en' %}<a href="{{ link.url }}" target="_blank" style="display:inline-block;margin-right:8px;text-decoration:underline">{{ link.name }}</a>{% endif %}{% endfor %}
+      </div>
+      {% endif %}
+      {% if app.import_url %}<button type="button" onclick="window.open('{{ app.import_url }}','_blank')" style="align-self:flex-start;border:none;background:rgba(127,127,127,.25);color:inherit;padding:6px 14px;border-radius:8px;font-size:.8rem;cursor:pointer">Import Config</button>{% endif %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+{% endif %}<script data-nuc="pgcap">
+(function(){
+  function t(sel){var el=document.querySelector(sel);return el?el.textContent.replace(/\s+/g,' ').trim():'';}
+  var status=t('[data-nuc-status]')||'active';
+  var reset=t('[data-nuc-reset]')||'no_reset';
+  var onholdDur=t('[data-nuc-onhold-dur]');
+  var onholdUntil=t('[data-nuc-onhold-until]');
+  var badge=document.querySelector('[data-i18n="st_active"]');
+  if(badge){
+    badge.textContent=status;
+    badge.removeAttribute('data-i18n');
+    var map={active:'#16a34a',limited:'#dc2626',on_hold:'#8b5cf6',expired:'#f59e0b',disabled:'#6b7280'};
+    var c=map[status]||'#16a34a';
+    try{badge.style.color='#fff';badge.style.background=c;badge.style.borderColor=c;}catch(e){}
+  }
+  if(status!=='active' && status!=='on_hold'){
+    document.querySelectorAll('[data-link]').forEach(function(el){el.setAttribute('data-nuc-gated','');});
+    ['#copyAllBtn','#qrBtn'].forEach(function(s){var el=document.querySelector(s);if(el)el.setAttribute('data-nuc-gated','');});
+    document.querySelectorAll('.actions').forEach(function(el){el.setAttribute('data-nuc-gated','');});
+  }
+  var items=[];
+  if(reset && reset!=='no_reset') items.push('<div>ریست دوره‌ای حجم: '+reset+'</div>');
+  if(status==='on_hold'){
+    if(onholdDur){var days=Math.round(parseFloat(onholdDur)/86400);items.push('<div>نگهداری: '+days+' روز</div>');}
+    if(onholdUntil) items.push('<div>نگهداری تا: '+onholdUntil+'</div>');
+  }
+  var supp=document.getElementById('nucCapSupp');
+  if(supp&&items.length){supp.innerHTML=items.join('');supp.style.display='block';}
+})();
+</script>
+</div>
+</body>
 </html>

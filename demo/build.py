@@ -73,6 +73,21 @@ class _Status:
     value = "active"
 
 
+class _Strategy:
+    value = "no_reset"
+
+
+class _App:
+    def __init__(self, name, icon_url, recommended, platform, description, download_links, import_url):
+        self.name = name
+        self.icon_url = icon_url
+        self.recommended = recommended
+        self.platform = type("P", (object,), {"value": platform})() if platform else None
+        self.description = description
+        self.download_links = download_links
+        self.import_url = import_url
+
+
 class _User:
     username = "demo.user"
     status = _Status()
@@ -81,12 +96,36 @@ class _User:
     expire = SAMPLE_EXPIRE
     hwid_limit = 3
     note = "سلام! این یک اکانت دمو است — حجم، انقضا و لینک‌ها به‌صورت نمونه ثابت هستند."
+    data_limit_reset_strategy = _Strategy()
+    on_hold_expire_duration = None
+    on_hold_timeout = None
+
+
+SAMPLE_APPS = [
+    _App(
+        "Streisand", "https://img.icons8.com/color/48/streisand.png", True, "android",
+        {"en": "Modern Android client that supports multiple protocols and smart routing."},
+        [type("DL", (object,), {
+            "name": "Install from Play Store",
+            "url": "https://play.google.com/store/apps/details?id=app.streisand",
+            "language": type("L", (object,), {"value": "en"})(),
+        })()],
+        "https://play.google.com/store/apps/details?id=app.streisand&url={url}",
+    ),
+    _App(
+        "Telegram", "https://img.icons8.com/color/48/telegram-app.png", False, None,
+        {"en": "Use the official Telegram client."},
+        [], None,
+    ),
+]
 
 
 PG_CONTEXT = {
     "user": _User(),
     "announce": "🔔 در کانال تلگرام عضو شوید: t.me/nuctereadev\nگزارش مشکلات: t.me/nucsub",
+    "announce_url": "https://t.me/nuctereadev",
     "links": SAMPLE_LINKS,
+    "apps": SAMPLE_APPS,
 }
 
 XUI_CONTEXT = {
