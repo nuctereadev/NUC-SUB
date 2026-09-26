@@ -379,7 +379,15 @@ verify_manifest_signature() {
     fi
     ms="$(command -v minisign)"
 
-    actual_id="$("$ms" -P -p "$t/pub" 2>/dev/null | tr -d '[:space:]')"
+    # Key id = trailing field of the pubkey's untrusted comment. `minisign -P`
+    # takes a base64 key string, not a file, and only prints usage when given
+    # -p, so sed is the portable way to read the id off a key file.
+    actual_id="$(sed -n 's/^untrusted comment: *minisign public key *//p' "$t/pub" 2>/dev/null \
+                 | head -1 | tr -d '[:space:]')"
+    if [[ ! "$actual_id" =~ ^[0-9A-F]{16}$ ]]; then
+        fail "could not read a minisign key id from the published MINISIGN_PUBKEY"
+        rm -rf "$t"; return 1
+    fi
     if [[ -n "$NUC_SUB_EXPECT_KEY_ID" && "$actual_id" != "$NUC_SUB_EXPECT_KEY_ID" ]]; then
         fail "minisign key id mismatch: expected ${NUC_SUB_EXPECT_KEY_ID}, got ${actual_id:-<unreadable>}"
         rm -rf "$t"; return 1

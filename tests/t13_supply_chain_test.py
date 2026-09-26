@@ -445,7 +445,7 @@ def test_signature_verifier_logic() -> None:
         check("NUC_SUB_REQUIRE_SIG=1 turns a missing signature fatal",
               r.returncode == 1, f"rc={r.returncode}")
 
-        r = run({"NUC_SUB_EXPECT_KEY_ID": "RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y"})
+        r = run({"NUC_SUB_EXPECT_KEY_ID": "DEADBEEFDEADBEEF"})
         check("a pinned key id with no signature is fatal",
               r.returncode == 1, f"rc={r.returncode}")
 
@@ -468,16 +468,26 @@ def test_signature_rejects_tampering() -> None:
         m, sig = d / "MANIFEST.sha256", d / "MANIFEST.sha256.minisig"
         m.write_text("0" * 64 + "  cli/nucsub\n", encoding="utf-8")
 
+        # -W: no passphrase, so minisign does not block on a prompt with no TTY.
         g = subprocess.run([_bash(), "-lc",
-                            f'minisign -G -p "{pub}" -s "{key}" >/dev/null 2>&1'],
+                            f'minisign -G -W -p "{pub}" -s "{key}" >/dev/null 2>&1'],
                            capture_output=True, text=True, timeout=120)
         if g.returncode != 0:
             print("  SKIP  minisign key generation failed")
             return
-        subprocess.run([_bash(), "-lc", f'minisign -S -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
-                       capture_output=True, text=True, timeout=120)
-        key_id = subprocess.run([_bash(), "-lc", f'minisign -P -p "{pub}"'],
-                                capture_output=True, text=True, timeout=120).stdout.strip()
+        s = subprocess.run([_bash(), "-lc",
+                            f'minisign -S -W -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
+                           capture_output=True, text=True, timeout=120)
+        if s.returncode != 0 or not sig.is_file():
+            print("  SKIP  minisign signing failed")
+            return
+        # Key id is the trailing field of the pubkey's untrusted comment;
+        # `minisign -P` takes a base64 key string, not a file.
+        key_id = subprocess.run(
+            [_bash(), "-lc",
+             f"""sed -n 's/^untrusted comment: *minisign public key *//p' "{pub}" | head -1 | tr -d '[:space:]'"""],
+            capture_output=True, text=True, timeout=120).stdout.strip()
+        check("key id reads as 16 hex chars", bool(re.fullmatch(r"[0-9A-F]{16}", key_id)), key_id)
 
         def run(extra: dict[str, str]) -> subprocess.CompletedProcess:
             env = dict(os.environ)
@@ -493,16 +503,40 @@ def test_signature_rejects_tampering() -> None:
         check("tampered manifest is rejected", run({}).returncode == 1)
 
         # Restore the signed bytes, then try a different key.
-        subprocess.run([_bash(), "-lc", f'minisign -S -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
+        subprocess.run([_bash(), "-lc",
+                        f'minisign -S -W -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
                        capture_output=True, text=True, timeout=120)
         check("correct key id verifies", run({"NUC_SUB_EXPECT_KEY_ID": key_id}).returncode == 0)
         check("wrong key id is rejected",
-              run({"NUC_SUB_EXPECT_KEY_ID": "RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y"}).returncode == 1)
+              run({"NUC_SUB_EXPECT_KEY_ID": "DEADBEEFDEADBEEF"}).returncode == 1)
 
-        # Signature bytes mangled.
+        # Corrupted signature bytes.
         sig.write_text(sig.read_text(encoding="utf-8", errors="replace").replace("untrusted comment:", "untrusted comment:", 1)[:-40] + "A" * 40,
                        encoding="utf-8")
         check("corrupted signature is rejected", run({}).returncode == 1)
+
+        # The realistic full-compromise case: the attacker controls the repo, so
+        # they ship their own key AND re-sign the manifest. Only the pinned id
+        # stops this -- which is exactly why the pin must not be optional.
+        subprocess.run([_bash(), "-lc",
+                        f'minisign -G -W -p "{d}/evil.pub" -s "{d}/evil.key" >/dev/null 2>&1'],
+                       capture_output=True, text=True, timeout=120)
+        evil_sig = d / "evil.sig"
+        subprocess.run([_bash(), "-lc",
+                        f'minisign -S -W -s "{d}/evil.key" -m "{m}" -x "{evil_sig}" >/dev/null 2>&1'],
+                       capture_output=True, text=True, timeout=120)
+
+        def run_evil(extra: dict[str, str]) -> subprocess.CompletedProcess:
+            env = dict(os.environ)
+            env.update(extra)
+            return subprocess.run(
+                [_bash(), "-c", f'bash "{verifier}" "{m}" "{evil_sig}" "{d}/evil.pub"'],
+                capture_output=True, text=True, env=env, timeout=120)
+
+        check("attacker key re-signing the manifest is rejected by the pin",
+              run_evil({"NUC_SUB_EXPECT_KEY_ID": key_id}).returncode == 1)
+        check("attacker key is accepted when no id is pinned (documented limit)",
+              run_evil({}).returncode == 0)
 
 
 # --------------------------------------------------------------------------

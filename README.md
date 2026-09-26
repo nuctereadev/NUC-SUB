@@ -311,14 +311,19 @@ what the installer prints:
 # When a key is added this section reads:
 #
 #   minisign public key id:
-#     RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y
+#     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
 #     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/MINISIGN_PUBKEY
-#     minisign -P -p MINISIGN_PUBKEY
+#     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
 ```
+
+The id is the 16 hex characters at the end of the public key's `untrusted
+comment:` line. `sed` rather than `minisign -P` on purpose: `-P` takes a base64
+key string, not a filename, and prints its usage text when handed `-p` — which
+looks like a key id if you do not check.
 
 Until a key is published, releases are checksum-only: `install.sh` warns once
 and continues, because a key id cannot be pinned to a key that does not exist
@@ -329,12 +334,13 @@ To publish a key:
 1. Generate it on a machine that cannot push to this repository:
    `minisign -G -p MINISIGN_PUBKEY -s /secure/path/minisign.key`
 2. `bash tools/sign-manifest.sh` — regenerates the manifest, signs it, writes
-   the public key, and prints the key id.
+   the public key, verifies the pair round-trips, and prints the key id.
 3. Set `NUC_SUB_EXPECT_KEY_ID` in both `install.sh` and `cli/nucsub` to that id,
    and paste it into the block above.
 4. Commit `MANIFEST.sha256`, `MANIFEST.sha256.minisig` and `MINISIGN_PUBKEY`,
    then tag. `tools/sign-manifest.sh` refuses to sign if the private key is
-   inside the working tree.
+   inside the working tree, and refuses to run without a terminal unless you
+   pass `NUC_SUB_MINISIGN_NOPASS=1` for a passphrase-less key.
 
 ---
 

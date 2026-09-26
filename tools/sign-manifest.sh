@@ -37,6 +37,22 @@ die() { echo -e "${RED}$*${NC}" >&2; exit 1; }
 
 command -v minisign >/dev/null 2>&1 || die "minisign is not installed (apt-get install -y minisign)"
 
+# minisign prompts for the secret key's passphrase on stdin. Without a terminal
+# (CI, a cron job) that prompt never gets an answer, so the run dies or, worse,
+# signs with an unprotected key. Be explicit rather than let it hang.
+NOPASS_FLAG=()
+if [[ "${NUC_SUB_MINISIGN_NOPASS:-0}" == "1" ]]; then
+  NOPASS_FLAG=(-W)
+  echo -e "${YELLOW}  warning${NC} signing with an unencrypted secret key."
+  echo "         A passphrase-less release key is one stolen file away from forging"
+  echo "         a trusted release. Keep the secret on offline storage and copy it"
+  echo "         to a signing machine only when you actually need it."
+elif [[ ! -t 0 ]]; then
+  die "no terminal on stdin, so minisign cannot prompt for the key passphrase.
+  Run this from an interactive shell, or use a passphrase-less key and re-run
+  with NUC_SUB_MINISIGN_NOPASS=1."
+fi
+
 find_secret() {
   local c
   for c in "${NUC_SUB_MINISIGN_SECRET:-}" \
@@ -67,12 +83,26 @@ if ! bash tools/gen-manifest.sh; then
   die "gen-manifest.sh failed; refusing to sign a manifest that does not match the tree"
 fi
 
-minisign -S -s "$SECRET" -m MANIFEST.sha256 -x MANIFEST.sha256.minisig \
+minisign -S "${NOPASS_FLAG[@]}" -s "$SECRET" -m MANIFEST.sha256 -x MANIFEST.sha256.minisig \
   || die "minisign failed"
-minisign -P -p "$SECRET" > MINISIGN_PUBKEY 2>/dev/null \
-  || die "could not derive the public key"
 
-KEY_ID="$(minisign -P -p MINISIGN_PUBKEY | tr -d '[:space:]')"
+# Derive the public key with -R (recreate from secret). `minisign -P` is not an
+# extractor: it takes a base64 key string and prints usage when given -p.
+minisign -R -s "$SECRET" -p MINISIGN_PUBKEY >/dev/null 2>&1 \
+  || die "could not derive the public key from the secret key"
+
+# Key id = trailing field of the pubkey's untrusted comment, 16 hex chars.
+KEY_ID="$(sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY \
+          | head -1 | tr -d '[:space:]')"
+if [[ ! "$KEY_ID" =~ ^[0-9A-F]{16}$ ]]; then
+  die "could not read a key id from the generated public key"
+fi
+
+# Prove the pair actually works before telling anyone to pin it.
+if ! minisign -V -p MINISIGN_PUBKEY -x MANIFEST.sha256.minisig -m MANIFEST.sha256 >/dev/null 2>&1; then
+  die "the generated signature does not verify against the generated public key"
+fi
+echo -e "${DIM}  signature round trip verified locally${NC}"
 
 echo
 echo -e "${GREEN}✓ wrote MANIFEST.sha256.minisig${NC}"

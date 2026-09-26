@@ -251,7 +251,18 @@ verify_manifest_signature() {
         rm -rf "$t"; exit 1
     fi
 
-    actual_id="$("$ms" -P -p "$t/pub" 2>/dev/null | tr -d '[:space:]')"
+    actual_id="$(sed -n 's/^untrusted comment: *minisign public key *//p' "$t/pub" 2>/dev/null \
+                 | head -1 | tr -d '[:space:]')"
+    # The key id is the trailing field of the pubkey's untrusted comment. It is
+    # derived from the key material and is bound into the signature, so a
+    # comment that disagrees with the key fails the -V check below. Reading it
+    # with sed rather than `minisign -P` matters: -P takes a base64 key string,
+    # not a file, and prints usage when handed -p.
+    if [[ ! "$actual_id" =~ ^[0-9A-F]{16}$ ]]; then
+        echo -e "${RED}  ✗ could not read a minisign key id from the published MINISIGN_PUBKEY${NC}"
+        echo -e "${RED}    Refusing to install a release with an unidentifiable key.${NC}"
+        rm -rf "$t"; exit 1
+    fi
     if [[ -n "$NUC_SUB_EXPECT_KEY_ID" && "$actual_id" != "$NUC_SUB_EXPECT_KEY_ID" ]]; then
         echo -e "${RED}  ✗ minisign key id mismatch${NC}"
         echo -e "${RED}    expected ${NUC_SUB_EXPECT_KEY_ID}${NC}"

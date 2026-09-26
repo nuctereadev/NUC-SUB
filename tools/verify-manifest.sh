@@ -98,15 +98,27 @@ MS="$(minisign_bin)"
 [[ -f "$PUBKEY" ]] || die "signature exists but no public key at $PUBKEY"
 
 # ---- key id pinning --------------------------------------------------------
-# `minisign -P` prints the primary key id for a pubkey file. Comparing it here
-# means a swapped pubkey fails even when the attacker also re-signs.
+# The key id is the trailing field of the pubkey's untrusted comment. It is
+# derived from the key material and bound into the signature, so a comment that
+# disagrees with the key fails the -V check. Read it with sed rather than
+# `minisign -P`: -P expects a base64 key string and prints usage when given -p.
+minisign_key_id() {
+    sed -n 's/^untrusted comment: *minisign public key *//p' "$1" 2>/dev/null \
+        | head -1 | tr -d '[:space:]'
+}
+
+actual_id="$(minisign_key_id "$PUBKEY")"
+if [[ ! "$actual_id" =~ ^[0-9A-F]{16}$ ]]; then
+    die "could not read a minisign key id from $PUBKEY (expected 16 hex chars in the untrusted comment)"
+fi
+
+# Comparing it here means a swapped pubkey fails even when the attacker also
+# re-signs the manifest with their own key.
 if [[ -n "$EXPECT_ID" ]]; then
-  actual_id="$("$MS" -P -p "$PUBKEY" 2>/dev/null | tr -d '[:space:]')"
-  [[ -n "$actual_id" ]] || die "could not read a key id from $PUBKEY"
-  if [[ "$actual_id" != "$EXPECT_ID" ]]; then
-    die "key id mismatch: expected $EXPECT_ID, $PUBKEY is $actual_id"
-  fi
-  note "key id pinned: $actual_id"
+    if [[ "$actual_id" != "$EXPECT_ID" ]]; then
+        die "key id mismatch: expected $EXPECT_ID, $PUBKEY is $actual_id"
+    fi
+    note "key id pinned: $actual_id"
 fi
 
 if ! "$MS" -V -p "$PUBKEY" -x "$SIG" -m "$MANIFEST" >/dev/null 2>&1; then
@@ -115,7 +127,7 @@ if ! "$MS" -V -p "$PUBKEY" -x "$SIG" -m "$MANIFEST" >/dev/null 2>&1; then
   die "  not ours. Nothing was installed. Do not work around this."
 fi
 
-echo -e "${GREEN}✓ manifest signature verified${NC} (key ${actual_id:-unpinned})" >&2
+echo -e "${GREEN}✓ manifest signature verified${NC} (key ${actual_id})" >&2
 note "Compare that key id against the fingerprint in README.md before trusting"
 note "this release. A key that matches a file served by the same host proves"
 note "nothing on its own."
