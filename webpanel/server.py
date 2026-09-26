@@ -23,6 +23,7 @@ import os
 import re
 import socket
 import subprocess
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -60,9 +61,9 @@ def load_settings():
     path = _settings_path()
     if path and os.path.isfile(path):
         try:
-            with open(path, "r") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 SETTINGS = json.load(f)
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             SETTINGS = {}
     else:
         SETTINGS = {}
@@ -283,7 +284,11 @@ class Handler(BaseHTTPRequestHandler):
             if self.command == "POST":
                 self._handle_settings_post()
             else:
-                self._send_json({"ok": True, "settings": SETTINGS})
+                # Single source of truth = the shared config.json. Re-read it on
+                # every GET so values changed by the CLI (or another process)
+                # show up live instead of a stale in-memory snapshot.
+                load_settings()
+                self._send_json({"ok": True, "settings": dict(SETTINGS)})
             return
 
         self._send_json({"error": "unknown api"}, 404)
@@ -314,7 +319,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": "expected_object"}, 400)
             return
 
+        # Base the merge on the CURRENT on-disk state, never on a possibly
+        # stale in-memory copy: the CLI writes the same config.json, so a panel
+        # save must never roll back a value the CLI changed meanwhile.
+        load_settings()
+
         remove_logo = data.get("remove_logo") is True
+        remove_tg = data.get("remove_telegram") is True
         updated = {}
         for k, v in data.items():
             if k not in SAFE_SETTINGS_KEYS:
@@ -322,7 +333,12 @@ class Handler(BaseHTTPRequestHandler):
             if k == "telegram_channel":
                 v = str(v).strip()
                 if not v:
-                    continue  # empty = no change (save must never wipe other fields)
+                    # empty = no change UNLESS removal was explicitly requested
+                    if remove_tg:
+                        _log("settings POST: removed telegram_channel")
+                        SETTINGS[k] = ""
+                        updated[k] = ""
+                    continue
                 if not is_valid_url(v):
                     _log("settings POST rejected telegram_channel: %r", v[:200])
                     self._send_json({"error": "invalid_telegram_url"}, 400)
@@ -376,7 +392,7 @@ class Handler(BaseHTTPRequestHandler):
                 _log("refresh after save failed: %r", res)
                 warn = "theme_refresh_failed"
 
-        self._send_json({"ok": True, "settings": SETTINGS, "updated": updated,
+        self._send_json({"ok": True, "settings": dict(SETTINGS), "updated": updated,
                          "warn": warn})
 
     # -- HTTP methods -------------------------------------------------------
@@ -411,6 +427,30 @@ def _resolve_install_dir(base):
     if os.path.isfile(os.path.join(base, "config.json")):
         return base
     return os.path.dirname(base)
+
+
+class _ReusableServer(ThreadingHTTPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
+def _bind_with_retry(port, attempts=20, delay=0.5):
+    """Bind the requested port, tolerating a restart race.
+
+    On `systemctl restart` the outgoing process can still hold the port for a
+    moment, which used to make the panel permanently drift to the next free
+    port on every restart. Retry briefly so the panel keeps a stable URL.
+    Returns a bound server, or None if the port is taken by something else."""
+    last = None
+    for _ in range(max(1, attempts)):
+        try:
+            return _ReusableServer(("0.0.0.0", port), Handler)
+        except OSError as e:
+            last = e
+            time.sleep(delay)
+    if last:
+        _log("port %d still busy after retries: %r", port, last)
+    return None
 
 
 def main():
@@ -451,16 +491,16 @@ def main():
 
     load_settings()
 
-    # Find a free port if the requested one is occupied
-    port = ARGS.port
-    test = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        test.bind(("0.0.0.0", port))
-    except OSError:
-        port = find_free_port(port + 1, port + 100)
+    HOST_PORT = ARGS.port
+    srv = _bind_with_retry(ARGS.port)
+    if srv is None:
+        # The requested port is genuinely taken by another service — move on.
+        port = find_free_port(ARGS.port + 1, ARGS.port + 100)
         print(f"[nuc-sub] ⚠ port {ARGS.port} is occupied — web panel will use port {port}", flush=True)
-    finally:
-        test.close()
+        HOST_PORT = port
+        srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    else:
+        port = srv.server_address[1]
 
     # Persist the effective port so the CLI/menus report the real running port.
     try:
@@ -469,8 +509,6 @@ def main():
     except OSError:
         pass
 
-    HOST_PORT = port
-    srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"[nuc-sub] web panel listening on http://0.0.0.0:{port}", flush=True)
     try:
         srv.serve_forever()

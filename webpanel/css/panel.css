@@ -3487,3 +3487,47 @@ html[dir="ltr"] .input-shell input{
     max-width:100%;
   }
 }
+
+.input-shell .input-clear{
+  position:absolute;
+
+  top:50%;
+  left:7px;
+
+  transform:translateY(-50%);
+
+  width:25px;
+  height:25px;
+
+  border:none;
+  border-radius:6px;
+
+  background:transparent;
+  color:#565656;
+
+  font-size:11px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  cursor:pointer;
+
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.input-shell .input-clear:hover{
+  color:#ff5555;
+  background:rgba(255,85,85,.08);
+}
+
+.sv-field .input-shell input#tg-input{
+  padding-right:34px;
+  padding-left:34px;
+}
+
+html[dir="ltr"] .sv-field .input-shell .input-clear{
+  display:none;
+}

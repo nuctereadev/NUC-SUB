@@ -594,6 +594,15 @@
                       spellcheck="false"
                     >
 
+                    <button
+                      type="button"
+                      class="input-clear"
+                      id="tg-clear-btn"
+                      title="حذف کانال"
+                      aria-label="حذف کانال تلگرام"
+                      onclick="clearChannel()"
+                    ><i class="fa-solid fa-xmark"></i></button>
+
                   </div>
 
                   <div class="field-error" id="tg-err" role="alert"></div>
@@ -1217,13 +1226,13 @@ function switchView(name){
   if(crumb){crumb.textContent=t(tKey)}
   const mt=$('m-topbar-title');
   if(mt){mt.textContent=t(tKey)}
-  if(name==='settings'){const fi=$('tg-input');if(fi&&document.activeElement&&document.activeElement!==fi)fi.focus()}
+  if(name==='settings'){const fi=$('tg-input');if(fi&&document.activeElement&&document.activeElement!==fi)fi.focus();loadSettings(false)}
   window.scrollTo(0,0);
   mbtSync();
 }
 
 // ---------- shared settings state (single source shown in this view) ---------
-let ST={logo:'',logoDirty:false,logoRemoved:false};
+let ST={logo:'',logoDirty:false,logoRemoved:false,tgRemoved:false};
 const SET_ERR_MAP={
   invalid_telegram_url:'js.telInvalid',
   invalid_json:'js.saveFailed',
@@ -1262,7 +1271,7 @@ async function loadSettings(manual){
       $('brand-name-input').value=s.brand_name||'';
       updateBrandCount();
       ST.logo=s.brand_logo||'';
-      ST.logoDirty=false;ST.logoRemoved=false;
+      ST.logoDirty=false;ST.logoRemoved=false;ST.tgRemoved=false;
       showPreview(ST.logo);
       if(manual)showToast(t('js.saved'));
     }
@@ -1274,10 +1283,10 @@ async function loadSettings(manual){
 // ------------------------------------------------------------- single save ----
 async function saveSettings(){
   ['tg-err','brand-err','logo-err'].forEach(clearErr);
-  const tg=$('tg-input').value.trim();
   const brand=($('brand-name-input').value||'').trim();
+  let tg=$('tg-input').value.trim();
   let invalid=false;
-  if(tg&&!/^https:\/\/t\.me\/[A-Za-z0-9_]{5,}$/.test(tg)){
+  if(!ST.tgRemoved&&tg&&!/^https:\/\/t\.me\/[A-Za-z0-9_]{5,}$/.test(tg)){
     $('tg-err').textContent=t('js.telInvalid');invalid=true;
   }
   if(brand.length>30){
@@ -1289,7 +1298,9 @@ async function saveSettings(){
   if(invalid)return;
   const btn=$('settings-save-btn'),feed=$('settings-feedback');
   btn.disabled=true;btn.classList.add('loading');
-  const payload={telegram_channel:tg,brand_name:brand};
+  const payload={brand_name:brand};
+  if(ST.tgRemoved){payload.telegram_channel='';payload.remove_telegram=true}
+  else if(tg)payload.telegram_channel=tg;
   if(ST.logoDirty)payload.brand_logo=ST.logo;
   else if(ST.logoRemoved){payload.brand_logo='';payload.remove_logo=true}
   try{
@@ -1326,8 +1337,14 @@ function applySettings(s){
   $('brand-name-input').value=s.brand_name||'';
   updateBrandCount();
   ST.logo=s.brand_logo||'';
-  ST.logoDirty=false;ST.logoRemoved=false;
+  ST.logoDirty=false;ST.logoRemoved=false;ST.tgRemoved=false;
   showPreview(ST.logo);
+}
+function clearChannel(){
+  const el=$('tg-input');
+  if(el)el.value='';
+  clearErr('tg-err');
+  ST.tgRemoved=true;
 }
 function removeLogo(){
   if(!ST.logo&&!ST.logoDirty)return;

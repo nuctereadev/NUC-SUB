@@ -102,7 +102,7 @@ config_get() {
     python3 - "$CONFIG_FILE" "$key" <<'PY' 2>/dev/null || echo ""
 import json, sys
 p, k = sys.argv[1], sys.argv[2]
-print(json.load(open(p)).get(k, ''))
+print(json.load(open(p, encoding='utf-8')).get(k, ''))
 PY
 }
 
@@ -116,9 +116,9 @@ config_set() {
         python3 - "$CONFIG_FILE" "$key" "$val" <<'PY' 2>/dev/null || true
 import json, sys
 p, k, v = sys.argv[1], sys.argv[2], sys.argv[3]
-d = json.load(open(p))
+d = json.load(open(p, encoding='utf-8'))
 d[k] = v
-json.dump(d, open(p, 'w'), indent=2, ensure_ascii=False)
+json.dump(d, open(p, 'w', encoding='utf-8'), indent=2, ensure_ascii=False)
 PY
         if [[ ! -s "$CONFIG_FILE" ]]; then
             printf '{\n  "%s": "%s"\n}\n' "$key" "$esc" > "$CONFIG_FILE"
@@ -1340,7 +1340,7 @@ cmd_brand() {
             require_root
             val="${2:-}"
             if [[ -z "$val" ]]; then
-                echo -ne "  Path to brand logo (png/svg/jpeg/webp): "
+                echo -ne "  Path to brand logo (png/jpeg/webp/gif): "
                 read -r val
             fi
             [[ -n "$val" && -f "$val" ]] || fail "Logo file not found: ${val:-<empty>}"
@@ -1350,11 +1350,12 @@ cmd_brand() {
                 warn "Logo is ${size} bytes (>1 MiB). Consider resizing; storing anyway."
             fi
             case "${val##*.}" in
-                svg) mime="image/svg+xml" ;;
                 jpg|jpeg) mime="image/jpeg" ;;
                 png) mime="image/png" ;;
                 webp) mime="image/webp" ;;
-                *) mime="image/png" ;;
+                gif) mime="image/gif" ;;
+                svg) fail "SVG logos are not allowed (PNG/JPEG/GIF/WebP only)." ;;
+                *) fail "Unsupported logo type: .${val##*.} (PNG/JPEG/GIF/WebP only)." ;;
             esac
             b64="$(base64 -w0 < "$val" 2>/dev/null || base64 < "$val" | tr -d '\r\n')"
             config_set brand_logo "data:$mime;base64,$b64"
