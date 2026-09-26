@@ -8,12 +8,17 @@
 # traffic figures it needs so no state can inherit the previous one's quota.
 set -uo pipefail
 
-REPO=/root/t11/repo
-OUT=/root/t11/out
-DB=/etc/x-ui/x-ui.db
-EMAIL=xzi3b440d4
-SUBID=rgxaioe5mngxgxug
-PORT=2096
+# The client email / subscription id are live identifiers and must never be
+# committed: pass them in, e.g.
+#   NUC_EMAIL=... NUC_SUBID=... ./t11_matrix.sh
+: "${NUC_EMAIL:?set NUC_EMAIL to the client email under test}"
+: "${NUC_SUBID:?set NUC_SUBID to the subscription id under test}"
+REPO=${NUC_REPO:-/root/t11/repo}
+OUT=${NUC_OUT:-/root/t11/out}
+DB=${NUC_DB:-/etc/x-ui/x-ui.db}
+EMAIL=$NUC_EMAIL
+SUBID=$NUC_SUBID
+PORT=${NUC_PORT:-2096}
 GiB=1073741824
 mkdir -p "$OUT"
 

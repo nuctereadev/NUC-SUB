@@ -1,12 +1,20 @@
 #!/bin/bash
-# Unlimited plan: 3x-ui leaves PageData.Total empty when total==0.
-# Every theme that prints "of <total> total" therefore has to cope with that.
-REPO=/root/t11/repo
-OUT=/root/t11/unlimited
-DB=/etc/x-ui/x-ui.db
-EMAIL=xzi3b440d4
-SUBID=rgxaioe5mngxgxug
-PORT=2096
+# Unlimited plan: a total of 0 must still render as the infinity sign.
+# research/service.go defaults PageData.Total to "∞" and only overwrites it when
+# the plan has a real byte limit, so this checks the templates do not defeat it.
+#
+# The client email / subscription id are live identifiers and must never be
+# committed: pass them in, e.g.
+#   NUC_EMAIL=... NUC_SUBID=... ./t11_unlimited.sh
+set -uo pipefail
+: "${NUC_EMAIL:?set NUC_EMAIL to the client email under test}"
+: "${NUC_SUBID:?set NUC_SUBID to the subscription id under test}"
+REPO=${NUC_REPO:-/root/t11/repo}
+OUT=${NUC_OUT:-/root/t11/unlimited}
+DB=${NUC_DB:-/etc/x-ui/x-ui.db}
+EMAIL=$NUC_EMAIL
+SUBID=$NUC_SUBID
+PORT=${NUC_PORT:-2096}
 GiB=1073741824
 rm -rf "$OUT"; mkdir -p "$OUT"
 SUBPATH="$(sqlite3 "$DB" "select value from settings where key='subPath';")"
