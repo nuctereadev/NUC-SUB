@@ -725,7 +725,7 @@
           <a
             href="https://github.com/nuctereadev"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             data-i18n="foot.right"
           >
             <i class="fa-solid fa-code"></i>
@@ -755,7 +755,7 @@
 <a
   href="https://nuctereadev.github.io/support/"
   target="_blank"
-  rel="noopener"
+  rel="noopener noreferrer"
   class="donate-btn"
   data-i18n-title="foot.support.title"
   title="حمایت مالی"
@@ -1050,7 +1050,7 @@ function setLang(l){if(l==='fa'||l==='en'){LANG=l;localStorage.setItem('xui_sub_
 function toggleLang(){setLang(LANG==='fa'?'en':'fa')} 
 
 function $(id){return document.getElementById(id)} 
-function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-solid fa-circle-xmark"></i> ':'<i class="fa-solid fa-circle-check"></i> ')+msg;t.className='toast show'+(err?' err':'');clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.remove('show'),2600)} 
+function showToast(msg,err){const t=$('toast');t.textContent='';const i=document.createElement('i');i.className=err?'fa-solid fa-circle-xmark':'fa-solid fa-circle-check';t.appendChild(i);t.appendChild(document.createTextNode(' '+(msg==null?'':msg)));t.className='toast show'+(err?' err':'');clearTimeout(showToast._t);showToast._t=setTimeout(()=>t.classList.remove('show'),2600)} 
 async function api(path,opts){ 
   const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{})); 
   const data=await r.json().catch(()=>({})); 
@@ -1159,7 +1159,7 @@ async function loadThemes(){
 
           <div class="system-status-value">
             <span>${t('status.active')}</span>
-            <b>${active||t('status.value.default')}</b>
+            <b>${esc(active||t('status.value.default'))}</b>
           </div>
         </div>
       </div>
@@ -1207,7 +1207,7 @@ async function removeTheme(name){
 
 async function resetTheme(){ 
   if(!confirm(t('js.resetQ')))return; 
-  const res=await api('reset'); 
+    const res=await api('reset',{method:'POST'});
   if(res.ok){ 
     showToast(t('js.resetOk')); 
     loadThemes() 

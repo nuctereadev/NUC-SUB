@@ -4,7 +4,9 @@ NUC-SUB web panel — ultra-lightweight web panel for nucsub (3x-ui / Pasarguard
 
 A dependency-free Python3 stdlib HTTP server that:
   * serves the static SPA in --base (index.html, app.js, style.css)
-  * guards every /api/* route with a bearer token (query ?token= or header)
+  * guards every /api/* route with a bearer token (Authorization header, or a
+    token cookie — never a URL query parameter, which would leak into history
+    and Referer headers)
   * shells out to the nucsub script for privileged actions
   * manages per-install settings (telegram channel, brand name, brand logo)
     via config.json — the SAME single source of truth the CLI uses
@@ -231,13 +233,38 @@ def find_free_port(start=8080, end=9999):
 # HTTP Handler
 # ---------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = "nuc-sub-webpanel/2.2.0"
+    server_version = "nuc-sub-webpanel"
+    sys_version = ""  # do not advertise the Python build
 
     def log_message(self, *a):
         pass
 
+    def version_string(self):
+        return self.server_version
+
+    # -- response headers ---------------------------------------------------
+    # Baseline headers applied to every response. The CSP deliberately omits
+    # script-src: the panel is one inline <script> plus inline onclick=
+    # handlers, so a script-src policy is not enforceable without a refactor.
+    # The subset below is drop-in and still blocks plugin abuse, <base>
+    # hijacking and framing.
+    SECURITY_HEADERS = (
+        ("Content-Security-Policy",
+         "default-src 'self'; object-src 'none'; base-uri 'none'; "
+         "frame-ancestors 'none'; form-action 'self'"),
+        ("X-Content-Type-Options", "nosniff"),
+        ("X-Frame-Options", "DENY"),
+        ("Referrer-Policy", "no-referrer"),
+        ("Strict-Transport-Security", "max-age=31536000"),
+        ("Cache-Control", "no-store"),
+    )
+
+    def _security_headers(self):
+        for k, v in self.SECURITY_HEADERS:
+            self.send_header(k, v)
+
     # -- auth ---------------------------------------------------------------
-    def _authorized(self, qs):
+    def _authorized(self):
         # Re-read on every request: a token rotated by the CLI is accepted
         # (and the old one rejected) without restarting the panel.
         expected = _read_token_file()
@@ -253,10 +280,11 @@ class Handler(BaseHTTPRequestHandler):
         cookie = self.headers.get("Cookie", "")
         if self._cookie_token(cookie, expected):
             return True
-        q = parse_qs(qs)
-        qt = q.get("token", [None])[0]
-        if qt is not None and hmac.compare_digest(qt, expected):
-            return True
+        # NOTE: the token is deliberately NOT accepted as a ?token= query
+        # parameter. Query strings land in browser history, proxy/CDN logs and
+        # leak to third parties through the Referer header. The panel's own
+        # frontend only ever uses the Authorization header, so nothing in this
+        # project needs the query form.
         return False
 
     def _cookie_token(self, cookie, expected):
@@ -272,8 +300,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
+        self._security_headers()
         self.end_headers()
         self.wfile.write(body)
 
@@ -294,16 +321,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("X-Frame-Options", "DENY")
+        self._security_headers()
         self.end_headers()
         self.wfile.write(body)
 
     # -- routing ------------------------------------------------------------
     def _dispatch(self, path, qs):
         if path.startswith("/api/"):
-            if not self._authorized(qs):
+            if not self._authorized():
                 self._send_json({"error": "unauthorized", "token_required": True}, 401)
                 return
             return self._api(path, parse_qs(qs))
@@ -325,6 +350,12 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if action == "reset":
+            # State-changing, so POST only. A GET would be reachable
+            # cross-origin (e.g. <img src=...>) by any browser that holds the
+            # token cookie, with no preflight and no CSRF token.
+            if self.command != "POST":
+                self._send_json({"error": "method not allowed; use POST"}, 405)
+                return
             self._send_json(run_cli(["reset"]))
             return
 
@@ -364,7 +395,19 @@ class Handler(BaseHTTPRequestHandler):
         codes/messages to the client, and keeps the saved values as the single
         source of truth. A theme refresh is *requested* afterwards but a CLI
         hiccup never fails the save itself."""
-        content_len = int(self.headers.get("Content-Length", 0) or 0)
+        # Require an explicit JSON content type. A cross-origin attacker cannot
+        # send application/json without triggering a CORS preflight that this
+        # server never answers, so this alone blocks the "simple request"
+        # CSRF class even for a browser holding the token cookie.
+        ctype = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
+        if ctype != "application/json":
+            self._send_json({"error": "content_type_must_be_application_json"}, 415)
+            return
+        try:
+            content_len = int(self.headers.get("Content-Length", 0) or 0)
+        except (TypeError, ValueError):
+            self._send_json({"error": "bad_content_length"}, 400)
+            return
         if content_len > MAX_POST_BODY:
             _log("settings POST rejected: payload %dB > %dB", content_len, MAX_POST_BODY)
             self._send_json({"error": "payload_too_large"}, 413)
@@ -464,10 +507,34 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         self._dispatch(u.path, u.query)
 
+    def do_HEAD(self):
+        # Advertise headers without a body so health checks and reverse
+        # proxies get a real answer instead of a bare 501.
+        u = urlparse(self.path)
+        if u.path.startswith("/api/"):
+            self.send_response(405 if not self._authorized() else 404)
+            self.send_header("Content-Length", "0")
+            self._security_headers()
+            self.end_headers()
+            return
+        base = os.path.realpath(ARGS.base)
+        full = os.path.realpath(os.path.join(base, u.path.lstrip("/")))
+        if not full.startswith(base + os.sep) and full != base:
+            self.send_response(403)
+        elif os.path.isdir(full):
+            full = os.path.join(full, "index.html")
+        full = full if os.path.isfile(full) else None
+        self.send_response(200 if full else 404)
+        self.send_header("Content-Type", (mimetypes.guess_type(full)[0]
+                          or "application/octet-stream") if full else "text/plain")
+        self.send_header("Content-Length", str(os.path.getsize(full)) if full else "0")
+        self._security_headers()
+        self.end_headers()
+
     def do_POST(self):
         u = urlparse(self.path)
         if u.path.startswith("/api/"):
-            if not self._authorized(u.query):
+            if not self._authorized():
                 self._send_json({"error": "unauthorized", "token_required": True}, 401)
                 return
             return self._api(u.path, parse_qs(u.query))
