@@ -23,6 +23,10 @@ WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
 PANEL_CONF="$INSTALL_DIR/panel.conf"
+# Brand assets live with the rest of the NUC-SUB data so the logo picker can
+# offer a real, browsable folder instead of asking for an opaque path.
+BRAND_DIR="$INSTALL_DIR/branding"
+LOGOS_DIR="$BRAND_DIR/logos"
 NUC_SUB_VERSION="2.2.0"
 
 # Every theme known to the project (used to offer on-demand downloads).
@@ -1283,6 +1287,134 @@ cmd_telegram() {
 }
 
 # --------------------------------------------------------------- Branding cmd ---
+# --------------------------------------------------------- brand logo assets ---
+# The extension is never trusted: the real type is sniffed from the file
+# content, and the declared type must match. This mirrors the web panel's
+# validate_logo_data_url() exactly, so the CLI and the panel accept the same
+# files and reject the same ones.
+logo_sniff() {  # logo_sniff <file> -> real mime on stdout, or "" if unknown
+    python3 - "$1" <<'PY' 2>/dev/null || true
+import re, sys
+raw = open(sys.argv[1], "rb").read(65536)
+if raw[:8] == b"\x89PNG\r\n\x1a\n":
+    print("image/png")
+elif raw[:3] == b"\xff\xd8\xff":
+    print("image/jpeg")
+elif raw[:6] in (b"GIF87a", b"GIF89a"):
+    print("image/gif")
+elif len(raw) >= 12 and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+    print("image/webp")
+elif re.search(rb"<\s*svg[\s>]", raw[:4096], re.IGNORECASE):
+    print("image/svg+xml")
+PY
+}
+
+logo_svg_danger() {  # logo_svg_danger <file> -> reason on stdout if the SVG is unsafe
+    python3 - "$1" <<'PY' 2>/dev/null || true
+import re, sys
+text = open(sys.argv[1], "rb").read().decode("utf-8", "replace")
+text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+text = re.sub(r"<!\[CDATA\[(.*?)\]\]>", r"\1", text, flags=re.DOTALL)
+banned = [
+    (r"<\s*script", "script tag"),
+    (r"\son[a-z]+\s*=", "event handler"),
+    (r"javascript\s*:", "javascript: URI"),
+    (r"<\s*foreignObject", "foreignObject"),
+    (r"<\s*iframe", "iframe"),
+    (r"<\s*embed", "embed"),
+    (r"<\s*object", "object"),
+    (r"(?:xlink:)?href\s*=\s*[\"']?\s*(?:https?:|//)", "remote reference"),
+    (r"@import", "css @import"),
+    (r"<!ENTITY", "XML entity"),
+    (r"data:text/html", "embedded html"),
+]
+for pattern, label in banned:
+    if re.search(pattern, text, re.IGNORECASE):
+        print(label)
+        break
+PY
+}
+
+# Verify a candidate logo file. Echoes the real mime on success, otherwise
+# fails with a specific reason the user can act on.
+logo_verify() {  # logo_verify <file>
+    local f="$1" size real declared ext
+    [[ -f "$f" ]] || { fail "File not found: $f"; return 1; }
+    [[ -r "$f" ]] || { fail "File is not readable: $f"; return 1; }
+    size="$(stat -c%s "$f" 2>/dev/null || wc -c < "$f")"
+    if [[ "$size" -eq 0 ]]; then fail "File is empty: $f"; return 1; fi
+    if [[ "$size" -gt 1048576 ]]; then
+        fail "Logo is ${size} bytes — larger than the 1 MiB limit. Resize it and try again."
+        return 1
+    fi
+    real="$(logo_sniff "$f")"
+    if [[ -z "$real" ]]; then
+        fail "Not a real image. Supported formats: PNG, JPEG, WEBP, GIF, SVG."
+        return 1
+    fi
+    # The extension must agree with the content: blocks a renamed .png that is
+    # really something else (and a .svg that is really a script).
+    ext="${f##*.}"; ext="${ext,,}"
+    case "$real" in
+        image/png)     declared="png" ;;
+        image/jpeg)    declared="jpg|jpeg" ;;
+        image/webp)    declared="webp" ;;
+        image/gif)     declared="gif" ;;
+        image/svg+xml) declared="svg" ;;
+        *)             fail "Unsupported image type: ${real}"; return 1 ;;
+    esac
+    if [[ ! "$ext" =~ ^($declared)$ ]]; then
+        fail "Extension '.${ext:-none}' does not match the real content (${real}). Rename the file or pick the correct one."
+        return 1
+    fi
+    if [[ "$real" == "image/svg+xml" ]]; then
+        local reason
+        reason="$(logo_svg_danger "$f")"
+        if [[ -n "$reason" ]]; then
+            fail "SVG rejected: it contains a ${reason}. Only plain, self-contained logo artwork is allowed."
+            return 1
+        fi
+    fi
+    echo "$real"
+}
+
+logos_ensure_dir() {
+    if [[ ! -d "$LOGOS_DIR" ]]; then
+        mkdir -p "$LOGOS_DIR" 2>/dev/null || return 1
+        chmod 700 "$BRAND_DIR" "$LOGOS_DIR" 2>/dev/null || true
+    fi
+    return 0
+}
+
+# List valid logo files as "name<TAB>path", sorted by name.
+logos_list() {
+    local f base
+    [[ -d "$LOGOS_DIR" ]] || return 0
+    for f in "$LOGOS_DIR"/*; do
+        [[ -f "$f" ]] || continue
+        base="${f##*/}"
+        case "${base,,}" in
+            *.png|*.jpg|*.jpeg|*.webp|*.gif|*.svg) printf '%s\t%s\n' "$base" "$f" ;;
+        esac
+    done | sort
+}
+
+# Copy a chosen logo into the shared assets folder so it can be re-selected
+# later. The stored name is the basename only — the user's path is never used
+# as a destination, so a traversal attempt cannot escape LOGOS_DIR.
+logos_import() {  # logos_import <src> -> echoes the stored path
+    local src="$1" base dest
+    base="${src##*/}"
+    # keep the name to a safe, single path segment
+    base="$(printf '%s' "$base" | tr -d '/\\' | tr -cd 'A-Za-z0-9._-')"
+    [[ -n "$base" ]] || return 1
+    [[ "$base" == .* ]] && base="logo$base"
+    dest="$LOGOS_DIR/$base"
+    cp -f "$src" "$dest" 2>/dev/null || return 1
+    chmod 644 "$dest" 2>/dev/null || true
+    echo "$dest"
+}
+
 cmd_brand() {
     local action="${1:-get}"
     local val
@@ -1292,7 +1424,9 @@ cmd_brand() {
             if [[ -n "$val" ]]; then echo -e "  Brand name: ${BOLD}$val${NC}"
             else echo "  No brand name set."; fi
             val="$(config_get brand_logo)"
-            if [[ -n "$val" ]]; then echo "  Brand logo: ${GREEN}set${NC} ($((${#val}/1024)) KiB data URL)"
+            if [[ -n "$val" ]]; then
+                # exact stored value size (the original file size isn't kept)
+                echo -e "  Brand logo: ${GREEN}set${NC} (${#val} B stored)"
             else echo "  Brand logo: not set."; fi
             ;;
         set-logo-data)
@@ -1300,22 +1434,84 @@ cmd_brand() {
             val="${2:-}"
             [[ -n "$val" ]] || fail "No logo data URL provided."
             [[ "$val" == data:image/* ]] || fail "Logo must be a data:image URL."
-            local _b64 _hex
-            _b64="${val#*,}"
-            _hex="$(printf '%s' "$_b64" | base64 -d 2>/dev/null | head -c 12 | od -An -tx1 | tr -d ' \n')"
-            case "$_hex" in
-                89504e470d0a1a0a*|ffd8ff*|474946383761*|474946383961*|52494646*57454250) : ;;
-                *) fail "Logo data is not a real PNG/JPEG/GIF/WebP image (refused)." ;;
-            esac
             [[ "${#val}" -le 1050000 ]] || fail "Logo too large (max ~1 MiB)."
+            # Same content rules as logo_verify()/the web panel: real type is
+            # sniffed, the declared MIME must match, and SVGs must be inert.
+            local verdict
+            verdict="$(printf '%s' "$val" | python3 -c '
+import base64, re, sys
+v = sys.stdin.read().strip()
+m = re.match(r"^data:(image/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$", v)
+if not m:
+    print("invalid"); raise SystemExit
+declared, b64 = m.group(1), m.group(2)
+try:
+    raw = base64.b64decode(b64, validate=True)
+except Exception:
+    print("invalid"); raise SystemExit
+if raw[:8] == b"\x89PNG\r\n\x1a\n":
+    real = "image/png"
+elif raw[:3] == b"\xff\xd8\xff":
+    real = "image/jpeg"
+elif raw[:6] in (b"GIF87a", b"GIF89a"):
+    real = "image/gif"
+elif len(raw) >= 12 and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+    real = "image/webp"
+elif re.search(rb"<\s*svg[\s>]", raw[:4096], re.IGNORECASE):
+    real = "image/svg+xml"
+else:
+    real = ""
+if not real:
+    print("not_image"); raise SystemExit
+if real != declared:
+    print("mime_mismatch"); raise SystemExit
+if real == "image/svg+xml":
+    t = raw.decode("utf-8", "replace")
+    t = re.sub(r"<!--.*?-->", " ", t, flags=re.DOTALL)
+    t = re.sub(r"<!\[CDATA\[(.*?)\]\]>", r"\1", t, flags=re.DOTALL)
+    for pat, label in [
+        (r"<\s*script", "script tag"),
+        (r"\son[a-z]+\s*=", "event handler"),
+        (r"javascript\s*:", "javascript: URI"),
+        (r"<\s*(iframe|embed|object|foreignObject)", "embedded frame"),
+        (r"(?:xlink:)?href\s*=\s*[\x27\x22]?\s*(?:https?:|//)", "remote reference"),
+        (r"@import", "css @import"),
+        (r"<!ENTITY", "XML entity"),
+    ]:
+        if re.search(pat, t, re.IGNORECASE):
+            print("svg_unsafe:" + label); raise SystemExit
+print("ok")
+' 2>/dev/null)" || verdict="invalid"
+            case "$verdict" in
+                ok) : ;;
+                invalid) fail "Logo data is not a valid image data URL (refused)." ;;
+                not_image) fail "Logo data is not a real PNG/JPEG/GIF/WebP/SVG image (refused)." ;;
+                mime_mismatch) fail "Declared image type does not match the actual data (refused)." ;;
+                svg_unsafe:*) fail "SVG rejected: it contains a ${verdict#svg_unsafe:}. Only plain, self-contained artwork is allowed." ;;
+                *) fail "Logo data could not be validated (refused)." ;;
+            esac
             config_set brand_logo "$val"
-            ok "Brand logo set (${#val} chars)."
+            ok "Brand logo set."
             reapply_active
             ;;
-        clear-logo)
+        clear-logo|remove-logo)
             require_root
+            if [[ -z "$(config_get brand_logo)" ]]; then
+                warn "No brand logo is set — nothing to remove."
+                return 0
+            fi
             config_set brand_logo ""
-            ok "Brand logo cleared."
+            ok "Brand logo removed."
+            reapply_active
+            ;;
+        clear-name|remove-name)
+            require_root
+            if [[ -z "$(config_get brand_name)" ]]; then
+                warn "No brand name is set — nothing to clear."
+                return 0
+            fi
+            config_set brand_name ""
+            ok "Brand name cleared."
             reapply_active
             ;;
         set|set-name)
@@ -1338,29 +1534,7 @@ cmd_brand() {
             ;;
         set-logo)
             require_root
-            val="${2:-}"
-            if [[ -z "$val" ]]; then
-                echo -ne "  Path to brand logo (png/jpeg/webp/gif): "
-                read -r val
-            fi
-            [[ -n "$val" && -f "$val" ]] || fail "Logo file not found: ${val:-<empty>}"
-            local size mime b64
-            size="$(stat -c%s "$val" 2>/dev/null || wc -c < "$val")"
-            if [[ "$size" -gt 1048576 ]]; then
-                warn "Logo is ${size} bytes (>1 MiB). Consider resizing; storing anyway."
-            fi
-            case "${val##*.}" in
-                jpg|jpeg) mime="image/jpeg" ;;
-                png) mime="image/png" ;;
-                webp) mime="image/webp" ;;
-                gif) mime="image/gif" ;;
-                svg) fail "SVG logos are not allowed (PNG/JPEG/GIF/WebP only)." ;;
-                *) fail "Unsupported logo type: .${val##*.} (PNG/JPEG/GIF/WebP only)." ;;
-            esac
-            b64="$(base64 -w0 < "$val" 2>/dev/null || base64 < "$val" | tr -d '\r\n')"
-            config_set brand_logo "data:$mime;base64,$b64"
-            ok "Brand logo stored (${size} bytes)."
-            reapply_active
+            brand_logo_pick "${2:-}"
             ;;
         clear)
             require_root
@@ -1370,9 +1544,112 @@ cmd_brand() {
             reapply_active
             ;;
         *)
-            echo -e "${YELLOW}Usage: nucsub brand {get|set <name>|set-logo <file>|clear}${NC}"
+            echo -e "${YELLOW}Usage: nucsub brand {get|set <name>|set-logo|clear-name|clear-logo|clear}${NC}"
             ;;
     esac
+}
+
+# Store a verified logo file as the active brand logo.
+brand_logo_store() {  # brand_logo_store <file>
+    local f="$1" mime b64
+    mime="$(logo_verify "$f")" || return 1
+    b64="$(base64 -w0 < "$f" 2>/dev/null || base64 < "$f" | tr -d '\r\n')"
+    config_set brand_logo "data:$mime;base64,$b64"
+    ok "Brand logo set: ${f##*/}"
+    reapply_active
+}
+
+# The logo picker: a real folder the user can drop files into, a numbered list
+# to pick from, and a guided "add a new logo" step. A raw path is still
+# possible, but only as an explicit last resort with an example.
+brand_logo_pick() {
+    local preset="${1:-}"
+    require_root
+    if ! logos_ensure_dir; then
+        fail "Could not create the logo folder: $LOGOS_DIR"
+    fi
+    if [[ -n "$preset" ]]; then
+        brand_logo_store "$preset"
+        return $?
+    fi
+
+    local -a names=() paths=()
+    local line
+    while IFS=$'\t' read -r n p; do
+        [[ -n "$n" ]] || continue
+        names+=("$n"); paths+=("$p")
+    done < <(logos_list)
+
+    title "Brand Logo"
+    sep
+    echo -e "  ${DIM}Logo folder:${NC} ${BOLD}$LOGOS_DIR${NC}"
+    echo ""
+    if [[ ${#names[@]} -eq 0 ]]; then
+        echo -e "  ${YELLOW}No logos in the folder yet.${NC}"
+        echo -e "  ${DIM}Copy your logo file (PNG, JPEG, WEBP, GIF or SVG) into that${NC}"
+        echo -e "  ${DIM}folder, then come back here — or use option 2 to add one now.${NC}"
+    else
+        echo -e "  ${DIM}Available logos:${NC}"
+        local i
+        for i in "${!names[@]}"; do
+            echo -e "  ${GREEN}$((i+1))) ${NC}${names[$i]}"
+        done
+    fi
+    sep
+    if [[ ${#names[@]} -gt 0 ]]; then
+        echo -e "  ${GREEN}1)${NC} Select an existing logo"
+    else
+        echo -e "  ${GREEN}1)${NC} Select an existing logo ${DIM}(folder is empty — add one first)${NC}"
+    fi
+    echo -e "  ${GREEN}2)${NC} Add a new logo ${DIM}(choose a file on this server)${NC}"
+    echo -e "  ${GREEN}3)${NC} Use a full path manually ${DIM}(advanced)${NC}"
+    echo -e "  ${GREEN}0)${NC} Back"
+    sep
+    echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
+    local choice
+    read -r choice || return 0
+
+    local picked="" idx=0
+    case "$choice" in
+        1)
+            if [[ ${#names[@]} -eq 0 ]]; then
+                warn "No logos available yet — add one with option 2 first."
+                return 0
+            fi
+            echo -ne "  ${BOLD}Logo number [1-${#names[@]}]: ${NC}"
+            read -r idx || return 0
+            [[ "$idx" =~ ^[0-9]+$ ]] || { warn "Enter a number between 1 and ${#names[@]}."; return 0; }
+            (( idx >= 1 && idx <= ${#names[@]} )) || { warn "Enter a number between 1 and ${#names[@]}."; return 0; }
+            picked="${paths[$((idx-1))]}"
+            ;;
+        2)
+            echo -e "  ${DIM}Example: /root/logo.png${NC}"
+            echo -ne "  ${BOLD}Path to the logo file: ${NC}"
+            read -r picked || return 0
+            [[ -n "$picked" ]] || { warn "No path given."; return 0; }
+            if brand_logo_store "$picked"; then
+                # Keep a copy in the assets folder so it can be picked again.
+                local stored
+                if stored="$(logos_import "$picked")"; then
+                    ok "Logo also saved to the logo folder: ${stored##*/}"
+                fi
+            fi
+            return 0
+            ;;
+        3)
+            echo -e "  ${DIM}Example: /var/www/uploads/my-logo.webp${NC}"
+            echo -ne "  ${BOLD}Full path: ${NC}"
+            read -r picked || return 0
+            [[ -n "$picked" ]] || { warn "No path given."; return 0; }
+            brand_logo_store "$picked"
+            return $?
+            ;;
+        0) return 0 ;;
+        *) warn "Invalid option: $choice"; return 0 ;;
+    esac
+
+    [[ -n "$picked" ]] || { warn "Nothing selected."; return 0; }
+    brand_logo_store "$picked"
 }
 
 brand_menu() {
@@ -1384,17 +1661,21 @@ brand_menu() {
         echo -e "  ${DIM}Current brand:${NC}"
         cmd_brand get
         sep
-        echo -e "  ${GREEN}1)${NC} Set brand name"
-        echo -e "  ${GREEN}2)${NC} Set brand logo (upload a file)"
-        echo -e "  ${GREEN}3)${NC} Clear brand"
+        echo -e "  ${GREEN}1)${NC} Set / change brand name"
+        echo -e "  ${GREEN}2)${NC} Set / change brand logo"
+        echo -e "  ${GREEN}3)${NC} Remove brand logo      ${DIM}— keeps the brand name${NC}"
+        echo -e "  ${GREEN}4)${NC} Clear brand name        ${DIM}— keeps the logo${NC}"
+        echo -e "  ${GREEN}5)${NC} Clear all branding      ${DIM}— name + logo${NC}"
         echo -e "  ${GREEN}0)${NC} Back to web panel menu"
         sep
-        echo -ne "  ${BOLD}Select option [0-3]: ${NC}"
+        echo -ne "  ${BOLD}Select option [0-5]: ${NC}"
         read -r choice || return 0
         case "$choice" in
             1) ( cmd_brand set ) || true; pause_enter ;;
             2) ( cmd_brand set-logo ) || true; pause_enter ;;
-            3) ( cmd_brand clear ) || true; pause_enter ;;
+            3) ( cmd_brand clear-logo ) || true; pause_enter ;;
+            4) ( cmd_brand clear-name ) || true; pause_enter ;;
+            5) ( cmd_brand clear ) || true; pause_enter ;;
             0) return ;;
             *) warn "Invalid option: $choice"; sleep 1 ;;
         esac

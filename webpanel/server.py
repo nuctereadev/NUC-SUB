@@ -96,9 +96,56 @@ def sniff_image_bytes(raw):
         return "image/gif"
     if len(raw) >= 12 and raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
         return "image/webp"
+    if looks_like_svg(raw):
+        return "image/svg+xml"
     return ""
 
-ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+ALLOWED_IMAGE_MIMES = {"image/png", "image/jpeg", "image/gif", "image/webp",
+                       "image/svg+xml"}
+
+# SVG is text, so "is it an image?" cannot be answered by magic bytes alone.
+# Accept only a real <svg> root (after the usual prolog noise) and reject the
+# constructs that turn a logo into an attack surface: scripts, event handlers,
+# external/remote references and embedded foreign content.
+_SVG_ROOT_RE = re.compile(rb"<\s*svg[\s>]", re.IGNORECASE)
+_SVG_BANNED = (
+    (rb"<\s*script", "script tag"),
+    (rb"\son[a-z]+\s*=", "event handler"),
+    (rb"javascript\s*:", "javascript: URI"),
+    (rb"<\s*foreignObject", "foreignObject"),
+    (rb"<\s*iframe", "iframe"),
+    (rb"<\s*embed", "embed"),
+    (rb"<\s*object", "object"),
+    (rb"<\s*use[^>]*?(?:xlink:)?href\s*=\s*[\"']?\s*(?:https?:|//)", "remote <use> reference"),
+    (rb"(?:xlink:)?href\s*=\s*[\"']\s*(?:https?:|//)", "remote reference"),
+    (rb"@import", "css @import"),
+    (rb"<!ENTITY", "XML entity"),
+    (rb"data:text/html", "embedded html"),
+)
+
+
+def looks_like_svg(raw):
+    """True when the payload really is an SVG document (root element check)."""
+    if not raw:
+        return False
+    head = raw[:4096]
+    return bool(_SVG_ROOT_RE.search(head))
+
+
+def svg_danger_reason(raw):
+    """Return a human-readable reason if the SVG carries unsafe content, else ''."""
+    try:
+        text = raw.decode("utf-8", errors="replace")
+    except Exception:  # noqa: BLE001
+        return "unreadable encoding"
+    # Normalise the few things that would otherwise slip past a plain regex:
+    # comments/CDATA are stripped and entities are decoded before scanning.
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+    text = re.sub(r"<!\[CDATA\[(.*?)\]\]>", r"\1", text, flags=re.DOTALL)
+    for pattern, label in _SVG_BANNED:
+        if re.search(pattern, text.encode("utf-8"), re.IGNORECASE):
+            return label
+    return ""
 
 def validate_logo_data_url(value):
     """Validate a data:image/...;base64,... logo URL. Returns (ok, err_index, raw_len)."""
@@ -123,6 +170,10 @@ def validate_logo_data_url(value):
         return False, "not_image", len(raw)
     if declared not in ALLOWED_IMAGE_MIMES or declared != real:
         return False, "mime_mismatch", len(raw)
+    if real == "image/svg+xml":
+        reason = svg_danger_reason(raw)
+        if reason:
+            return False, "svg_unsafe", len(raw)
     return True, "", len(raw)
 
 def is_valid_url(url):

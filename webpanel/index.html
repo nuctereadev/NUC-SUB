@@ -661,7 +661,7 @@
                     <input
                       id="brand-logo-input"
                       type="file"
-                      accept=".png,.jpg,.jpeg,.webp,.gif"
+                      accept=".png,.jpg,.jpeg,.webp,.gif,.svg,image/svg+xml"
                       data-i18n-ph="set.logo.ph"
                       title="Upload logo"
                     >
@@ -906,7 +906,8 @@ const I18N={fa:{
   'js.brandTooLong':'نام برند حداکثر ۳۰ کاراکتر است',
   'js.brandInvalid':'نام برند نباید شامل گیومه یا بک‌اسلش باشد',
   'js.logoInvalid':'لوگوی واردشده نامعتبر است',
-  'js.logoNotImage':'فایل انتخاب‌شده تصویر واقعی نیست (PNG/JPG/WEBP/GIF)',
+  'js.logoNotImage':'فایل انتخاب‌شده تصویر واقعی نیست (PNG/JPG/WEBP/GIF/SVG)',
+  'js.logoSvgUnsafe':'این SVG حاوی کد اجرایی یا ارجاع خارجی است و پذیرفته نشد',
   'js.logoTooLarge':'لوگو بیش از حد بزرگ است (حداکثر ۱ مگابایت)',
   'js.payloadTooLarge':'حجم درخواست بیش از حد مجاز است',
   'js.saveFailed':'خطای داخلی در ذخیره‌سازی',
@@ -1014,7 +1015,8 @@ const I18N={fa:{
   'js.brandTooLong':'Brand name must be max 30 characters',
   'js.brandInvalid':'Brand name must not contain quotes or backslashes',
   'js.logoInvalid':'Invalid logo',
-  'js.logoNotImage':'Selected file is not a real image (PNG/JPG/WEBP/GIF)',
+  'js.logoNotImage':'Selected file is not a real image (PNG/JPG/WEBP/GIF/SVG)',
+  'js.logoSvgUnsafe':'This SVG contains script or external references and was rejected',
   'js.logoTooLarge':'Logo too large (max 1 MiB)',
   'js.payloadTooLarge':'Request too large',
   'js.saveFailed':'Internal save error',
@@ -1243,6 +1245,7 @@ const SET_ERR_MAP={
   brand_logo_invalid:'js.logoInvalid',
   brand_logo_not_image:'js.logoNotImage',
   brand_logo_mime_mismatch:'js.logoNotImage',
+  brand_logo_svg_unsafe:'js.logoSvgUnsafe',
   brand_logo_too_large:'js.logoTooLarge',
   payload_too_large:'js.payloadTooLarge',
   save_failed:'js.saveFailed'
@@ -1365,6 +1368,28 @@ function sniffImgType(buf){
      buf[8]===0x57&&buf[9]===0x45&&buf[10]===0x42&&buf[11]===0x50)return'image/webp';
   return'';
 }
+// SVG carries no magic bytes, so it is detected by a real <svg> root — the
+// same rule the server applies, so both sides always agree.
+function looksLikeSvg(text){return /<\s*svg[\s>]/i.test(text.slice(0,4096))}
+// Mirrors svg_danger_reason() in server.py: reject the constructs that would
+// turn a logo into an attack surface.
+const SVG_BANNED=[[/<\s*script/i,'script tag'],[/\son[a-z]+\s*=/i,'event handler'],
+  [/javascript\s*:/i,'javascript: URI'],[/<\s*foreignObject/i,'foreignObject'],
+  [/<\s*(iframe|embed|object)/i,'embedded frame'],[/@import/i,'css @import'],
+  [/<!ENTITY/i,'XML entity'],[/data:text\/html/i,'embedded html'],
+  [/(?:xlink:)?href\s*=\s*["']?\s*(?:https?:|\/\/)/i,'remote reference']];
+function svgUnsafeReason(text){
+  const t=text.replace(/<!--[\s\S]*?-->/g,' ').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1');
+  for(const [re,label] of SVG_BANNED){if(re.test(t))return label}
+  return'';
+}
+function useLogoDirectly(dataUrl){
+  ST.logo=dataUrl;ST.logoDirty=true;ST.logoRemoved=false;
+  showPreview(dataUrl);
+  const inp=$('brand-logo-input');
+  if(inp)inp.value='';
+  showToast(t('ed.done'));
+}
 function bindLogoUpload(){
   const inp=$('brand-logo-input');
   if(!inp)return;
@@ -1377,13 +1402,30 @@ function bindLogoUpload(){
       inp.value='';return;
     }
     f.arrayBuffer().then(buf=>{
-      if(!sniffImgType(new Uint8Array(buf))){
+      const u8=new Uint8Array(buf);
+      if(sniffImgType(u8)){
+        const fr=new FileReader();
+        fr.onload=()=>openLogoEditor(fr.result);
+        fr.readAsDataURL(f);
+        return;
+      }
+      // No raster magic bytes: the only remaining accepted format is SVG.
+      const text=new TextDecoder('utf-8').decode(u8);
+      if(!looksLikeSvg(text)){
         $('logo-err').textContent=t('ed.notImage');showToast(t('ed.notImage'),true);
         inp.value='';return;
       }
-      const fr=new FileReader();
-      fr.onload=()=>openLogoEditor(fr.result);
-      fr.readAsDataURL(f);
+      if(svgUnsafeReason(text)){
+        $('logo-err').textContent=t('js.logoSvgUnsafe')+' ('+svgUnsafeReason(text)+')';
+        showToast(t('js.logoSvgUnsafe'),true);
+        inp.value='';return;
+      }
+      // Keep the vector format as-is: the canvas editor only exports PNG.
+      let bin='';
+      for(let i=0;i<u8.length;i+=0x8000){
+        bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
+      }
+      useLogoDirectly('data:image/svg+xml;base64,'+btoa(bin));
     }).catch(()=>{
       $('logo-err').textContent=t('ed.notImage');inp.value='';
     });
