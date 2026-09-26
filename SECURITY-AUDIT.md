@@ -22,9 +22,9 @@ around the code**: the product installs and self-updates itself by fetching
 unsigned files from a moving GitHub branch and running them as root, and the
 admin panel is reachable from the public internet with no transport security.
 
-**Production readiness: acceptable for a single-admin, IP-restricted install
-once the deployment items in "Must fix before public exposure" are done. Not
-acceptable as-is for general distribution.**
+**Production readiness: acceptable for a single-admin install now that the
+panel is loopback-only and unprivileged. The remaining structural gap is the
+unsigned self-update path (H1), which needs a release process, not a patch.**
 
 ---
 
@@ -47,17 +47,15 @@ user's ability to inspect what they run.
 *Fix:* pin downloads to a commit SHA, publish and verify a signed manifest, and
 drop the `bash <(curl …)` recommendation in favour of "download, read, then run".
 
-### H2 — HIGH · Admin panel is publicly reachable over plain HTTP
-Live-confirmed: `http://<host>:8080/` returns `200` from the public internet.
-`Server: nuc-sub-webpanel` · no TLS.
+### H2 — HIGH · Admin panel was publicly reachable over plain HTTP  *(FIXED)*
+Live-confirmed before the fix: `http://<host>:8080/` returned `200` from the
+public internet, and the token and every settings change travelled in cleartext.
 
-*Impact:* the bearer token and every settings change travel in cleartext and can
-be captured or modified by anyone on the path. HSTS was added by this audit but
-is meaningless until TLS terminates in front of the panel.
-*Fix (deployment):* bind the panel to `127.0.0.1` and reach it over an SSH
-tunnel, or put it behind a TLS reverse proxy with a firewall rule. This is the
-single highest-value change and it is a deployment decision, so it was **not**
-changed unilaterally.
+*Fix applied:* the panel now binds **loopback by default** (`--host`, default
+`127.0.0.1`, overridable with `NUC_SUB_WEB_HOST=0.0.0.0` for people who put TLS
+and a firewall in front). Reach it over an SSH tunnel:
+`ssh -L 8080:127.0.0.1:8080 <server>`. HSTS is now sent as well, which becomes
+meaningful as soon as TLS terminates in front of it.
 
 ### M1 — MEDIUM · Token accepted in the URL query string  *(FIXED)*
 `webpanel/server.py:256-259`
@@ -106,15 +104,23 @@ Live: `Server: nuc-sub-webpanel/2.2.0 Python/3.12.3`.
 *Fix applied:* now `nuc-sub-webpanel`. The product version is kept because it is
 useful in bug reports; the interpreter build is not.
 
-### M6 — MEDIUM · Web panel runs as root
-`cli/nucsub` generates the `xui-sub-panel` unit with `User=root`.
+### M6 — MEDIUM · Web panel ran as root  *(FIXED)*
+The generated unit had `User=root`, so a token compromise was root code
+execution, because the panel shells out to the CLI, which writes to `/etc/x-ui`
+and restarts services.
 
-*Impact:* a token compromise is then root code execution, because the panel
-shells out to the CLI, which writes to `/etc/x-ui` and restarts services.
-*Fix:* run the panel as a dedicated unprivileged user and grant it only what it
-needs (or drive the privileged operations through a small, fixed-argument
-sudoers policy). **Not changed here** — it alters the install layout and the
-`nucsub` command surface, so it needs a decision plus a migration.
+*Fix applied:* the panel now runs as a dedicated shell-less system user
+(`nucsub-web`, override with `NUC_SUB_WEB_USER=root`) and escalates only through
+a fixed-argument sudoers policy that grants exactly `status`, `list`, `reset`,
+`apply <name>` and `remove <name>` — with no bare `nucsub` grant, so least
+privilege holds. The token stays `root:nucsub-web 0640`, so only root can mint a
+new one while the panel can still read it. `sudo -n` is used throughout, so a
+broken policy fails closed instead of prompting on a request.
+
+One trade-off, stated plainly: `NoNewPrivileges=true` had to come off the unit,
+because setuid escalation is impossible under it. `PrivateTmp=true` is kept.
+Full `ProtectSystem=` sandboxing is likewise incompatible with sudo escalation
+and is not used.
 
 ### L1 — LOW · Unpinned build dependency  *(not shipped)*
 `demo/requirements.txt` pins `jinja2>=3.1` with no upper bound.
@@ -195,10 +201,11 @@ URL and commit in a `THIRD_PARTY.md` so the next audit does not have to.
 
 ## Must fix before public exposure
 
-1. Put the panel behind TLS and restrict it to loopback or a firewall allowlist (H2).
-2. Stop running the web panel as root (M6).
+1. ~~Put the panel behind TLS and restrict it to loopback~~ — **done** (H2).
+2. ~~Stop running the web panel as root~~ — **done** (M6).
 3. Add integrity verification to the install/update path and pin to a release
-   commit (H1).
+   commit (H1). This is the last structural item left, and it needs a release
+   process rather than a code change.
 4. Rotate the credentials sitting in `probe_*.sh` / `.env` (L4).
 
 ## Worth doing next

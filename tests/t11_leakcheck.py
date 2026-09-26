@@ -23,6 +23,9 @@ ALLOW = {
 # demo/build.py ships a gallery of deliberately fake share links; their ids are
 # part of the fixture, not leaked material.
 DEMO_FILES = {"demo/build.py"}
+# A deliberately-wrong token used to prove the panel rejects bad credentials.
+# It is the literal string "wrong" repeated, never a real secret.
+ALLOW_LITERALS = {"Bearer wrongwrongwrongwrong"}
 
 files = subprocess.run(["git", "ls-files"], capture_output=True, text=True,
                        check=True).stdout.split()
@@ -41,7 +44,7 @@ for path in files:
             continue
         for m in pat.finditer(doc):
             val = m.group(0)
-            if val in ALLOW:
+            if val in ALLOW or val in ALLOW_LITERALS:
                 continue
             line = doc[:m.start()].count("\n") + 1
             hits += 1

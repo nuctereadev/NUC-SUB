@@ -29,6 +29,7 @@ import logging
 import mimetypes
 import os
 import re
+import shutil
 import socket
 import subprocess
 import time
@@ -197,13 +198,45 @@ def is_valid_theme_name(name):
 # ---------------------------------------------------------------------------
 # CLI helper
 # ---------------------------------------------------------------------------
+def _is_root():
+    """True when running as uid 0. geteuid() does not exist off Unix, and the
+    panel is only ever deployed on Linux, so treat anything else as unprivileged."""
+    try:
+        return os.geteuid() == 0
+    except AttributeError:
+        return False
+
+
+def _sudo_available():
+    """True when this process can reach the CLI through the sudoers policy."""
+    if _is_root() or not shutil.which("sudo"):
+        return False
+    try:
+        return subprocess.run(
+            ["sudo", "-n", "-l", ARGS.cli],
+            capture_output=True, text=True, timeout=10, shell=False,
+        ).returncode == 0
+    except Exception:  # noqa: BLE001
+        return False
+
+
+_SUDO_OK = False
+
+
 def run_cli(args, input_data=None):
-    """Run nucsub CLI and return structured result. Validates args for safety."""
+    """Run nucsub CLI and return structured result. Validates args for safety.
+
+    When the panel runs unprivileged (the normal, hardened case) the CLI is
+    reached through a fixed-argument sudoers policy, so the panel can escalate
+    for exactly the commands it needs and nothing else."""
     if not os.path.isfile(ARGS.cli):
         return {"ok": False, "code": -1, "stdout": "", "stderr": "nucsub not found"}
+    argv = list(args)
+    if not _is_root() and _SUDO_OK:
+        argv = ["sudo", "-n", ARGS.cli] + argv
     try:
         out = subprocess.run(
-            [ARGS.cli] + args, capture_output=True, text=True, timeout=60,
+            argv, capture_output=True, text=True, timeout=60,
             input=input_data, shell=False,
         )
         return {
@@ -623,7 +656,7 @@ def _bind_with_retry(port, attempts=20, delay=0.5):
     last = None
     for _ in range(max(1, attempts)):
         try:
-            return _ReusableServer(("0.0.0.0", port), Handler)
+            return _ReusableServer((ARGS.host, port), Handler)
         except OSError as e:
             last = e
             time.sleep(delay)
@@ -636,6 +669,10 @@ def main():
     global ARGS, SETTINGS_FILE, HOST_PORT, INSTALL_DIR
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
+    ap.add_argument("--host", default=os.environ.get("NUC_SUB_WEB_HOST", "127.0.0.1"),
+                    help="bind address; defaults to loopback so the admin panel "
+                         "is not exposed to the network. Set NUC_SUB_WEB_HOST=0.0.0.0 "
+                         "to opt in to a public bind (put TLS in front first).")
     ap.add_argument("--token")
     ap.add_argument("--base", default=".")
     ap.add_argument("--cli", default="")
@@ -649,6 +686,12 @@ def main():
 
     # config.json sits beside the CLI install — the SAME file the CLI reads.
     SETTINGS_FILE = os.path.join(INSTALL_DIR, "config.json")
+
+    global _SUDO_OK
+    _SUDO_OK = _sudo_available()
+    if not _is_root() and not _SUDO_OK:
+        print("[nuc-sub] WARNING: running unprivileged with no sudoers entry for "
+              f"{ARGS.cli} - theme actions will fail", flush=True)
 
     # Migrate any legacy settings that used to land one level up (fixes the
     # historical split where CLI+webpanel wrote different files).
@@ -685,7 +728,7 @@ def main():
         port = find_free_port(ARGS.port + 1, ARGS.port + 100)
         print(f"[nuc-sub] ⚠ port {ARGS.port} is occupied — web panel will use port {port}", flush=True)
         HOST_PORT = port
-        srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+        srv = ThreadingHTTPServer((ARGS.host, port), Handler)
     else:
         port = srv.server_address[1]
 
@@ -696,7 +739,11 @@ def main():
     except OSError:
         pass
 
-    print(f"[nuc-sub] web panel listening on http://0.0.0.0:{port}", flush=True)
+    shown = "127.0.0.1" if ARGS.host in ("127.0.0.1", "localhost") else ARGS.host
+    print(f"[nuc-sub] web panel listening on http://{shown}:{port}", flush=True)
+    if shown == "127.0.0.1":
+        print("[nuc-sub] loopback only — reach it with: "
+              "ssh -L %d:127.0.0.1:%d <server>" % (port, port), flush=True)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:

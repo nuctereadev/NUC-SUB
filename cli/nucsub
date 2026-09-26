@@ -46,6 +46,10 @@ NUCSUB_BIN="${NUC_SUB_BIN:-/usr/bin/nucsub}"
 # The web panel systemd unit. Overridable so a test or a parallel install never
 # rewrites/restarts the unit that belongs to the main installation.
 WEB_SERVICE="${NUC_SUB_WEB_SERVICE:-xui-sub-panel}"
+# Unprivileged system account the web panel runs as. Override with
+# NUC_SUB_WEB_USER=root to keep the old root behaviour.
+WEB_SYSTEM_USER="${NUC_SUB_WEB_SYSTEM_USER:-nucsub-web}"
+WEB_USER="${NUC_SUB_WEB_USER:-}"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
@@ -1055,20 +1059,26 @@ web_panel_managed_here() {
     return 1
 }
 
-# Detect the server's primary outbound IPv4 so the printed login URL is usable
-# (never 0.0.0.0 unless nothing else is available).
+# The host to print in the login URL. When the panel binds loopback (the
+# default) a public IP would be actively wrong, because nothing is listening
+# there -- the URL has to name the tunnel endpoint instead.
 web_panel_host() {
-    local h="${SUB_PANEL_HOST:-}"
-    if [[ -n "$h" && "$h" != "0.0.0.0" ]]; then echo "$h"; return 0; fi
-    h=""
-    if command -v ip >/dev/null 2>&1; then
-        h="$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \([0-9.]\{7,15\}\).*/\1/p')" || true
+    local bind="${NUC_SUB_WEB_HOST:-127.0.0.1}"
+    if [[ "$bind" == "0.0.0.0" || "$bind" == "::" ]]; then
+        local h="${SUB_PANEL_HOST:-}"
+        if [[ -n "$h" && "$h" != "0.0.0.0" ]]; then echo "$h"; return 0; fi
+        h=""
+        if command -v ip >/dev/null 2>&1; then
+            h="$(ip -4 route get 1.1.1.1 2>/dev/null | sed -n 's/.*src \([0-9.]\{7,15\}\).*/\1/p')" || true
+        fi
+        if [[ -z "$h" ]] && command -v hostname >/dev/null 2>&1; then
+            h="$(hostname -I 2>/dev/null | awk '{print $1}')" || true
+        fi
+        [[ -z "$h" ]] && h="0.0.0.0"
+        echo "$h"
+        return 0
     fi
-    if [[ -z "$h" ]] && command -v hostname >/dev/null 2>&1; then
-        h="$(hostname -I 2>/dev/null | awk '{print $1}')" || true
-    fi
-    [[ -z "$h" ]] && h="0.0.0.0"
-    echo "$h"
+    echo "$bind"
 }
 
 # Install the web panel as a real systemd service (survives reboots/reinstalls).
@@ -1086,17 +1096,68 @@ web_panel_install_service() {
     local dbaro=""
     [[ -n "$dbpath" && -e "$dbpath" ]] && dbaro="--db $dbpath"
     umask 077
+    # Bind to loopback by default: the admin panel must not be reachable from
+    # the network just because it was started. NUC_SUB_WEB_HOST=0.0.0.0 is an
+    # explicit opt-in for people who put TLS and a firewall in front of it.
+    local webhost="${NUC_SUB_WEB_HOST:-127.0.0.1}"
     # NOTE: the admin token is deliberately NOT written here. The server reads
     # $WEB_TOKEN_FILE directly, so this env file used to be a second copy that
     # could drift from the real one (and it leaked the token into the unit
     # file and `ps`). One store, one truth.
     cat > "$envf" <<EOF
 NP_PORT=$port
+NP_HOST=$webhost
 NP_BASE=$WEB_BASE
 NP_CLI=$INSTALL_DIR/cli/nucsub
 NP_THEMES=$THEMES_DIR
 EOF
     chmod 600 "$envf"
+
+    # -- privilege separation ---------------------------------------------
+    # The panel only needs root to run the CLI. Run the panel itself as an
+    # unprivileged, shell-less system user and let it escalate for exactly the
+    # commands it needs, so a stolen token no longer means root.
+    local webuser="$WEB_USER"
+    if [[ -z "$webuser" ]]; then
+        if id -u "$WEB_SYSTEM_USER" >/dev/null 2>&1; then
+            webuser="$WEB_SYSTEM_USER"
+        elif command -v useradd >/dev/null 2>&1; then
+            useradd --system --no-create-home --home-dir "$INSTALL_DIR" \
+                    --shell /usr/sbin/nologin "$WEB_SYSTEM_USER" >/dev/null 2>&1 \
+                && webuser="$WEB_SYSTEM_USER" || webuser="root"
+        else
+            webuser="root"
+        fi
+    fi
+
+    # The panel user must be able to read the token and write the files it owns,
+    # but the token itself stays root-owned so only root can mint a new one.
+    if [[ "$webuser" != "root" ]]; then
+        chown root:"$webuser" "$WEB_TOKEN_FILE" 2>/dev/null || true
+        chmod 640 "$WEB_TOKEN_FILE" 2>/dev/null || true
+        chown "$webuser":"$webuser" "$SETTINGS_FILE" 2>/dev/null || true
+        chown "$webuser":"$webuser" "$INSTALL_DIR/webpanel.log" 2>/dev/null || true
+        # The panel records its effective port here on every start; without
+        # write access the CLI would report a stale port after a restart.
+        touch "$WEB_PORT_FILE" 2>/dev/null || true
+        chown "$webuser":"$webuser" "$WEB_PORT_FILE" 2>/dev/null || true
+        chmod 644 "$WEB_PORT_FILE" 2>/dev/null || true
+        # Fixed-argument sudoers policy: the panel may run these and nothing
+        # else. `sudo -n` means a misconfigured policy fails closed instead of
+        # ever prompting on a request. No bare `nucsub` grant on purpose --
+        # least privilege, the panel only ever passes a subcommand.
+        local sd="/etc/sudoers.d/nucsub-webpanel"
+        {
+            echo "# Managed by nucsub. Grants the web panel exactly the CLI"
+            echo "# commands it needs. Regenerated on every service install."
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub status"
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub list"
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub reset"
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub apply [A-Za-z0-9_-]*"
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub remove [A-Za-z0-9_-]*"
+        } > "$sd" 2>/dev/null && chmod 440 "$sd" 2>/dev/null || true
+    fi
+
     cat > "$uroot/$unit" <<EOF
 [Unit]
 Description=NUC-SUB web panel (subscription theme manager)
@@ -1104,13 +1165,14 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=$webuser
 EnvironmentFile=-$envf
-ExecStart=$py $WEB_BASE/server.py --port \${NP_PORT} --base \${NP_BASE} --cli \${NP_CLI} --themes \${NP_THEMES} $dbaro
+ExecStart=$py $WEB_BASE/server.py --host \${NP_HOST} --port \${NP_PORT} --base \${NP_BASE} --cli \${NP_CLI} --themes \${NP_THEMES} $dbaro
 Restart=on-failure
 RestartSec=3
-NoNewPrivileges=true
 PrivateTmp=true
+# NoNewPrivileges is deliberately NOT set: the panel escalates through the
+# sudoers policy above to run the CLI. Keep it off, or privileged actions fail.
 
 [Install]
 WantedBy=multi-user.target
@@ -1185,6 +1247,11 @@ cmd_webpanel() {
             fi
             echo ""
             echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
+            if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" != "0.0.0.0" ]]; then
+                echo -e "  ${DIM}The panel listens on loopback only. From your machine run:${NC}"
+                echo -e "  ${BOLD}    ssh -L $port:127.0.0.1:$port <this-server>${NC}"
+                echo -e "  ${DIM}then open the URL above.${NC}"
+            fi
             echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
             echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
             ;;

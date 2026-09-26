@@ -147,6 +147,24 @@ def main():
         s, _, _ = req(base + "/%2e%2e/%2e%2e/etc/passwd")
         check("encoded path traversal blocked", s in (403, 404), "got %s" % s)
 
+        # --- loopback bind is the default ---------------------------------
+        out = subprocess.run(
+            [sys.executable, os.path.join(tmp, "webpanel", "server.py"), "--help"],
+            capture_output=True, text=True, timeout=20)
+        check("--host flag exists", "--host" in out.stdout, out.stdout[:200])
+        check("default host is loopback",
+              'os.environ.get("NUC_SUB_WEB_HOST", "127.0.0.1")' in
+              open(SERVER, encoding="utf-8").read())
+        check("source no longer hardcodes a 0.0.0.0 bind",
+              'ThreadingHTTPServer(("0.0.0.0"' not in
+              open(SERVER, encoding="utf-8").read())
+
+        # --- privilege separation wiring -----------------------------------
+        src = open(SERVER, encoding="utf-8").read()
+        check("run_cli escalates via sudo when unprivileged",
+              '"sudo", "-n", ARGS.cli' in src)
+        check("run_cli never uses a shell", "shell=True" not in src)
+
         # --- frontend regressions ------------------------------------------
         html = open(os.path.join(ROOT, "webpanel", "index.html"), encoding="utf-8").read()
         check("showToast no longer assigns innerHTML with message",
