@@ -255,7 +255,7 @@ button{font:inherit}
 <div class="app">
 
 <header class="top">
-  <div class="brand">PasarGuard</div>
+  <div class="brand">NUC-SUB</div>
   <div class="top-actions">
     <button class="icon-btn" id="langBtn" aria-label="Toggle language">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.2 2.4 3.4 5.4 3.4 9s-1.2 6.6-3.4 9c-2.2-2.4-3.4-5.4-3.4-9S9.8 5.4 12 3z"/></svg>
@@ -361,12 +361,12 @@ button{font:inherit}
 (function(){
   "use strict";
   const i18n={
-    fa:{account_subtitle:"حساب کاربری شما",st_active:"فعال",traffic_usage:"مصرف ترافیک",used:"مصرف شده",
+    fa:{account_subtitle:"حساب کاربری شما",st_active:"فعال", st_exhausted: "اتمام حجم", st_expired: "منقضی", st_disabled: "غیرفعال",traffic_usage:"مصرف ترافیک",used:"مصرف شده",
       remaining:"باقیمانده",qr_code:"کد QR",copy_all:"کپی همه", nuc_telegram:'کانال تلگرام',subscription_details:"جزئیات اشتراک",
       expiry:"تاریخ انقضا",status:"وضعیت",device_limit:"محدودیت دستگاه",username:"نام کاربری",
       announcement:"اعلان",admin_note:"یادداشت",configurations:"کانفیگ‌ها",tap_to_copy:"کلیک برای کپی",
       qr_title:"کد QR اشتراک",close:"بستن",copied:"کپی شد",all_copied:"همه کپی شدند"},
-    en:{account_subtitle:"Your account",st_active:"Active",traffic_usage:"Traffic Usage",used:"Used",
+    en:{account_subtitle:"Your account",st_active:"Active", st_exhausted: "Data Exhausted", st_expired: "Expired", st_disabled: "Disabled",traffic_usage:"Traffic Usage",used:"Used",
       remaining:"Remaining",qr_code:"QR Code",copy_all:"Copy All", nuc_telegram:'Telegram',subscription_details:"Subscription Details",
       expiry:"Expiry Date",status:"Status",device_limit:"Device Limit",username:"Username",
       announcement:"Announcement",admin_note:"Note",configurations:"Configurations",tap_to_copy:"Tap to copy",
@@ -2944,33 +2944,59 @@ var qrcode = function() {
   });
 })();
 </script>
-<i data-nuc-used style="display:none">{{ .used }}</i><i data-nuc-limit style="display:none">{{ .total }}</i>
+<i data-nuc-used style="display:none">{{ .used }}</i><i data-nuc-limit style="display:none">{{ .total }}</i><i data-nuc-expire-ts style="display:none">{{ .expire }}</i><i data-nuc-enabled style="display:none">{{ .enabled }}</i>
 <style data-nuc="pg-exhausted-style">
 [data-nuc-exhausted]{color:#ef4444!important}
 .status-badge-inline[data-nuc-exhausted]{background:rgba(239,68,68,.18)!important}
 </style>
 <script data-nuc="pg-status">
 (function(){
-  function pgStatus(){
-    var u=parseFloat((document.querySelector('[data-nuc-used]')||{textContent:''}).textContent);
-    var l=parseFloat((document.querySelector('[data-nuc-limit]')||{textContent:''}).textContent);
-    if(!(isFinite(u)&&isFinite(l)&&l>0&&u>=l))return;
-    var el=null;
-    el=document.querySelector('[data-i18n="st_active"]');
-    if(!el){var c=document.querySelectorAll('.info-value.success,.detail-value.success,b.ok,.status-badge-inline');for(var i=0;i<c.length;i++){var t=(c[i].textContent||'').trim();if(t==='فعال'||t==='Active'){el=c[i];break;}}}
-    if(!el){var d=document.querySelectorAll('*');for(var i=0;i<d.length;i++){var n=d[i];if(n.children.length===0){var t=(n.textContent||'').trim();if(t==='فعال'||t==='Active'){el=n;break;}}}}
-    if(!el)return;
+var FA={st_exhausted:'اتمام حجم',st_expired:'منقضی',st_disabled:'غیرفعال'};
+var EN={st_exhausted:'Data Exhausted',st_expired:'Expired',st_disabled:'Disabled'};
+/* volt-style tables spell the quota state 'limited' rather than 'exhausted' */
+var SHORT={st_exhausted:'limited',st_expired:'expired',st_disabled:'disabled',st_active:'active'};
+function txt(s){var e=document.querySelector(s);return e?(e.textContent||'').trim():'';}
+function num(s){var v=parseFloat(txt(s));return isFinite(v)?v:NaN;}
+function pgStatus(){
+  var exp=num('[data-nuc-expire-ts]'),en=txt('[data-nuc-enabled]'),state='';
+  var u=num('[data-nuc-used]'),l=num('[data-nuc-limit]');
+  var usedUp=l>0&&u>=l;
+  /* x-ui's own disable task switches a client off as soon as its quota runs
+     out, and also when it expires, so enable=0 cannot tell those two apart.
+     Check the specific cause first: an exhausted or expired client is much
+     more useful to the user than the generic "disabled" it was turned into.
+     Only a client that is off with quota to spare was disabled by hand. */
+  if(exp>0&&exp<=Date.now()/1000){state='st_expired';}
+  else if(usedUp){state='st_exhausted';}
+  else if(en==='false'||en==='0'){state='st_disabled';}
+  if(!state)return;
+  var els=document.querySelectorAll('[data-nuc-status-el]');
+  if(!els.length)els=document.querySelectorAll('[data-i18n="st_active"]');
+  if(!els.length){
+    var c=document.querySelectorAll('.info-value.success,.detail-value.success,b.ok,.status-badge-inline,.state,.status-pill,.usage-state,.status-text');
+    for(var i=0;i<c.length;i++){var t=(c[i].textContent||'').trim();if(t==='فعال'||t==='Active'){els=[c[i]];break;}}}
+  if(!els.length){
+    var all=document.querySelectorAll('body *');
+    for(var j=0;j<all.length;j++){var n=all[j];if(n.children.length===0){var q=(n.textContent||'').trim();if(q==='فعال'||q==='Active'){els=[n];break;}}}}
+  for(var k=0;k<els.length;k++){
+    var el=els[k];
     var isEn=/^[A-Za-z]/.test((el.textContent||'').trim());
-    el.setAttribute('data-i18n','st_exhausted');
+    /* a table keyed by data-i18n-status must not gain a data-i18n, or its own
+       applier would look up a key that table does not define */
+    if(el.hasAttribute('data-i18n-status'))el.setAttribute('data-i18n-status',SHORT[state]);
+    else el.setAttribute('data-i18n',state);
     el.setAttribute('data-nuc-exhausted','1');
-    el.textContent=isEn?'Data Exhausted':'اتمام حجم';
-    try{el.style.color='#ef4444';el.classList.remove('ok','success');el.classList.add('danger');}catch(e){}
-  }
-  pgStatus();
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
+    el.textContent=isEn?EN[state]:FA[state];
+    /* keep the cached Persian text in step, or a later language switch would
+       restore the stale label */
+    if(el._fa!==undefined)el._fa=FA[state];
+    try{el.style.color='#ef4444';el.classList.remove('ok','success');el.classList.add('danger');}catch(e){}}
+}
+pgStatus();
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
 })();
 </script>
-\n<script data-nuc="dynamize">(function(){
+<script data-nuc="dynamize">(function(){
 var D={expire:{{ .expire }},enabled:{{ .enabled }},total:{{ .totalByte }},used:({{ .downloadByte }})+({{ .uploadByte }})};
 function pad(n){return String(n).length<2?'0'+n:n;}
 function fill(sel,fn){document.querySelectorAll(sel).forEach(fn);}

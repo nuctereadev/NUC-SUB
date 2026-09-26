@@ -781,7 +781,7 @@
           </div>
           <span class="info-item-label" data-i18n="devices">دستگاه‌های فعال</span>
         </div>
-        <span class="info-item-value"{{ user.hwid_limit }}<span data-i18n=\"of\">از</span>{{ user.hwid_limit }}</span>
+        <span class="info-item-value"{{ user.hwid_limit }}<span data-i18n="of">از</span>{{ user.hwid_limit }}</span>
       </div>
       <div class="info-item">
         <div class="info-item-left">
@@ -3573,7 +3573,7 @@ var qrcode = function() {
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
 })();
 </script>
-\n<!-- data-nuc-pgcap -->
+<!-- data-nuc-pgcap -->
 <i data-nuc-status style="display:none">{{ user.status.value }}</i>
 <i data-nuc-reset style="display:none">{{ user.data_limit_reset_strategy.value }}</i>
 <i data-nuc-expire style="display:none">{% if user.expire %}{{ user.expire | datetime }}{% endif %}</i>

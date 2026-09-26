@@ -731,7 +731,7 @@
         <span class="num">{{ user.used_traffic | bytesformat }}</span>
         <span class="unit">GB</span>
       </div>
-      <div class="usage-sub" data-i18n="of_total">از 100 گیگابایت کل حجم</div>
+      <div class="usage-sub" data-i18n="of_total">از {% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %} کل حجم</div>
       <div class="usage-bar-track">
         <div class="usage-bar-fill" data-width="{% if user.data_limit %}{{ (user.used_traffic / user.data_limit * 100) | round(1) }}{% else %}0{% endif %}"></div>
       </div>
@@ -756,7 +756,7 @@
         <svg class="svg-icon sm" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       </div>
       <div class="lbl" data-i18n="devices">دستگاه‌ها</div>
-      <div class="val"{{ user.hwid_limit }}<span data-i18n=\"of\">از</span>{{ user.hwid_limit }}</div>
+      <div class="val"{{ user.hwid_limit }}<span data-i18n="of">از</span>{{ user.hwid_limit }}</div>
     </div>
     <div class="info-tile">
       <div class="ic">
@@ -848,7 +848,7 @@
       template: 'Lavender Template',
       st_active: 'فعال', st_exhausted: 'اتمام حجم',
       expires: 'انقضا:',
-      of_total: 'از 100 گیگابایت کل حجم',
+      of_total: 'از {% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %} کل حجم',
       remain: 'باقیمانده: {% if user.data_limit %}{{ (user.data_limit - user.used_traffic) | bytesformat }}{% else %}∞{% endif %}',
       status: 'وضعیت',
       devices: 'دستگاه‌ها',
@@ -3556,7 +3556,7 @@ var qrcode = function() {
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
 })();
 </script>
-\n<!-- data-nuc-pgcap -->
+<!-- data-nuc-pgcap -->
 <i data-nuc-status style="display:none">{{ user.status.value }}</i>
 <i data-nuc-reset style="display:none">{{ user.data_limit_reset_strategy.value }}</i>
 <i data-nuc-expire style="display:none">{% if user.expire %}{{ user.expire | datetime }}{% endif %}</i>

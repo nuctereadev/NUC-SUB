@@ -847,7 +847,7 @@
           </div>
           <span class="detail-label" data-i18n="devices">دستگاه‌ها</span>
         </div>
-        <span class="detail-value"{{ user.hwid_limit }}<span data-i18n=\"of\">از</span>{{ user.hwid_limit }}</span>
+        <span class="detail-value"{{ user.hwid_limit }}<span data-i18n="of">از</span>{{ user.hwid_limit }}</span>
       </div>
       <div class="detail-row">
         <div class="detail-row-left">
@@ -3624,7 +3624,7 @@ var qrcode = function() {
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',pgStatus);}
 })();
 </script>
-\n<!-- data-nuc-pgcap -->
+<!-- data-nuc-pgcap -->
 <i data-nuc-status style="display:none">{{ user.status.value }}</i>
 <i data-nuc-reset style="display:none">{{ user.data_limit_reset_strategy.value }}</i>
 <i data-nuc-expire style="display:none">{% if user.expire %}{{ user.expire | datetime }}{% endif %}</i>
