@@ -11,7 +11,14 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CY
 BOLD='\033[1m'; DIM='\033[2m'
 
 INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
-REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main}"
+# Immutable release ref, never a branch. Themes and panel assets land in
+# root-owned directories and are served to panel users, so resolving a moving
+# branch would mean deploying whatever the tip happened to be, unauthenticated.
+# Every downloaded file is checked against MANIFEST.sha256 from this ref.
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.0}"
+REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
+MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
+MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
 THEMES_DIR="$INSTALL_DIR/themes"
 DEPLOY_DIR="/etc/x-ui/sub_templates"
 XUI_DB="$([ -f /etc/x-ui/x-ui.db ] && echo /etc/x-ui/x-ui.db || echo /etc/3x-ui/db/x-ui.db)"
@@ -222,16 +229,19 @@ available_themes() {
 download_theme() {  # download_theme <name>
     local name="${1:-}"
     valid_theme_name "$name" || return 1
+    # No bytes are fetched before the manifest that describes them is in hand.
+    ensure_manifest || return 1
     if [[ "$PANEL" == "pasarguard" ]]; then
         local dst="$PG_THEMES_DIR/$name.html"
         [[ -s "$dst" ]] && return 0
         mkdir -p "$PG_THEMES_DIR"
         # atomic: fetch to a temp file then move into place only if valid
-        local tmp
+        local tmp rp
+        rp="pasarguard-themes/subscription/$name.html"
         tmp="$(mktemp "$PG_THEMES_DIR/.$name.XXXXXX.html")"
-        if ! curl -fsSL -m 60 "$REPO_URL/pasarguard-themes/subscription/$name.html" -o "$tmp"; then
+        if ! curl -fsSL -m 60 "$REPO_URL/$rp" -o "$tmp"; then
             rm -f "$tmp"
-            warn "Failed to download theme '$name' ($REPO_URL/pasarguard-themes/subscription/$name.html)"
+            warn "Failed to download theme '$name' ($REPO_URL/$rp)"
             return 1
         fi
         if ! validate_download "$tmp"; then
@@ -239,9 +249,13 @@ download_theme() {  # download_theme <name>
             warn "Downloaded theme '$name' is empty or invalid — won't deploy it."
             return 1
         fi
+        if ! verify_manifest_file "$rp" "$tmp" "theme '$name'"; then
+            rm -f "$tmp"
+            return 1
+        fi
         chmod 644 "$tmp"
         mv -f "$tmp" "$dst"
-        ok "Theme '$name' downloaded."
+        ok "Theme '$name' downloaded and checksum-verified."
         return 0
     fi
     local td="$THEMES_DIR/$name"
@@ -249,11 +263,12 @@ download_theme() {  # download_theme <name>
     mkdir -p "$td"
     # only index.html is required — the pg-derived themes are self-contained
     # single-file templates (fonts/icons are base64-embedded). Fetch atomically.
-    local tmp
+    local tmp rp
+    rp="themes/$name/index.html"
     tmp="$(mktemp "$td/.index.XXXXXX.html")"
-    if ! curl -fsSL -m 60 "$REPO_URL/themes/$name/index.html" -o "$tmp"; then
+    if ! curl -fsSL -m 60 "$REPO_URL/$rp" -o "$tmp"; then
         rm -f "$tmp"
-        warn "Failed to download theme '$name' ($REPO_URL/themes/$name/index.html)"
+        warn "Failed to download theme '$name' ($REPO_URL/$rp)"
         return 1
     fi
     if ! validate_download "$tmp"; then
@@ -261,9 +276,13 @@ download_theme() {  # download_theme <name>
         warn "Downloaded theme '$name' is empty or invalid — won't deploy it."
         return 1
     fi
+    if ! verify_manifest_file "$rp" "$tmp" "theme '$name'"; then
+        rm -f "$tmp"
+        return 1
+    fi
     chmod 644 "$tmp"
     mv -f "$tmp" "$td/index.html"
-    ok "Theme '$name' downloaded."
+    ok "Theme '$name' downloaded and checksum-verified."
     return 0
 }
 
@@ -273,6 +292,74 @@ validate_download() {  # validate_download <file>
     [[ -f "$f" && -s "$f" ]] || return 1
     # must actually be an HTML page (not a GitHub 404 body / error JSON)
     grep -qiE '<!DOCTYPE html|<html|<head|<body' "$f" || return 1
+    return 0
+}
+
+# ------------------------------------------------------- integrity checking ---
+# validate_download only proves the payload "looks like" a theme. That is not
+# integrity: a truncated, substituted or CDN-altered file can look perfectly
+# valid and would be deployed straight into a root-owned directory. These
+# helpers check the bytes against MANIFEST.sha256 and fail closed.
+
+sha256_of() {  # sha256_of <file> -> lowercase hex digest
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum -- "$1" | cut -d' ' -f1
+    else
+        shasum -a 256 -- "$1" | cut -d' ' -f1
+    fi
+}
+
+expected_sha() {  # expected_sha <repo-path> -> hex, or empty when unknown
+    local p="$1"
+    [[ -n "$MANIFEST" && -s "$MANIFEST" ]] || return 0
+    # Strip a trailing CR: a manifest authored on Windows (or exported by a repo
+    # with core.autocrlf on) arrives with CRLF, and without this every lookup
+    # would miss on a hidden \r and fail closed on a perfectly good release.
+    awk -v want="$p" '{ h = $1; path = $2; sub(/^\*/, "", path); sub(/\r$/, "", h); sub(/\r$/, "", path); if (path == want) { print h; exit } }' "$MANIFEST"
+}
+
+# Fetch the manifest once per run. A missing or malformed manifest is fatal:
+# without it nothing can be verified, and silently skipping verification would
+# reinstate the very hole this closes.
+ensure_manifest() {
+    [[ -n "$MANIFEST" ]] && return 0
+    local tmp
+    tmp="$(mktemp)"
+    if ! curl -fsSL -m 30 "$MANIFEST_URL" -o "$tmp" 2>/dev/null; then
+        rm -f "$tmp"
+        fail "Could not fetch MANIFEST.sha256 from $MANIFEST_URL"
+        echo -e "  ${DIM}Refusing to deploy unverified themes. Check the ref (NUC_SUB_REF=${NUC_SUB_REF}).${NC}"
+        return 1
+    fi
+    if ! grep -qE '^[0-9a-f]{64}  ' "$tmp"; then
+        rm -f "$tmp"
+        fail "MANIFEST.sha256 is missing or malformed - refusing to continue."
+        return 1
+    fi
+    MANIFEST="$tmp"
+    return 0
+}
+
+# verify_manifest_file <repo-path> <file-on-disk> [label-for-message]
+verify_manifest_file() {
+    local p="$1" f="$2" label="${3:-$1}" want got
+    # No manifest in play means a local/offline tree the operator controls.
+    [[ -n "$MANIFEST" ]] || return 0
+    want="$(expected_sha "$p")"
+    if [[ -z "$want" ]]; then
+        fail "$label is not listed in MANIFEST.sha256 - refusing to deploy it."
+        echo -e "  ${DIM}The release ref and the manifest disagree; this release is broken.${NC}"
+        return 1
+    fi
+    got="$(sha256_of "$f")"
+    if [[ "$want" != "$got" ]]; then
+        fail "CHECKSUM MISMATCH for $label"
+        echo -e "  ${DIM}expected ${want:0:16}...${NC}"
+        echo -e "  ${DIM}got      ${got:0:16}...${NC}"
+        echo -e "  ${DIM}Nothing was deployed. This means a corrupt transfer, a stale${NC}"
+        echo -e "  ${DIM}manifest, or an attempt to feed you altered code.${NC}"
+        return 1
+    fi
     return 0
 }
 
@@ -1196,11 +1283,24 @@ cmd_webpanel() {
             # Auto-install missing web panel assets so start always works.
             if [[ ! -f "$WEB_BASE/server.py" ]]; then
                 info "Web panel files missing — installing from GitHub..."
-                mkdir -p "$WEB_BASE"
-                local _wf
+                # server.py is executed by the panel service, so an unverified
+                # download here is remote code execution. Verify before use.
+                ensure_manifest || { fail "Cannot verify web panel files; refusing to start."; return 1; }
+                local _wf _wtmp
                 for _wf in "webpanel/server.py" "webpanel/index.html" "webpanel/css/icons.css" "webpanel/css/fonts.css" "webpanel/css/panel.css" "webpanel/fonts/IRANSansX-Bold.woff2" "webpanel/fonts/IRANSansX-Regular.woff2" "webpanel/fa/fa-solid-900.woff2"; do
                     mkdir -p "$INSTALL_DIR/$(dirname "$_wf")"
-                    curl -fsSL -m 40 "$REPO_URL/$_wf" -o "$INSTALL_DIR/$_wf" || warn "Failed to fetch $_wf"
+                    _wtmp="$(mktemp "$INSTALL_DIR/$(dirname "$_wf")/.dl.XXXXXX")"
+                    if ! curl -fsSL -m 40 "$REPO_URL/$_wf" -o "$_wtmp"; then
+                        rm -f "$_wtmp"
+                        fail "Failed to fetch $_wf — refusing to start the web panel."
+                        return 1
+                    fi
+                    if ! verify_manifest_file "$_wf" "$_wtmp" "$_wf"; then
+                        rm -f "$_wtmp"
+                        fail "Web panel install aborted; nothing was deployed."
+                        return 1
+                    fi
+                    mv -f "$_wtmp" "$INSTALL_DIR/$_wf"
                 done
             fi
             local port="${SUB_PANEL_PORT:-8080}"
@@ -2553,6 +2653,25 @@ update_remote_commit() {
 
 update_local_commit() { [[ -f "$UPDATE_COMMIT_FILE" ]] && tr -d '[:space:]' < "$UPDATE_COMMIT_FILE" || true; }
 
+# Optional out-of-band trust anchor. If the operator pins an expected commit
+# (e.g. the one whose checksums they reviewed elsewhere), update refuses to
+# proceed unless upstream resolves to exactly that commit. This is the only
+# control here that a compromised upstream cannot satisfy on its own, so it is
+# worth documenting rather than leaving implicit.
+update_expect_commit() { printf '%s' "${NUC_SUB_EXPECT_SHA:-}"; }
+
+update_check_expected_commit() {  # <resolved-commit>
+    local got="$1" want; want="$(update_expect_commit)"
+    [[ -n "$want" ]] || return 0
+    if [[ "$got" != "$want" ]]; then
+        fail "Upstream commit is $(update_short "$got") but NUC_SUB_EXPECT_SHA pins $(update_short "$want")."
+        echo -e "  ${DIM}Refusing to install a different commit. If this update is${NC}"
+        echo -e "  ${DIM}legitimate, re-run with NUC_SUB_EXPECT_SHA=$got after reviewing it.${NC}"
+        return 1
+    fi
+    return 0
+}
+
 update_short() { printf '%.7s' "$1"; }
 
 # Refuse to run when the tool that makes a safe update possible is missing.
@@ -2612,6 +2731,52 @@ update_validate_stage() {  # <stage-root>
             return 1
         fi
     fi
+    update_validate_stage_manifest "$root" || return 1
+    return 0
+}
+
+# The staged tree must be internally consistent with its own MANIFEST.sha256.
+# This catches a truncated tarball, a CDN serving a mismatched mixture, or a
+# half-written download before any of it is rsynced over the live install.
+# It does NOT protect against an upstream that ships a matching malicious pair
+# (tree + manifest); that needs NUC_SUB_EXPECT_SHA or a signed manifest.
+update_validate_stage_manifest() {  # <stage-root>
+    # Two separate `local` statements on purpose: bash expands every word of a
+    # command before the builtin assigns anything, so `local r="$1" m="$r/..."`
+    # would silently build m from an empty r.
+    local root="$1"
+    local m="$root/MANIFEST.sha256"
+    if [[ ! -f "$m" ]]; then
+        fail "Update does not contain MANIFEST.sha256 - refusing to install."
+        echo -e "  ${DIM}An update without a manifest cannot be verified.${NC}"
+        return 1
+    fi
+    if ! grep -qE '^[0-9a-f]{64}  ' "$m"; then
+        fail "Update contains a malformed MANIFEST.sha256 - refusing to install."
+        return 1
+    fi
+    local p want got bad=() n=0
+    while read -r want p; do
+        # Tolerate a CRLF manifest; see expected_sha(). A trailing \r on the path
+        # would make every [[ -f ]] miss and report a good release as tampered.
+        want="${want%$'\r'}"; p="${p%$'\r'}"
+        [[ -n "$p" ]] || continue
+        p="${p#\*}"
+        n=$((n + 1))
+        if [[ ! -f "$root/$p" ]]; then
+            bad+=("$p (missing)")
+            continue
+        fi
+        got="$(sha256_of "$root/$p")"
+        [[ "$got" == "$want" ]] || bad+=("$p (checksum)")
+    done < "$m"
+    if [[ ${#bad[@]} -gt 0 ]]; then
+        fail "Update tree does not match its own MANIFEST.sha256 (${#bad[@]} of $n file(s)):"
+        printf '    %s\n' "${bad[@]:0:10}"
+        [[ ${#bad[@]} -gt 10 ]] && printf '    ... and %d more\n' "$(( ${#bad[@]} - 10 ))"
+        return 1
+    fi
+    echo -e "  ${DIM}manifest: $n file(s) verified against MANIFEST.sha256${NC}"
     return 0
 }
 
@@ -2733,6 +2898,10 @@ cmd_update() {
     fi
     ok "Current version: $local_sha"
     ok "Latest version: $(update_short "$remote")"
+
+    # Out-of-band pin check: refuse a commit other than the one the operator
+    # vetted, before anything is downloaded.
+    update_check_expected_commit "$remote" || return 1
 
     if [[ "$force" -eq 0 && "$local_sha" != "unknown" && "$local_sha" == "$(update_short "$remote")" ]]; then
         ok "NUC-SUB is already up to date."

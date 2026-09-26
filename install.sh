@@ -15,12 +15,21 @@
 #  away and, if you want, enable the web panel for 3x-ui from option 6.
 #
 #  Usage:
-#    bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
+#    curl -fsSLO https://github.com/nuctereadev/NUC-SUB/releases/download/v2.2.0/install.sh
+#    sha256sum -c install.sh.sha256
+#    bash install.sh
+#
+#  Do NOT pipe this straight into bash. install.sh runs as root, and piping
+#  executes whatever the network delivered at that instant with no way to check
+#  it first. Download, verify, then run. The download path is also pinned to an
+#  immutable release tag and every payload file is checked against
+#  MANIFEST.sha256, so a mismatched or tampered file aborts the install.
 #
 #  Env for non-interactive installs:
 #    NUC_SUB_PANEL=3xui|pasarguard   panel to install (default: auto-detect)
 #    XUI_SUB_INSTALL_DIR             install dir (default /opt/nuc-sub)
 #    XUI_SUB_NONINTERACTIVE=1        skip the panel prompt and the menu at the end
+#    NUC_SUB_REF=<tag|sha>           release ref to install (default: pinned tag)
 # =============================================================================
 set -euo pipefail
 
@@ -29,7 +38,18 @@ BOLD='\033[1m'; DIM='\033[2m'
 
 # ---- repository source (override for forked/local builds) -------------------
 # When running from a git checkout, use local files; otherwise fetch from GitHub.
-REPO_URL="${XUI_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main}"
+#
+# The ref is an immutable RELEASE TAG, never a branch. install.sh runs as root
+# and every file it downloads is written into a root-owned directory, so
+# resolving "main" would mean silently installing whatever the branch tip
+# happens to be at that moment, with no way to tell a legitimate release from a
+# compromised or hijacked one. Pinning the ref makes the fetched set fixed and
+# auditable; MANIFEST.sha256 then proves the bytes match that release.
+# Override with NUC_SUB_REF=<tag|sha> for a different release.
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.0}"
+REPO_URL="${XUI_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
+MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
+MANIFEST=""   # path to the fetched manifest; empty in local-checkout mode
 
 # Files that are shared by both panels
 SRC_COMMON=(
@@ -130,10 +150,76 @@ select_panel() {
     done
 }
 
+sha256_of() {  # sha256_of <file> -> lowercase hex digest
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum -- "$1" | cut -d' ' -f1
+    else
+        shasum -a 256 -- "$1" | cut -d' ' -f1
+    fi
+}
+
+# The manifest is a plain sha256sum file: "<64 hex><2 spaces><path>".
+expected_sha() {  # expected_sha <repo-path> -> hex, or empty when unknown
+    local p="$1"
+    [[ -n "$MANIFEST" && -s "$MANIFEST" ]] || return 0
+    # Strip a trailing CR so a CRLF manifest does not make every lookup miss.
+    awk -v want="$p" '{ h = $1; path = $2; sub(/^\*/, "", path); sub(/\r$/, "", h); sub(/\r$/, "", path); if (path == want) { print h; exit } }' "$MANIFEST"
+}
+
+# Fail closed. A tampered, truncated or stale payload is deleted and the
+# install aborts -- it is never left on disk for a later step to pick up.
+verify_downloaded() {  # verify_downloaded <repo-path> <file-on-disk>
+    local p="$1" f="$2" want got
+    # A local checkout is the trust anchor: you just edited those bytes, and a
+    # mid-edit tree is expected to be ahead of the manifest. Remote mode only.
+    [[ -n "$MANIFEST" ]] || return 0
+    want="$(expected_sha "$p")"
+    if [[ -z "$want" ]]; then
+        rm -f "$f"
+        echo -e "${RED}  ✗ $p is not listed in MANIFEST.sha256 - refusing to install.${NC}"
+        echo -e "${DIM}    The release ref and the manifest disagree. This release is${NC}"
+        echo -e "${DIM}    broken; use a different NUC_SUB_REF or update the project.${NC}"
+        exit 1
+    fi
+    got="$(sha256_of "$f")"
+    if [[ "$want" != "$got" ]]; then
+        rm -f "$f"
+        echo -e "${RED}  ✗ CHECKSUM MISMATCH for $p${NC}"
+        echo -e "${DIM}    expected ${want:0:16}...${NC}"
+        echo -e "${DIM}    got      ${got:0:16}...${NC}"
+        echo -e "${DIM}    The download was discarded and nothing was installed.${NC}"
+        echo -e "${DIM}    Causes: corrupt transfer, stale manifest, or an attempt to${NC}"
+        echo -e "${DIM}    feed you altered code. Do not work around this.${NC}"
+        exit 1
+    fi
+}
+
+# Pull the manifest before the first payload file, so every later download can
+# be checked. Runs once; a malformed manifest is fatal.
+load_manifest() {
+    [[ -n "$MANIFEST" ]] && return 0
+    MANIFEST="$(mktemp)"
+    if ! curl -fsSL "$MANIFEST_URL" -o "$MANIFEST"; then
+        rm -f "$MANIFEST"; MANIFEST=""
+        echo -e "${RED}✗ Could not fetch MANIFEST.sha256 from $MANIFEST_URL${NC}"
+        echo -e "${RED}  Refusing to install unverified code.${NC}"
+        exit 1
+    fi
+    # A 404/HTML body from the CDN would otherwise parse as an empty manifest and
+    # turn every lookup into "not listed", which is confusing rather than clear.
+    if ! grep -qE '^[0-9a-f]{64}  ' "$MANIFEST"; then
+        rm -f "$MANIFEST"; MANIFEST=""
+        echo -e "${RED}✗ MANIFEST.sha256 is missing or malformed - refusing to install.${NC}"
+        exit 1
+    fi
+    echo -e "${DIM}  verified against MANIFEST.sha256 (${NUC_SUB_REF})${NC}"
+}
+
 fetch_raw() {  # fetch_raw <repo-path> <dest>  — mirrors a raw GitHub file locally
     local f="$1" out="$2"
     mkdir -p "$(dirname "$out")"
     curl -fsSL "$REPO_URL/$f" -o "$out" || { echo -e "${RED}✗ Failed to fetch $f${NC}"; exit 1; }
+    verify_downloaded "$f" "$out"
 }
 
 copy_from_local() {  # copy_from_local <src-root> <dest-root> <path...>
@@ -160,6 +246,7 @@ if is_local; then
     chmod 755 "$CLI_DIR/nucsub"
 else
     echo -e "${BLUE}→ Fetching source from GitHub...${NC}"
+    load_manifest
     for f in "${SRC_COMMON[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
     chmod 755 "$CLI_DIR/nucsub"
 fi
@@ -179,8 +266,10 @@ if [[ "$PANEL" == "3xui" ]]; then
         # subdirs were only a legacy layout that is gone from the repo, so they
         # are intentionally not fetched (they would 404).
         if curl -fsSL "$REPO_URL/themes/$DEFAULT_THEME/index.html" -o "$td/index.html"; then
+            verify_downloaded "themes/$DEFAULT_THEME/index.html" "$td/index.html"
             echo -e "${GREEN}  ✓ theme '$DEFAULT_THEME'${NC}"
         else
+            rm -f "$td/index.html"
             echo -e "${RED}  ✗ failed to fetch default theme '$DEFAULT_THEME'${NC}"
             exit 1
         fi
@@ -195,8 +284,10 @@ else  # pasarguard
     else
         for f in "${SRC_WEB[@]}"; do fetch_raw "$f" "$INSTALL_DIR/$f"; done
         if curl -fsSL "$REPO_URL/pasarguard-themes/subscription/$DEFAULT_THEME.html" -o "$PG_SRC_DIR/$DEFAULT_THEME.html"; then
+            verify_downloaded "pasarguard-themes/subscription/$DEFAULT_THEME.html" "$PG_SRC_DIR/$DEFAULT_THEME.html"
             echo -e "${GREEN}  ✓ theme '$DEFAULT_THEME'${NC}"
         else
+            rm -f "$PG_SRC_DIR/$DEFAULT_THEME.html"
             echo -e "${RED}  ✗ failed to fetch default theme '$DEFAULT_THEME'${NC}"
             exit 1
         fi

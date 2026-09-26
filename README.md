@@ -52,11 +52,26 @@ small.
 
 ## Quick start
 
-Run the installer as root:
+Download the installer, check it, then run it as root:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.0/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.0/install.sh.sha256
+sha256sum -c install.sh.sha256 && bash install.sh
 ```
+
+> **Do not pipe the installer into `bash`.** It runs as root, and
+> `bash <(curl ...)` executes whatever the network delivered at that instant
+> with no way to inspect it first. `install.sh` is pinned to an immutable
+> release tag and verifies every file it downloads against `MANIFEST.sha256`,
+> so a corrupted or altered payload aborts the install.
+>
+> Being straight about the limits: `install.sh.sha256` is served from the same
+> host as `install.sh`, so it catches truncation and CDN mixups but *not* an
+> attacker who can rewrite both. Checksums stop a bad transfer; they do not
+> stop a compromised repository. For a real trust anchor, compare the digest
+> against one you obtained out-of-band, and pin updates with
+> `NUC_SUB_EXPECT_SHA=<commit>`.
 
 You will be asked which panel to install for:
 
@@ -77,7 +92,7 @@ The installer then drops you into the interactive menu.
 For cloud-init, scripts, or automation:
 
 ```bash
-NUC_SUB_PANEL=3xui XUI_SUB_NONINTERACTIVE=1 bash <(curl -Ls https://raw.githubusercontent.com/nuctereadev/NUC-SUB/main/install.sh)
+NUC_SUB_PANEL=3xui XUI_SUB_NONINTERACTIVE=1 bash install.sh
 ```
 
 `NUC_SUB_PANEL` accepts `3xui` or `pasarguard` and defaults to auto-detection

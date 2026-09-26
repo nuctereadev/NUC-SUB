@@ -47,6 +47,14 @@ hasnt(){ if grep -q -- "$3" "$2" 2>/dev/null; then bad "$1" "unexpectedly found 
 exist(){ if [[ -e "$2" ]]; then ok "$1"; else bad "$1" "missing path $2"; fi; }
 noexist(){ if [[ -e "$2" ]]; then bad "$1" "should be gone: $2"; else ok "$1"; fi; }
 
+# The update writes to $ROOT/out.txt, which every later section overwrites, so
+# a failure reported several sections later has no trace of why. Snapshot it.
+dump_out() {
+    printf '     --- last update output ---\n'
+    tail -n 25 "$ROOT/out.txt" 2>/dev/null | sed 's/^/     | /'
+    printf '     -------------------------\n'
+}
+
 section(){ printf '\n\033[1;36m── %s\033[0m\n' "$1"; }
 
 # ---------------------------------------------------------------- fixtures ---
@@ -76,10 +84,22 @@ EOS
     echo "readme A"             > "$d/README.md"
 }
 
+# Real releases ship MANIFEST.sha256, and `nucsub update` now refuses any tree
+# without one, so every published fixture revision must carry a manifest that
+# matches its contents. Regenerated on each publish because the tests mutate
+# files (markers, deletions) between releases.
+write_manifest() {   # $1 = tree root
+    local d="$1" p
+    ( cd "$d" && find cli webpanel themes pasarguard-themes -type f 2>/dev/null | LC_ALL=C sort | while read -r p; do
+        printf '%s  %s\n' "$(sha256sum -- "$p" | cut -d' ' -f1)" "$p"
+    done ) > "$d/MANIFEST.sha256"
+}
+
 # Commit the current tree of $ORIGIN as the next revision; publish tarball.
 # --prefix mimics GitHub's codeload tarballs, which always wrap everything in a
 # single top-level directory.
 publish() {  # $1 = message
+    write_manifest "$ORIGIN"
     ( cd "$ORIGIN" && git add -A && git -c user.email=t@t -c user.name=t commit -q -m "$1" ) >/dev/null 2>&1
     local sha; sha="$(cd "$ORIGIN" && git rev-parse HEAD)"
     ( cd "$ORIGIN" && git archive --format=tar.gz --prefix=NUC-SUB-/ -o "$TARBALLS/$sha" HEAD ) >/dev/null
@@ -146,7 +166,12 @@ else
 fi
 echo "tarball base: $TARBALL_BASE"
 seed_tree "$ORIGIN"
-( cd "$ORIGIN" && git init -q -b main && git remote add origin "$BARE" ) >/dev/null 2>&1
+    ( cd "$ORIGIN" && git init -q -b main && git remote add origin "$BARE" ) >/dev/null 2>&1
+    # Pin line endings. Without this the fixture repo inherits the ambient
+    # core.autocrlf, so `git archive` rewrites LF files to CRLF and the release
+    # no longer matches the SHA-256 recorded for it — the test would then be
+    # measuring the developer's git config, not the update logic.
+    ( cd "$ORIGIN" && git config core.autocrlf false && git config core.eol lf ) >/dev/null 2>&1
 git init -q --bare "$BARE" >/dev/null 2>&1
 # SAFETY: run everything from the scratch dir. If any git command below were to
 # escape its subshell it would land here, which is not a repository, instead of
@@ -354,7 +379,7 @@ SUB_TEMPLATES_DIR="$INSTALL" NUC_SUB_REPO_GIT="$BARE" NUC_SUB_TARBALL_BASE="$TAR
   NUC_SUB_BIN="$ROOT/nucsub-on-path" NUC_SUB_WEB_SERVICE="t10-test-panel" \
   bash "$CLI_SRC" update > "$ROOT/out.txt" 2>&1
 rc=$?
-if [[ "$rc" -eq 0 ]]; then ok "re-run after failure succeeds"; else bad "re-run after failure succeeds" "rc=$rc"; fi
+if [[ "$rc" -eq 0 ]]; then ok "re-run after failure succeeds"; else bad "re-run after failure succeeds" "rc=$rc"; dump_out; fi
 has "new code live after recovery" "$INSTALL/cli/nucsub" "MARKER_F2"
 
 section "21/24 re-run update after a failure (recovery path)"

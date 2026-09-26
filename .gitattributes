@@ -5,6 +5,11 @@ cli/nucsub text eol=lf
 *.html text eol=lf
 *.css text eol=lf
 *.js text eol=lf
+*.md text eol=lf
+# Checksum manifests are parsed byte-for-byte: a CRLF checkout would break
+# `sha256sum -c` and leave a stray \r on every path the installer looks up.
+MANIFEST.sha256 text eol=lf
+install.sh.sha256 text eol=lf
 *.woff2 binary
 *.png binary
 *.jpg binary

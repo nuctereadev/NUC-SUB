@@ -23,8 +23,10 @@ unsigned files from a moving GitHub branch and running them as root, and the
 admin panel is reachable from the public internet with no transport security.
 
 **Production readiness: acceptable for a single-admin install now that the
-panel is loopback-only and unprivileged. The remaining structural gap is the
-unsigned self-update path (H1), which needs a release process, not a patch.**
+panel is loopback-only and unprivileged, and every downloaded root-executed
+file is checksum-verified against a pinned release (H1). The one structural gap
+left is cryptographic signing of that manifest, which needs a release process
+rather than a patch.**
 
 ---
 
@@ -44,8 +46,35 @@ minisign anywhere in the project.
 yields instant root code execution on every machine that installs or updates.
 `README.md:58` even recommends `bash <(curl -Ls ...)`, which removes the
 user's ability to inspect what they run.
-*Fix:* pin downloads to a commit SHA, publish and verify a signed manifest, and
-drop the `bash <(curl …)` recommendation in favour of "download, read, then run".
+
+*Fix applied:* the download path is now pinned to an immutable release tag
+(`NUC_SUB_REF`, default `v2.2.0`) instead of the moving `main` branch, and
+`MANIFEST.sha256` (75 files: the CLI, all web panel assets, 33 themes, 33
+Pasarguard templates) is fetched first and used to verify **every** payload
+before it lands in a root-owned directory. Verification is fail-closed — a
+mismatch, a file missing from the manifest, or an unparseable manifest aborts
+the install and deletes the payload rather than warning. The web panel asset
+fetch, which installs `server.py` for later execution, no longer degrades to a
+`warn` on failure. The self-update path validates the staged tree against its own
+manifest before rsyncing, and honours `NUC_SUB_EXPECT_SHA` as an out-of-band
+commit pin. `README.md` now documents download → `sha256sum -c` → run.
+
+*Residual risk, stated plainly:* the manifest and the code it describes come
+from the same repository, so this defeats corruption, truncation, CDN mixups
+and a tampered mirror — but **not** an attacker who can push to the repository.
+Closing that last hop needs a manifest signed by a key whose fingerprint is
+published somewhere other than the repo it protects (GPG or minisign). Until
+that exists, the honest guidance is: pin with `NUC_SUB_EXPECT_SHA`, and treat
+the release tag plus `MANIFEST.sha256` as "this is the release I reviewed",
+not as "this cannot have been tampered with".
+
+*Two bugs found by the new tests while implementing this:*
+- `local root="$1" m="$root/MANIFEST.sha256"` silently produced
+  `m=/MANIFEST.sha256`, because bash expands every word of a command *before*
+  the builtin assigns. Every update would have been rejected.
+- A CRLF manifest (Windows-authored, or any repo with `core.autocrlf` on) left
+  a hidden `\r` on each path, so every lookup missed and good releases were
+  reported as tampered. Both parsers now strip it.
 
 ### H2 — HIGH · Admin panel was publicly reachable over plain HTTP  *(FIXED)*
 Live-confirmed before the fix: `http://<host>:8080/` returned `200` from the
@@ -203,9 +232,10 @@ URL and commit in a `THIRD_PARTY.md` so the next audit does not have to.
 
 1. ~~Put the panel behind TLS and restrict it to loopback~~ — **done** (H2).
 2. ~~Stop running the web panel as root~~ — **done** (M6).
-3. Add integrity verification to the install/update path and pin to a release
-   commit (H1). This is the last structural item left, and it needs a release
-   process rather than a code change.
+3. ~~Add integrity verification to the install/update path and pin to a release
+   commit~~ (H1) — **done**: pinned release tag + `MANIFEST.sha256` verified
+   fail-closed on every download, plus the `NUC_SUB_EXPECT_SHA` pin. Signing the
+   manifest is the remaining part and needs a release process, not a code change.
 4. Rotate the credentials sitting in `probe_*.sh` / `.env` (L4).
 
 ## Worth doing next
