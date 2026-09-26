@@ -1039,7 +1039,7 @@ web_panel_host() {
 # Secrets live in a root-only EnvironmentFile, never in the (world-readable)
 # unit body; the service gets basic hardening for the public-facing HTTP server.
 web_panel_install_service() {
-    local port="${1:-}" token="$2" dbpath="${3:-}" unit="$WEB_SERVICE.service" uroot="" py="" envf="$INSTALL_DIR/.webpanel-env"
+    local port="${1:-}" dbpath="${2:-}" unit="$WEB_SERVICE.service" uroot="" py="" envf="$INSTALL_DIR/.webpanel-env"
     command -v systemctl >/dev/null 2>&1 || return 1
     if [[ -d /etc/systemd/system ]]; then uroot="/etc/systemd/system"
     elif [[ -d /usr/lib/systemd/system ]]; then uroot="/usr/lib/systemd/system"
@@ -1049,9 +1049,12 @@ web_panel_install_service() {
     local dbaro=""
     [[ -n "$dbpath" && -e "$dbpath" ]] && dbaro="--db $dbpath"
     umask 077
+    # NOTE: the admin token is deliberately NOT written here. The server reads
+    # $WEB_TOKEN_FILE directly, so this env file used to be a second copy that
+    # could drift from the real one (and it leaked the token into the unit
+    # file and `ps`). One store, one truth.
     cat > "$envf" <<EOF
 NP_PORT=$port
-NP_TOKEN=$token
 NP_BASE=$WEB_BASE
 NP_CLI=$INSTALL_DIR/cli/nucsub
 NP_THEMES=$THEMES_DIR
@@ -1066,7 +1069,7 @@ After=network.target
 Type=simple
 User=root
 EnvironmentFile=-$envf
-ExecStart=$py $WEB_BASE/server.py --port \${NP_PORT} --token \${NP_TOKEN} --base \${NP_BASE} --cli \${NP_CLI} --themes \${NP_THEMES} $dbaro
+ExecStart=$py $WEB_BASE/server.py --port \${NP_PORT} --base \${NP_BASE} --cli \${NP_CLI} --themes \${NP_THEMES} $dbaro
 Restart=on-failure
 RestartSec=3
 NoNewPrivileges=true
@@ -1087,7 +1090,10 @@ cmd_webpanel() {
     case "$action" in
         start)
             require_root
-            if web_panel_status | grep -q "Running"; then warn "Already running."; return; fi
+            # NOTE: capture instead of piping into `grep -q` — grep exits on the
+            # first match, the SIGPIPE then fails the pipeline under pipefail and
+            # this guard would be skipped, making start re-launch on a new port.
+            if [[ "$(web_panel_status 2>/dev/null)" == *"Running"* ]]; then warn "Already running."; return; fi
             # Auto-install missing web panel assets so start always works.
             if [[ ! -f "$WEB_BASE/server.py" ]]; then
                 info "Web panel files missing — installing from GitHub..."
@@ -1123,16 +1129,16 @@ cmd_webpanel() {
             local dbpath=""
             [[ "$PANEL" == "3xui" ]] && dbpath="$XUI_DB"
             # prefer a real systemd service (auto-start on boot); nohup is the fallback
-            if web_panel_install_service "$port" "$token" "$dbpath"; then
+            if web_panel_install_service "$port" "$dbpath"; then
                 ok "Web panel started (systemd $WEB_SERVICE) on port $port"
             else
                 warn "systemd unavailable — starting in background (no auto-start on boot)..."
-                nohup python3 "$WEB_BASE/server.py" --port "$port" --token "$token" --base "$WEB_BASE" \
+                nohup python3 "$WEB_BASE/server.py" --port "$port" --base "$WEB_BASE" \
                      --cli "$INSTALL_DIR/cli/nucsub" --themes "$THEMES_DIR" --db "$dbpath" \
                      >"$INSTALL_DIR/webpanel.log" 2>&1 &
                 echo $! > "$INSTALL_DIR/.webpanel.pid"
                 sleep 1
-                if web_panel_status | grep -q "Running"; then
+                if [[ "$(web_panel_status 2>/dev/null)" == *"Running"* ]]; then
                     ok "Web panel started on port $port"
                 else
                     warn "Start failed — check $INSTALL_DIR/webpanel.log"
@@ -1164,13 +1170,147 @@ cmd_webpanel() {
             title "Web Panel Status"; sep
             web_panel_status || true
             ;;
-        token)
-            [[ -f "$WEB_TOKEN_FILE" ]] && cat "$WEB_TOKEN_FILE" || warn "No token file."
+        token|show)
+            # script-friendly: print the raw token and nothing else
+            if web_token_read; then :; else warn "No valid token stored."; return 1; fi
             ;;
         *)
             echo -e "${YELLOW}Usage: nucsub webpanel {start|stop|restart|status|token}${NC}"
+            echo -e "${DIM}       nucsub webpanel token   — print the current token${NC}"
+            echo -e "${DIM}       (use menu option 4 to change/regenerate it)${NC}"
             ;;
     esac
+}
+
+# ------------------------------------------------------ web panel token ---
+# $WEB_TOKEN_FILE is the ONLY token store. server.py reads the same file on
+# every request, so a rotation here is live: no restart, no second copy, and
+# the previous token stops working the moment this file changes.
+web_token_read() {  # prints the token; non-zero when there is no valid one
+    local t=""
+    [[ -f "$WEB_TOKEN_FILE" ]] || return 1
+    t="$(<"$WEB_TOKEN_FILE")"
+    t="${t//[$'\r\n']/}"
+    [[ "$t" =~ ^[A-Za-z0-9]{16,64}$ ]] || return 1
+    printf '%s' "$t"
+}
+
+web_token_generate() {  # 32 chars from /dev/urandom (~190 bits of entropy)
+    local raw=""
+    while [[ "${#raw}" -lt 32 ]]; do
+        raw+="$(head -c 512 /dev/urandom | LC_ALL=C tr -dc 'A-Za-z0-9')"
+    done
+    printf '%s' "${raw:0:32}"
+}
+
+web_token_write() {  # web_token_write <token> — atomic + root-only, or non-zero
+    local tok="${1:-}" dir tmp
+    [[ "$tok" =~ ^[A-Za-z0-9]{16,64}$ ]] || return 1
+    dir="$(dirname "$WEB_TOKEN_FILE")"
+    mkdir -p "$dir" 2>/dev/null || return 1
+    tmp="$(mktemp "$dir/.webpanel-token.XXXXXX" 2>/dev/null)" || return 1
+    chmod 600 "$tmp" 2>/dev/null || true
+    if ! printf '%s\n' "$tok" > "$tmp" 2>/dev/null; then rm -f "$tmp"; return 1; fi
+    # atomic rename: a reader can never observe a half-written token
+    if ! mv -f "$tmp" "$WEB_TOKEN_FILE" 2>/dev/null; then rm -f "$tmp"; return 1; fi
+    chmod 600 "$WEB_TOKEN_FILE" 2>/dev/null || true
+    return 0
+}
+
+web_token_probe() {  # web_token_probe <token> — does the LIVE panel accept it?
+    local tok="${1:-}" port
+    port="$(cat "$WEB_PORT_FILE" 2>/dev/null || true)"
+    [[ "$port" =~ ^[0-9]{2,5}$ ]] || port=8080
+    curl -fsS -m 8 -o /dev/null -H "Authorization: Bearer $tok" \
+        "http://127.0.0.1:${port}/api/list" 2>/dev/null
+}
+
+web_token_change() {  # confirm -> write -> prove it works -> roll back if not
+    require_root
+    local old new ans
+    old="$(web_token_read || true)"
+    title "Change Web Panel Token"
+    sep
+    if [[ -n "$old" ]]; then
+        echo -e "  ${DIM}Current token :${NC} ${YELLOW}$old${NC}"
+    else
+        warn "No valid token stored yet — a new one will be created."
+    fi
+    echo -e "  ${DIM}Stored in       : ${NC}$WEB_TOKEN_FILE ${DIM}(mode 600)${NC}"
+    sep
+    echo -e "  ${YELLOW}⚠ The current token stops working immediately.${NC}"
+    echo -e "  ${DIM}  Every signed-in browser must enter the new token again.${NC}"
+    sep
+    echo -ne "  ${BOLD}Generate a new token? [y/N]: ${NC}"
+    read -r ans || return 0
+    if [[ ! "$ans" =~ ^[Yy]$ ]]; then
+        info "Cancelled — the token was not changed."
+        return 0
+    fi
+
+    new="$(web_token_generate)"
+    if ! web_token_write "$new"; then
+        if [[ -n "$old" ]]; then web_token_write "$old" || true; fi
+        fail "Could not store the new token — the previous one was kept."
+        return 1
+    fi
+
+    # Don't declare success until the running panel actually accepts it. A
+    # panel started by an older unit still holds the old token in its command
+    # line, so give it one restart before calling it a failure.
+    if ! web_token_probe "$new"; then
+        warn "Panel has not picked up the new token — restarting it."
+        systemctl restart "$WEB_SERVICE" >/dev/null 2>&1 || true
+        sleep 2
+    fi
+    if ! web_token_probe "$new"; then
+        if [[ -n "$old" ]] && web_token_write "$old"; then
+            systemctl restart "$WEB_SERVICE" >/dev/null 2>&1 || true
+            sleep 1
+            fail "New token was rejected — the previous token has been restored."
+        else
+            fail "New token was rejected and the previous one could not be restored."
+            echo -e "  ${YELLOW}Use this token to regain access: ${BOLD}$new${NC}"
+        fi
+        return 1
+    fi
+
+    ok "Web panel token changed."
+    sep
+    echo -e "  ${CYAN}New token : ${BOLD}$new${NC}"
+    echo -e "  ${DIM}Saved to $WEB_TOKEN_FILE (mode 600).${NC}"
+    echo -e "  ${DIM}Sign in again with this token; the old one no longer works.${NC}"
+    return 0
+}
+
+web_token_menu() {  # main-menu option 4 — full token management
+    while true; do
+        clr
+        print_header
+        title "Web Panel Token"
+        sep
+        local tok
+        if tok="$(web_token_read)"; then
+            echo -e "  ${DIM}Current token:${NC}"
+            echo -e "    ${YELLOW}$tok${NC}"
+        else
+            echo -e "  ${DIM}Current token:${NC} ${RED}none stored${NC}"
+        fi
+        echo -e "  ${DIM}Store        : $WEB_TOKEN_FILE (mode 600)${NC}"
+        echo -e "  ${DIM}Used by      : the web panel login page and every API call${NC}"
+        sep
+        echo -e "  ${GREEN}1)${NC} Change / regenerate token  ${DIM}— invalidates the old one${NC}"
+        echo -e "  ${GREEN}0)${NC} Back to web panel menu"
+        sep
+        echo -ne "  ${BOLD}Select option [0-1]: ${NC}"
+        local choice=""
+        read -r choice || return 0
+        case "$choice" in
+            1) ( web_token_change ) || true; pause_enter ;;
+            0) return ;;
+            *) warn "Invalid option: $choice"; sleep 1 ;;
+        esac
+    done
 }
 
 # ------------------------------------------------------------- Web panel menu ---
@@ -1185,7 +1325,7 @@ web_panel_menu() {
         echo -e "  ${GREEN}1)${NC} Start web panel        ${DIM}— install + run + show URL/token${NC}"
         echo -e "  ${GREEN}2)${NC} Stop web panel"
         echo -e "  ${GREEN}3)${NC} Restart web panel"
-        echo -e "  ${GREEN}4)${NC} Show token"
+        echo -e "  ${GREEN}4)${NC} Token management       ${DIM}— view / change the panel access token${NC}"
         echo -e "  ${GREEN}5)${NC} Telegram channel       ${DIM}— set / edit / delete the channel link (shown in themes)${NC}"
         echo -e "  ${GREEN}6)${NC} Branding               ${DIM}— set the subscription-brand name & logo shown in themes${NC}"
         echo -e "  ${GREEN}0)${NC} Back to main menu"
@@ -1196,7 +1336,7 @@ web_panel_menu() {
             1) ( cmd_webpanel start ) || true; pause_enter ;;
             2) ( cmd_webpanel stop ) || true; pause_enter ;;
             3) ( cmd_webpanel restart ) || true; pause_enter ;;
-            4) ( cmd_webpanel token ) || true; pause_enter ;;
+            4) ( web_token_menu ) || true ;;
             5) ( telegram_menu ) || true ;;
             6) ( brand_menu ) || true ;;
             0) return ;;

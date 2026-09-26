@@ -1054,7 +1054,7 @@ function showToast(msg,err){const t=$('toast');t.innerHTML=(err?'<i class="fa-so
 async function api(path,opts){ 
   const r=await fetch('/api/'+path,Object.assign({headers:{'Authorization':'Bearer '+token}},opts||{})); 
   const data=await r.json().catch(()=>({})); 
-  if(r.status===401){showLogin();throw new Error('unauthorized')} 
+  if(r.status===401){token='';localStorage.removeItem(TOKEN_KEY);showLogin();throw new Error('unauthorized')} 
   return data; 
 } 
 function showLogin(){$('view-login').style.display='';$('view-main').style.display='none'}

@@ -9,8 +9,14 @@ A dependency-free Python3 stdlib HTTP server that:
   * manages per-install settings (telegram channel, brand name, brand logo)
     via config.json — the SAME single source of truth the CLI uses
 
+The admin token is read from <install-dir>/.webpanel-token — the same file the
+CLI writes — and re-read whenever it changes, so rotating it from the CLI
+(main menu -> 4) Web panel -> 4) Token management) takes effect immediately,
+with no restart and no second copy to keep in sync. --token is still accepted
+as an explicit override for tests/manual runs.
+
 Usage:
-  python3 server.py --port 8080 --token <tok> --base <webpanel>
+  python3 server.py --port 8080 --base <webpanel>
                    --cli <path/to/nucsub> --themes <themesDir> --db <xui.db>
 """
 import argparse
@@ -232,25 +238,32 @@ class Handler(BaseHTTPRequestHandler):
 
     # -- auth ---------------------------------------------------------------
     def _authorized(self, qs):
-        if not ARGS.token:
-            return True
+        # Re-read on every request: a token rotated by the CLI is accepted
+        # (and the old one rejected) without restarting the panel.
+        expected = _read_token_file()
+        if not expected:
+            # No usable token -> fail CLOSED. Serving the panel wide open
+            # because the token file is missing would be far worse.
+            _log("auth: no usable token in %s — refusing request",
+                 os.path.basename(_token_file()))
+            return False
         auth = self.headers.get("Authorization", "")
-        if hmac.compare_digest(auth[:7], "Bearer ") and hmac.compare_digest(auth[7:], ARGS.token):
+        if hmac.compare_digest(auth[:7], "Bearer ") and hmac.compare_digest(auth[7:], expected):
             return True
         cookie = self.headers.get("Cookie", "")
-        if self._cookie_token(cookie):
+        if self._cookie_token(cookie, expected):
             return True
         q = parse_qs(qs)
         qt = q.get("token", [None])[0]
-        if qt is not None and hmac.compare_digest(qt, ARGS.token):
+        if qt is not None and hmac.compare_digest(qt, expected):
             return True
         return False
 
-    def _cookie_token(self, cookie):
+    def _cookie_token(self, cookie, expected):
         for part in cookie.split(";"):
             part = part.strip()
             if part.startswith("token="):
-                return hmac.compare_digest(part[6:], ARGS.token)
+                return hmac.compare_digest(part[6:], expected)
         return False
 
     # -- responses ----------------------------------------------------------
@@ -480,6 +493,54 @@ def _resolve_install_dir(base):
     return os.path.dirname(base)
 
 
+# ---------------------------------------------------------------------------
+# Auth token
+# ---------------------------------------------------------------------------
+# There is exactly ONE token store: <install-dir>/.webpanel-token, the same
+# file the CLI writes. The server used to receive a *copy* through
+# --token / the systemd EnvironmentFile, which meant two places to keep in
+# sync (and the value leaked into `ps` and the unit file). Now the file is the
+# only source of truth and it is re-read whenever it changes, so rotating the
+# token takes effect immediately without restarting the panel.
+TOKEN_FILE_NAME = ".webpanel-token"
+_TOKEN_CACHE = {"sig": None, "value": ""}
+
+
+def _token_file():
+    return os.path.join(INSTALL_DIR, TOKEN_FILE_NAME)
+
+
+def _read_token_file():
+    """Current token from the store, re-read on every change.
+
+    Returns "" when no usable token exists (missing, unreadable, empty or
+    obviously corrupt). An explicit --token always wins, so tests and manual
+    runs can pin one.
+    """
+    if ARGS and ARGS.token:
+        return ARGS.token
+    path = _token_file()
+    try:
+        st = os.stat(path)
+    except OSError:
+        _TOKEN_CACHE["sig"] = None
+        _TOKEN_CACHE["value"] = ""
+        return ""
+    sig = (st.st_mtime_ns, st.st_size, st.st_ino)
+    if _TOKEN_CACHE["sig"] == sig:
+        return _TOKEN_CACHE["value"]
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            val = f.read(4096).strip()
+    except OSError:
+        val = ""
+    if not re.fullmatch(r"[A-Za-z0-9]{16,64}", val or ""):
+        val = ""
+    _TOKEN_CACHE["sig"] = sig
+    _TOKEN_CACHE["value"] = val
+    return val
+
+
 class _ReusableServer(ThreadingHTTPServer):
     allow_reuse_address = True
     daemon_threads = True
@@ -542,6 +603,14 @@ def main():
 
     load_settings()
 
+    # Refuse to come up without a usable token. Binding the port and then
+    # rejecting every request would look like a broken panel and would hide a
+    # real misconfiguration, so say exactly what to do and exit instead.
+    if not _read_token_file():
+        print(f"[nuc-sub] ✗ no usable admin token in {TOKEN_FILE_NAME} — "
+              f"start the panel with `nucsub webpanel start` to create one", flush=True)
+        raise SystemExit(1)
+
     HOST_PORT = ARGS.port
     srv = _bind_with_retry(ARGS.port)
     if srv is None:
@@ -556,7 +625,7 @@ def main():
     # Persist the effective port so the CLI/menus report the real running port.
     try:
         with open(os.path.join(INSTALL_DIR, ".webport"), "w") as f:
-            f.write(str(port))
+            f.write(f"{port}\n")
     except OSError:
         pass
 
