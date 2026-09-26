@@ -15,10 +15,14 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.0}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.1}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
+# Minisign key id this release is signed with. Empty until the maintainer
+# publishes MINISIGN_PUBKEY + MANIFEST.sha256.minisig; once set, a substituted
+# public key is rejected even if the attacker re-signs the manifest.
+NUC_SUB_EXPECT_KEY_ID="${NUC_SUB_EXPECT_KEY_ID:-}"
 THEMES_DIR="$INSTALL_DIR/themes"
 DEPLOY_DIR="/etc/x-ui/sub_templates"
 XUI_DB="$([ -f /etc/x-ui/x-ui.db ] && echo /etc/x-ui/x-ui.db || echo /etc/3x-ui/db/x-ui.db)"
@@ -33,7 +37,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.0"
+NUC_SUB_VERSION="2.2.1"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -337,7 +341,57 @@ ensure_manifest() {
         return 1
     fi
     MANIFEST="$tmp"
-    return 0
+    verify_manifest_signature
+}
+
+# Minisign check on the manifest, mirroring install.sh. Inlined here too: the
+# CLI is itself one of the files being verified, so it cannot delegate the check
+# to something fetched from the same host.
+#
+# A signature checked against a same-host key is not a trust anchor. The pinned
+# key id plus the fingerprint published in README.md are the real defence, and
+# the reader has to compare that fingerprint over an independent channel.
+verify_manifest_signature() {
+    local required="${NUC_SUB_REQUIRE_SIG:-0}" t ms actual_id
+    t="$(mktemp -d)"
+
+    if ! curl -fsSL -m 30 "$REPO_URL/MANIFEST.sha256.minisig" -o "$t/sig" 2>/dev/null; then
+        if [[ -n "$NUC_SUB_EXPECT_KEY_ID" ]]; then
+            fail "this release pins minisign key ${NUC_SUB_EXPECT_KEY_ID} but published no signature"
+            rm -rf "$t"; return 1
+        fi
+        if [[ "$required" == "1" ]]; then
+            fail "NUC_SUB_REQUIRE_SIG=1 but the release has no manifest signature"
+            rm -rf "$t"; return 1
+        fi
+        echo -e "  ${YELLOW}! checksum-only release (no manifest signature).${NC}"
+        rm -rf "$t"; return 0
+    fi
+
+    if ! curl -fsSL -m 30 "$REPO_URL/MINISIGN_PUBKEY" -o "$t/pub" 2>/dev/null; then
+        fail "release ships a manifest signature but no MINISIGN_PUBKEY - refusing"
+        rm -rf "$t"; return 1
+    fi
+
+    if ! command -v minisign >/dev/null 2>&1; then
+        fail "release is signed but minisign is not installed (apt-get install -y minisign)"
+        rm -rf "$t"; return 1
+    fi
+    ms="$(command -v minisign)"
+
+    actual_id="$("$ms" -P -p "$t/pub" 2>/dev/null | tr -d '[:space:]')"
+    if [[ -n "$NUC_SUB_EXPECT_KEY_ID" && "$actual_id" != "$NUC_SUB_EXPECT_KEY_ID" ]]; then
+        fail "minisign key id mismatch: expected ${NUC_SUB_EXPECT_KEY_ID}, got ${actual_id:-<unreadable>}"
+        rm -rf "$t"; return 1
+    fi
+
+    if ! "$ms" -V -p "$t/pub" -x "$t/sig" -m "$MANIFEST" >/dev/null 2>&1; then
+        fail "MANIFEST SIGNATURE INVALID - refusing to install. Do not work around this."
+        rm -rf "$t"; return 1
+    fi
+
+    echo -e "  ${GREEN}✓ manifest signature verified${NC} ${DIM}(minisign key ${actual_id:-unpinned})${NC}"
+    rm -rf "$t"; return 0
 }
 
 # verify_manifest_file <repo-path> <file-on-disk> [label-for-message]

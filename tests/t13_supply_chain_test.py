@@ -364,6 +364,225 @@ def _bash() -> str:
     return "bash"
 
 
+def _minisign_available() -> bool:
+    try:
+        r = subprocess.run([_bash(), "-lc", "command -v minisign"],
+                           capture_output=True, text=True, timeout=60)
+        return r.returncode == 0 and r.stdout.strip() != ""
+    except Exception:
+        return False
+
+
+# --------------------------------------------------------------------------
+# 6. Manifest signature controls (minisign)
+# --------------------------------------------------------------------------
+def test_signature_controls_present() -> None:
+    """Structural: both entry points must actually gate on a signature.
+
+    The real crypto path is exercised in test_signature_rejects_tampering when
+    minisign is present; these assertions run everywhere so a refactor that
+    quietly drops the check cannot pass on a machine without minisign.
+    """
+    inst = read(INSTALL_SH)
+    cli = read(CLI)
+
+    for name, src in (("install.sh", inst), ("cli/nucsub", cli)):
+        check(f"{name} defines verify_manifest_signature",
+              "verify_manifest_signature" in src)
+        check(f"{name} pins an expected minisign key id",
+              "NUC_SUB_EXPECT_KEY_ID" in src)
+        check(f"{name} fetches MANIFEST.sha256.minisig",
+              "MANIFEST.sha256.minisig" in src)
+        check(f"{name} fetches MINISIGN_PUBKEY", "MINISIGN_PUBKEY" in src)
+        check(f"{name} rejects a key id mismatch",
+              "key id mismatch" in src)
+        check(f"{name} rejects an invalid signature",
+              "SIGNATURE INVALID" in src)
+
+    # A missing signature must never be a silent success.
+    for name, src in (("install.sh", inst), ("cli/nucsub", cli)):
+        check(f"{name} fails when a pinned key id has no signature",
+              re.search(r"NUC_SUB_EXPECT_KEY_ID[\s\S]{0,400}?(no MANIFEST\.sha256\.minisig|no signature)", src) is not None)
+    check("NUC_SUB_REQUIRE_SIG is documented in install.sh",
+          "NUC_SUB_REQUIRE_SIG" in inst)
+
+    # The manifest signature must be checked before payload bytes land.
+    check("signature check runs inside load_manifest",
+          re.search(r"load_manifest\(\)\s*\{[\s\S]{0,2000}?verify_manifest_signature", inst) is not None)
+    check("CLI checks the signature before returning the manifest",
+          re.search(r"MANIFEST=\"\$tmp\"[\s\S]{0,80}?verify_manifest_signature", cli) is not None)
+
+
+def test_signature_verifier_logic() -> None:
+    """Behavioural against tools/verify-manifest.sh, no minisign required.
+
+    Covers the paths that are pure control flow: an unsigned release degrades to
+    a warning, but becomes fatal once a key id is pinned or REQUIRE_SIG is set.
+    """
+    if not bash_available():
+        return
+    verifier = ROOT / "tools" / "verify-manifest.sh"
+    check("tools/verify-manifest.sh exists", verifier.is_file())
+    if not verifier.is_file():
+        return
+    with tempfile.TemporaryDirectory() as td:
+        m = Path(td) / "MANIFEST.sha256"
+        m.write_text("0" * 64 + "  cli/nucsub\n", encoding="utf-8")
+
+        def run(env_extra: dict[str, str]) -> subprocess.CompletedProcess:
+            env = dict(os.environ)
+            env.update(env_extra)
+            return subprocess.run(
+                [_bash(), "-c",
+                 f'bash "{verifier}" "{m}" "{m}.minisig" "{Path(td) / "nokey"}"'],
+                capture_output=True, text=True, env=env, timeout=120)
+
+        r = run({})
+        check("unsigned release exits 2 (checksum-only, not a pass)",
+              r.returncode == 2, f"rc={r.returncode}")
+
+        r = run({"NUC_SUB_REQUIRE_SIG": "1"})
+        check("NUC_SUB_REQUIRE_SIG=1 turns a missing signature fatal",
+              r.returncode == 1, f"rc={r.returncode}")
+
+        r = run({"NUC_SUB_EXPECT_KEY_ID": "RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y"})
+        check("a pinned key id with no signature is fatal",
+              r.returncode == 1, f"rc={r.returncode}")
+
+        r = subprocess.run([_bash(), "-c", f'bash "{verifier}"'], capture_output=True,
+                           text=True, timeout=120)
+        check("verifier with no manifest argument fails closed",
+              r.returncode == 1, f"rc={r.returncode}")
+
+
+def test_signature_rejects_tampering() -> None:
+    """Real crypto: a genuine minisign signature must catch a modified manifest."""
+    if not _minisign_available() or not bash_available():
+        print("  SKIP  minisign not installed — signature crypto path not exercised "
+              "here (structural checks still ran)")
+        return
+    verifier = ROOT / "tools" / "verify-manifest.sh"
+    with tempfile.TemporaryDirectory() as td:
+        d = Path(td)
+        key, pub = d / "test.key", d / "test.pub"
+        m, sig = d / "MANIFEST.sha256", d / "MANIFEST.sha256.minisig"
+        m.write_text("0" * 64 + "  cli/nucsub\n", encoding="utf-8")
+
+        g = subprocess.run([_bash(), "-lc",
+                            f'minisign -G -p "{pub}" -s "{key}" >/dev/null 2>&1'],
+                           capture_output=True, text=True, timeout=120)
+        if g.returncode != 0:
+            print("  SKIP  minisign key generation failed")
+            return
+        subprocess.run([_bash(), "-lc", f'minisign -S -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
+                       capture_output=True, text=True, timeout=120)
+        key_id = subprocess.run([_bash(), "-lc", f'minisign -P -p "{pub}"'],
+                                capture_output=True, text=True, timeout=120).stdout.strip()
+
+        def run(extra: dict[str, str]) -> subprocess.CompletedProcess:
+            env = dict(os.environ)
+            env.update(extra)
+            return subprocess.run(
+                [_bash(), "-c", f'bash "{verifier}" "{m}" "{sig}" "{pub}"'],
+                capture_output=True, text=True, env=env, timeout=120)
+
+        check("a genuine signature verifies", run({}).returncode == 0)
+
+        # Same key, manifest edited after signing.
+        m.write_text("1" * 64 + "  cli/nucsub\n", encoding="utf-8")
+        check("tampered manifest is rejected", run({}).returncode == 1)
+
+        # Restore the signed bytes, then try a different key.
+        subprocess.run([_bash(), "-lc", f'minisign -S -s "{key}" -m "{m}" -x "{sig}" >/dev/null 2>&1'],
+                       capture_output=True, text=True, timeout=120)
+        check("correct key id verifies", run({"NUC_SUB_EXPECT_KEY_ID": key_id}).returncode == 0)
+        check("wrong key id is rejected",
+              run({"NUC_SUB_EXPECT_KEY_ID": "RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y"}).returncode == 1)
+
+        # Signature bytes mangled.
+        sig.write_text(sig.read_text(encoding="utf-8", errors="replace").replace("untrusted comment:", "untrusted comment:", 1)[:-40] + "A" * 40,
+                       encoding="utf-8")
+        check("corrupted signature is rejected", run({}).returncode == 1)
+
+
+# --------------------------------------------------------------------------
+# 7. Release hygiene
+# --------------------------------------------------------------------------
+def test_no_broken_download_urls() -> None:
+    """`releases/download/...` only resolves once a GitHub Release exists, and
+    nothing here creates one, so shipping it in user-facing docs is a dead end."""
+    offenders: list[str] = []
+    for p in (INSTALL_SH, ROOT / "README.md"):
+        for i, line in enumerate(read(p).splitlines(), 1):
+            if "releases/download" in line:
+                offenders.append(f"{p.name}:{i}")
+    check("no releases/download URL in installer or README", not offenders,
+          ", ".join(offenders))
+
+
+def test_version_and_ref_are_consistent() -> None:
+    inst = read(INSTALL_SH)
+    cli = read(CLI)
+    readme = read(ROOT / "README.md")
+
+    m_inst = re.search(r'NUC_SUB_REF="\$\{NUC_SUB_REF:-(v[\d.]+)\}"', inst)
+    m_cli = re.search(r'NUC_SUB_REF="\$\{NUC_SUB_REF:-(v[\d.]+)\}"', cli)
+    check("install.sh pins a version tag", m_inst is not None)
+    check("cli/nucsub pins a version tag", m_cli is not None)
+    if m_inst and m_cli:
+        check("installer and CLI pin the same tag", m_inst.group(1) == m_cli.group(1),
+              f"{m_inst.group(1)} vs {m_cli.group(1)}")
+        check("README quick start uses the same tag",
+              readme.count(m_inst.group(1)) >= 2, f"expected >=2 uses of {m_inst.group(1)}")
+
+    m_ver = re.search(r'NUC_SUB_VERSION="([\d.]+)"', cli)
+    check("cli declares a version", m_ver is not None)
+    if m_ver and m_cli:
+        check("CLI version matches the pinned tag",
+              m_cli.group(1).lstrip("v") == m_ver.group(1),
+              f"tag {m_cli.group(1)} vs version {m_ver.group(1)}")
+
+    # install.sh must not advertise a different tag in its usage header.
+    usage = re.findall(r"install\.sh\b", inst)
+    check("installer usage header names the pinned tag",
+          m_inst is not None and m_inst.group(1) in inst.split("set -euo")[0])
+
+
+def flat_text(s: str) -> str:
+    """Collapse hard-wrapped Markdown so phrase assertions survive line breaks.
+
+    Strips blockquote and list markers, then normalises whitespace. Inline
+    emphasis like *not* is preserved: the assertions quote the prose verbatim.
+    """
+    lines = []
+    for line in s.splitlines():
+        line = re.sub(r"^\s*>+\s?", "", line)
+        line = re.sub(r"^\s*[-*+]\s+", "", line)
+        lines.append(line)
+    return " ".join(" ".join(lines).split())
+
+
+def test_security_docs_match_reality() -> None:
+    """Docs that describe the old behaviour are worse than no docs."""
+    readme = read(ROOT / "README.md")
+    # Prose is hard-wrapped, so match against a whitespace-normalised copy.
+    flat = flat_text(readme)
+    check("README does not claim NoNewPrivileges is set",
+          "runs with `NoNewPrivileges=true`" not in readme)
+    check("README explains why NoNewPrivileges is off",
+          "NoNewPrivileges" in readme and "deliberately" in readme)
+    check("README does not claim the panel binds to all interfaces",
+          "binds to all interfaces" not in readme)
+    check("README documents the loopback + SSH tunnel access",
+          "127.0.0.1" in readme and "ssh -L" in readme)
+    check("README states the same-host checksum limit",
+          "*not* an attacker who can rewrite both" in flat)
+    check("README admits a same-host signature is not authentication",
+          "not authentication" in flat)
+    check("README says a same-host key is not a trust anchor",
+          "same repository as the manifest" in flat and "rewrite the other" in flat)
+
+
 def main() -> int:
     test_manifest_covers_shipped_files()
     test_manifest_generator_agrees()
@@ -373,6 +592,12 @@ def main() -> int:
     test_stage_manifest_check()
     test_expected_sha_tolerates_crlf()
     test_downloads_are_gated()
+    test_signature_controls_present()
+    test_signature_verifier_logic()
+    test_signature_rejects_tampering()
+    test_no_broken_download_urls()
+    test_version_and_ref_are_consistent()
+    test_security_docs_match_reality()
 
     passed = sum(1 for okk, _ in results if okk)
     for okk, name in results:

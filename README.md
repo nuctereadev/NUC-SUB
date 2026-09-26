@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.0/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.0/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -72,6 +72,34 @@ sha256sum -c install.sh.sha256 && bash install.sh
 > stop a compromised repository. For a real trust anchor, compare the digest
 > against one you obtained out-of-band, and pin updates with
 > `NUC_SUB_EXPECT_SHA=<commit>`.
+
+### Supply chain
+
+Three layers, each covering what the one above it cannot:
+
+| Layer | Stops | Does not stop |
+| --- | --- | --- |
+| Pinned ref (`v2.2.1`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
+| minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
+
+Every release is pinned to a tag and every downloaded byte is checksummed
+before it is written into the root-owned install directory. Releases also carry
+a detached minisign signature over `MANIFEST.sha256`; the installer verifies it
+before downloading any payload, and refuses outright if the key id does not
+match the one compiled into the installer.
+
+**The signature is only as good as your comparison.** `MINISIGN_PUBKEY` is
+served from the same repository as the manifest, so an attacker who can rewrite
+one can rewrite the other. The trust anchor is the key id printed by the
+installer, compared against the fingerprint published in
+[`README.md`](#release-signing-key) over a channel you already trust. If you
+cannot get that fingerprint anywhere but the same host that served the
+installer, you have checksums, not authentication — and that is a property of
+GitHub, not of this project.
+
+Set `NUC_SUB_REQUIRE_SIG=1` to make an unverifiable release a hard failure
+instead of a warning.
 
 You will be asked which panel to install for:
 
@@ -236,17 +264,77 @@ receiving normal subscription configs; only the human-facing page changes.
 
 ## Security
 
-- The web panel token is stored in `/opt/nuc-sub/.webpanel-token` with mode
-  `0600`; the systemd unit loads panel secrets from a `0600` environment file.
-- Every API endpoint requires the `Authorization: Bearer <token>` header;
-  tokens are compared with `hmac.compare_digest` to prevent timing attacks.
-- Security headers are set on all responses: `X-Content-Type-Options: nosniff`,
-  `Cache-Control: no-store`, and `X-Frame-Options`.
-- Theme names are validated against a strict allowlist pattern before any
-  filesystem or database operation.
-- The systemd unit runs with `NoNewPrivileges=true` and `PrivateTmp=true`.
-- The web panel binds to all interfaces by default; restrict it to trusted IPs
-  in your firewall, or set the `SUB_PANEL_HOST` environment variable.
+- Installs and payload fetches are pinned to an immutable release tag and every
+  downloaded file is verified against `MANIFEST.sha256`; a mismatch is deleted
+  and the install aborts rather than continuing with unverified code.
+- Releases carry a detached minisign signature over the manifest, verified
+  before any payload is written, with the key id pinned in the installer. See
+  [Supply chain](#supply-chain).
+- The web panel binds to `127.0.0.1` only and runs as the unprivileged
+  `nucsub-web` user. It is reachable exclusively through an SSH tunnel:
+  `ssh -L 8080:127.0.0.1:8080 <server>`.
+- The panel escalates to root through a single sudoers policy limited to
+  `nucsub status|list|reset|apply|remove`. A shell, a `bash -c`, or any extra
+  argument is refused, and the panel cannot write its own code.
+- The web panel token lives in `/opt/nuc-sub/.webpanel-token`, root-owned and
+  group-readable only by `nucsub-web`; the panel re-reads it when it changes, so
+  rotating it with the CLI takes effect immediately.
+- Every API endpoint requires the `Authorization: Bearer <token>` header; the
+  token is compared with `hmac.compare_digest` to prevent timing attacks, and it
+  is never accepted as a URL query parameter.
+- Security headers on all responses: `Content-Security-Policy`,
+  `Referrer-Policy: no-referrer`, `Strict-Transport-Security`,
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cache-Control:
+  no-store`, and a `Server` header that does not advertise the Python build.
+- Theme names are validated against a strict allowlist before any filesystem or
+  database operation, and settings are written through `textContent` so stored
+  values cannot become markup.
+- `PrivateTmp=true` is set on the unit. `NoNewPrivileges` is deliberately
+  **not** set: the panel needs to escalate through the sudoers policy above, and
+  that escalation cannot work under `NoNewPrivileges`. Least privilege comes
+  from the non-root user plus the narrow sudoers rule, not from that flag.
+- `SUB_PANEL_HOST` is not a supported variable. The bind address is `NP_HOST` in
+  the unit's environment file, defaulting to `127.0.0.1`; the CLI passes
+  `--host "${NP_HOST}"` to the server.
+
+---
+
+## Release signing key
+
+Releases are signed with a minisign key whose secret never lives in this
+repository. The public key id published here is the value to compare against
+what the installer prints:
+
+```
+# Not yet published.
+#
+# When a key is added this section reads:
+#
+#   minisign public key id:
+#     RWQf6LRCGA9i53mlYecO4IzT51QuEHiY9MS7NyDWK2Y
+#
+#   Verify the key itself once, over a channel you already trust:
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/MINISIGN_PUBKEY
+#     minisign -P -p MINISIGN_PUBKEY
+#
+# The installer prints the same id. If they differ, stop.
+```
+
+Until a key is published, releases are checksum-only: `install.sh` warns once
+and continues, because a key id cannot be pinned to a key that does not exist
+yet. `NUC_SUB_REQUIRE_SIG=1` turns that warning into a failure.
+
+To publish a key:
+
+1. Generate it on a machine that cannot push to this repository:
+   `minisign -G -p MINISIGN_PUBKEY -s /secure/path/minisign.key`
+2. `bash tools/sign-manifest.sh` — regenerates the manifest, signs it, writes
+   the public key, and prints the key id.
+3. Set `NUC_SUB_EXPECT_KEY_ID` in both `install.sh` and `cli/nucsub` to that id,
+   and paste it into the block above.
+4. Commit `MANIFEST.sha256`, `MANIFEST.sha256.minisig` and `MINISIGN_PUBKEY`,
+   then tag. `tools/sign-manifest.sh` refuses to sign if the private key is
+   inside the working tree.
 
 ---
 

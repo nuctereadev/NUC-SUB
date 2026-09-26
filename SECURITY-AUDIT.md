@@ -62,11 +62,18 @@ commit pin. `README.md` now documents download → `sha256sum -c` → run.
 *Residual risk, stated plainly:* the manifest and the code it describes come
 from the same repository, so this defeats corruption, truncation, CDN mixups
 and a tampered mirror — but **not** an attacker who can push to the repository.
-Closing that last hop needs a manifest signed by a key whose fingerprint is
-published somewhere other than the repo it protects (GPG or minisign). Until
-that exists, the honest guidance is: pin with `NUC_SUB_EXPECT_SHA`, and treat
-the release tag plus `MANIFEST.sha256` as "this is the release I reviewed",
-not as "this cannot have been tampered with".
+That last hop is now closed by a detached **minisign** signature over
+`MANIFEST.sha256`, verified before any payload byte is written, with the key id
+pinned inside both `install.sh` and `cli/nucsub`. See `README.md` § Supply chain
+and § Release signing key.
+
+Note what the signature does *not* do. `MINISIGN_PUBKEY` is served from the same
+repository as the manifest, so anyone who can rewrite one can rewrite the other
+and re-sign. Pinning the key id inside the installer only defeats *silent*
+key substitution — the installer is itself fetched from the same host. The real
+anchor is a human comparing the published fingerprint over a channel they already
+trust. Until a key is published, releases are checksum-only and the installer
+says so out loud rather than implying more assurance than it has.
 
 *Two bugs found by the new tests while implementing this:*
 - `local root="$1" m="$root/MANIFEST.sha256"` silently produced
@@ -75,6 +82,28 @@ not as "this cannot have been tampered with".
 - A CRLF manifest (Windows-authored, or any repo with `core.autocrlf` on) left
   a hidden `\r` on each path, so every lookup missed and good releases were
   reported as tampered. Both parsers now strip it.
+
+### I1 — INFO · A stale CLI silently reverts the panel hardening
+Found during a live release-integrity sweep, not by a test.
+
+The live host was still running the pre-hardening `cli/nucsub`. When that old
+CLI regenerated the web-panel unit, it wrote the **old** unit: `User=root`,
+`NoNewPrivileges=true`, and no `--host` argument. The panel came back up as
+root, and the loopback bind survived only because `server.py` defaults to
+`127.0.0.1` — the argument that was supposed to enforce it was gone. The
+environment file lost `NP_HOST` at the same time. `tests/t12_live_verify.sh`
+caught it immediately (4 failures), so the controls worked; the gap was that
+nothing checks whether the *tooling* on the host is the shipped version.
+
+*Lesson recorded:* hardening a host is not a one-time act. Any file that can
+rewrite the unit — the CLI is the obvious one — must ship in the same release
+as the unit, and the live host has to be reconciled against the manifest, not
+assumed current. `/opt/nuc-sub` is now swept against the published
+`MANIFEST.sha256` on every release. The same sweep found a second, separate
+defect: a Windows-side upload had written `server.py` with a UTF-8 BOM and
+mojibake (`—` became `â€”`). It still ran, because Python tolerates a BOM, but
+it did not match the manifest — the integrity check working as intended, on a
+file that had genuinely drifted.
 
 ### H2 — HIGH · Admin panel was publicly reachable over plain HTTP  *(FIXED)*
 Live-confirmed before the fix: `http://<host>:8080/` returned `200` from the
@@ -233,13 +262,22 @@ URL and commit in a `THIRD_PARTY.md` so the next audit does not have to.
 1. ~~Put the panel behind TLS and restrict it to loopback~~ — **done** (H2).
 2. ~~Stop running the web panel as root~~ — **done** (M6).
 3. ~~Add integrity verification to the install/update path and pin to a release
-   commit~~ (H1) — **done**: pinned release tag + `MANIFEST.sha256` verified
-   fail-closed on every download, plus the `NUC_SUB_EXPECT_SHA` pin. Signing the
-   manifest is the remaining part and needs a release process, not a code change.
+   commit~~ — **done** (H1): pinned release tag + `MANIFEST.sha256` verified
+   fail-closed on every download, plus the `NUC_SUB_EXPECT_SHA` pin, plus a
+   minisign manifest signature with a key id pinned in both entry points. The
+   signature activates as soon as the maintainer publishes `MINISIGN_PUBKEY` and
+   `MANIFEST.sha256.minisig`; until then the installer degrades to checksum-only
+   and says so, because a key id cannot be pinned to a key that does not exist.
 4. Rotate the credentials sitting in `probe_*.sh` / `.env` (L4).
+5. Reconcile the live host against the published manifest after **every**
+   release, not only when a task asks for it (I1). A stale CLI on the host
+   rewrites the systemd unit and silently reverts the panel hardening.
 
 ## Worth doing next
 
+- Generate the minisign key on an offline machine, publish `MINISIGN_PUBKEY`
+  and the signature, set `NUC_SUB_EXPECT_KEY_ID` in `install.sh` and
+  `cli/nucsub`, and paste the key id into `README.md` § Release signing key.
 - Move inline `onclick=` handlers to `addEventListener` so a real `script-src`
   CSP can be enforced (this is the prerequisite for closing M2 properly).
 - Shorten the panel token lifetime / add rotation UI; it currently lives in
@@ -247,14 +285,22 @@ URL and commit in a `THIRD_PARTY.md` so the next audit does not have to.
 - Replace the SVG blocklist with an allowlist parser.
 - Pin `jinja2`, add a lockfile, and record vendored-library provenance (L1, L8).
 - Stop swallowing the `sqlite3` install failure (L2).
+- Key-only SSH, `ufw` enabled, and rotating the root password that was shared in
+  a chat session. Deliberately left alone in this pass to avoid a lockout;
+  `PermitRootLogin yes` + `PasswordAuthentication yes` + `ufw inactive` is the
+  largest remaining exposure on the host.
 
 ## Known-unknowns
 
 - `qrcode-lib.js` exact upstream version (L8).
 - Whether any Jinja2 ≥3.1 advisory applies to the version the dev preview
   resolves — no CVE number I am confident enough in to assert; run `pip-audit`.
-- SSH hardening, the firewall ruleset, and on-disk permissions could not be
-  inspected: the audit host had no SSH key or password available in this
-  session, so the live checks were HTTP-only. `tests/t12_live_check.sh` is
-  committed and will complete that picture in one run once SSH access is
-  available.
+- The signing key does not exist yet, so the minisign path is exercised only by
+  `tools/verify-manifest.sh` and the structural assertions in
+  `tests/t13_supply_chain_test.py`; the crypto path itself is verified
+  out-of-band with a throwaway key. First real release after key publication
+  should re-run that with the production key.
+- Whether the `MINISIGN_PUBKEY` fingerprint can be obtained over a channel
+  independent of this repository. If not, readers have checksums plus a pinned
+  id, not authentication, and that limit should be restated in the README
+  whenever the key is published.

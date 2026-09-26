@@ -15,7 +15,7 @@
 #  away and, if you want, enable the web panel for 3x-ui from option 6.
 #
 #  Usage:
-#    curl -fsSLO https://github.com/nuctereadev/NUC-SUB/releases/download/v2.2.0/install.sh
+#    curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/install.sh
 #    sha256sum -c install.sh.sha256
 #    bash install.sh
 #
@@ -24,12 +24,16 @@
 #  it first. Download, verify, then run. The download path is also pinned to an
 #  immutable release tag and every payload file is checked against
 #  MANIFEST.sha256, so a mismatched or tampered file aborts the install.
+#  When the release ships a minisign signature, the manifest signature is
+#  verified before any payload is written, and the minisign key id is pinned.
 #
 #  Env for non-interactive installs:
 #    NUC_SUB_PANEL=3xui|pasarguard   panel to install (default: auto-detect)
 #    XUI_SUB_INSTALL_DIR             install dir (default /opt/nuc-sub)
 #    XUI_SUB_NONINTERACTIVE=1        skip the panel prompt and the menu at the end
 #    NUC_SUB_REF=<tag|sha>           release ref to install (default: pinned tag)
+#    NUC_SUB_REQUIRE_SIG=1           fail instead of degrading when the published
+#                                    manifest signature cannot be verified
 # =============================================================================
 set -euo pipefail
 
@@ -46,10 +50,16 @@ BOLD='\033[1m'; DIM='\033[2m'
 # compromised or hijacked one. Pinning the ref makes the fetched set fixed and
 # auditable; MANIFEST.sha256 then proves the bytes match that release.
 # Override with NUC_SUB_REF=<tag|sha> for a different release.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.0}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.1}"
 REPO_URL="${XUI_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # path to the fetched manifest; empty in local-checkout mode
+
+# Minisign public key id this release is signed with. Empty until the maintainer
+# publishes MINISIGN_PUBKEY + MANIFEST.sha256.minisig. Once it is set, a release
+# cannot be made to verify with a substituted key: the id is compared against
+# this literal, not merely against the key file served alongside the manifest.
+NUC_SUB_EXPECT_KEY_ID="${NUC_SUB_EXPECT_KEY_ID:-}"
 
 # Files that are shared by both panels
 SRC_COMMON=(
@@ -194,6 +204,73 @@ verify_downloaded() {  # verify_downloaded <repo-path> <file-on-disk>
     fi
 }
 
+# Check the manifest's minisign signature before any payload is written.
+#
+# Inlined on purpose: install.sh runs from a single downloaded file, so a helper
+# script would have to be fetched from the same host it is meant to vouch for.
+# tools/verify-manifest.sh is the maintainer/CI copy of this same logic.
+#
+# A signature verified against a key fetched from the same host is NOT an anchor
+# -- an attacker who can rewrite the manifest can rewrite the key too. The
+# defence is the pinned key id below plus a fingerprint in README.md that the
+# reader compares over an independent channel. See README.md > Supply chain.
+verify_manifest_signature() {
+    local sig="$1" pubkey="$2" ms actual_id required="${NUC_SUB_REQUIRE_SIG:-0}"
+    local t; t="$(mktemp -d)"
+
+    if ! curl -fsSL "$REPO_URL/MANIFEST.sha256.minisig" -o "$t/sig" 2>/dev/null; then
+        if [[ -n "$NUC_SUB_EXPECT_KEY_ID" ]]; then
+            echo -e "${RED}  ✗ this release pins minisign key ${NUC_SUB_EXPECT_KEY_ID}${NC}"
+            echo -e "${RED}    but published no MANIFEST.sha256.minisig. Refusing.${NC}"
+            rm -rf "$t"; exit 1
+        fi
+        if [[ "$required" == "1" ]]; then
+            echo -e "${RED}  ✗ NUC_SUB_REQUIRE_SIG=1 but the release has no manifest signature.${NC}"
+            rm -rf "$t"; exit 1
+        fi
+        echo -e "${YELLOW}  ! no manifest signature published - checksum-only release.${NC}"
+        echo -e "${DIM}    Payload integrity is still enforced, but a compromised${NC}"
+        echo -e "${DIM}    repo/ref/CDN could serve a self-consistent manifest.${NC}"
+        rm -rf "$t"; return 0
+    fi
+
+    if ! curl -fsSL "$REPO_URL/MINISIGN_PUBKEY" -o "$t/pub" 2>/dev/null; then
+        echo -e "${RED}  ✗ the release ships MANIFEST.sha256.minisig but no MINISIGN_PUBKEY.${NC}"
+        echo -e "${RED}    Refusing to install an unverifiable release.${NC}"
+        rm -rf "$t"; exit 1
+    fi
+
+    if command -v minisign >/dev/null 2>&1; then
+        ms="$(command -v minisign)"
+    elif [[ -x "$XUI_SUB_INSTALL_DIR/../tools/minisign" ]]; then
+        ms="$XUI_SUB_INSTALL_DIR/../tools/minisign"
+    else
+        echo -e "${RED}  ✗ this release is signed but minisign is not installed.${NC}"
+        echo -e "${RED}    Install it (apt-get install -y minisign) or set${NC}"
+        echo -e "${RED}    NUC_SUB_REQUIRE_SIG=0 to accept a checksum-only install.${NC}"
+        rm -rf "$t"; exit 1
+    fi
+
+    actual_id="$("$ms" -P -p "$t/pub" 2>/dev/null | tr -d '[:space:]')"
+    if [[ -n "$NUC_SUB_EXPECT_KEY_ID" && "$actual_id" != "$NUC_SUB_EXPECT_KEY_ID" ]]; then
+        echo -e "${RED}  ✗ minisign key id mismatch${NC}"
+        echo -e "${RED}    expected ${NUC_SUB_EXPECT_KEY_ID}${NC}"
+        echo -e "${RED}    got      ${actual_id:-<unreadable>}${NC}"
+        echo -e "${RED}    The release was signed by a different key. Refusing.${NC}"
+        rm -rf "$t"; exit 1
+    fi
+
+    if ! "$ms" -V -p "$t/pub" -x "$t/sig" -m "$MANIFEST" >/dev/null 2>&1; then
+        echo -e "${RED}  ✗ MANIFEST SIGNATURE INVALID${NC}"
+        echo -e "${RED}    The manifest does not match the signed release.${NC}"
+        echo -e "${RED}    Nothing was installed. Do not work around this.${NC}"
+        rm -rf "$t"; exit 1
+    fi
+
+    echo -e "${GREEN}  ✓ manifest signature verified${NC} ${DIM}(minisign key ${actual_id:-unpinned})${NC}"
+    rm -rf "$t"; return 0
+}
+
 # Pull the manifest before the first payload file, so every later download can
 # be checked. Runs once; a malformed manifest is fatal.
 load_manifest() {
@@ -212,6 +289,7 @@ load_manifest() {
         echo -e "${RED}✗ MANIFEST.sha256 is missing or malformed - refusing to install.${NC}"
         exit 1
     fi
+    verify_manifest_signature "$MANIFEST"
     echo -e "${DIM}  verified against MANIFEST.sha256 (${NUC_SUB_REF})${NC}"
 }
 
