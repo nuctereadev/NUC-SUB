@@ -208,12 +208,18 @@ def _is_root():
 
 
 def _sudo_available():
-    """True when this process can reach the CLI through the sudoers policy."""
+    """True when this process can reach the CLI through the sudoers policy.
+
+    Probes with a bare `sudo -n -l`, not `sudo -n -l <path>`: the arg form
+    needs the sudoers LIST privilege and reports failure even when a working
+    NOPASSWD entry exists, which made the panel wrongly claim it had no
+    escalation path. -n keeps it non-interactive, so a missing policy shows up
+    as a non-zero exit instead of a hung request."""
     if _is_root() or not shutil.which("sudo"):
         return False
     try:
         return subprocess.run(
-            ["sudo", "-n", "-l", ARGS.cli],
+            ["sudo", "-n", "-l"],
             capture_output=True, text=True, timeout=10, shell=False,
         ).returncode == 0
     except Exception:  # noqa: BLE001
@@ -742,7 +748,9 @@ def main():
     shown = "127.0.0.1" if ARGS.host in ("127.0.0.1", "localhost") else ARGS.host
     print(f"[nuc-sub] web panel listening on http://{shown}:{port}", flush=True)
     if shown == "127.0.0.1":
-        print("[nuc-sub] loopback only — reach it with: "
+        # ASCII only: the unit's stdout is not guaranteed to be UTF-8, and a
+        # non-ASCII byte here raises UnicodeEncodeError on some locales.
+        print("[nuc-sub] loopback only - reach it with: "
               "ssh -L %d:127.0.0.1:%d <server>" % (port, port), flush=True)
     try:
         srv.serve_forever()

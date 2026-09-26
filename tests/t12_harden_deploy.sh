@@ -11,8 +11,11 @@ set -uo pipefail
 
 UNIT="xui-sub-panel"
 UNIT_PATH="/etc/systemd/system/${UNIT}.service"
-ENV_PATH="/run/nuc-sub-web.env"
 INSTALL_DIR="/opt/nuc-sub"
+# Must be under INSTALL_DIR, NOT /run: /run is a tmpfs that is wiped on
+# reboot, and EnvironmentFile=- silently tolerates a missing file, which would
+# leave the panel starting with no port and no paths after a reboot.
+ENV_PATH="${INSTALL_DIR}/.webpanel-env"
 SUDOERS="/etc/sudoers.d/nucsub-webpanel"
 WEB_USER="${NUC_SUB_WEB_SYSTEM_USER:-nucsub-web}"
 BACKUP="/root/.nuc-sub-webunit.bak"
@@ -21,7 +24,31 @@ MODE="${1:-apply}"
 say()  { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 ok()   { printf '   \033[32mok\033[0m   %s\n' "$*"; }
 bad()  { printf '   \033[31mFAIL\033[0m %s\n' "$*"; }
-die()  { printf '\n\033[31mABORT: %s\033[0m\n' "$*"; exit 1; }
+
+# die() must roll back, not just exit. `exit` does not raise the ERR trap, so
+# the trap alone left the panel down after the first failed deploy.
+ROLLBACK_ARMED=0
+rollback() {
+    [ "$ROLLBACK_ARMED" = "1" ] || return 0
+    ROLLBACK_ARMED=0
+    say "rolling back"
+    cp -a "$BACKUP" "$UNIT_PATH" 2>/dev/null
+    rm -f "$SUDOERS"
+    systemctl daemon-reload 2>/dev/null
+    if systemctl restart "$UNIT" 2>/dev/null && systemctl is-active --quiet "$UNIT"; then
+        ok "previous unit restored and service is active"
+    else
+        bad "ROLLBACK FAILED - the panel is down. Restore it with:"
+        printf '        cp -a %s %s && systemctl daemon-reload && systemctl restart %s\n' \
+            "$BACKUP" "$UNIT_PATH" "$UNIT"
+    fi
+}
+die() {
+    printf '\n\033[31mABORT: %s\033[0m\n' "$*"
+    rollback
+    exit 1
+}
+trap rollback ERR
 
 [ "$(id -u)" = "0" ] || die "must run as root (use sudo)"
 
@@ -58,14 +85,40 @@ say "1/6  backing up the current unit"
 [ -f "$BACKUP" ] || cp -a "$UNIT_PATH" "$BACKUP"
 ok "backup at $BACKUP"
 
+say "1b/6  checking the installed panel supports --host"
+# The unit passes --host, so an older installed server.py would refuse to start
+# and take the panel down. Catch that here, before touching anything.
+SRV="$INSTALL_DIR/webpanel/server.py"
+[ -f "$SRV" ] || die "no installed panel at $SRV"
+if ! grep -q -- '--host' "$SRV"; then
+    die "the installed $SRV predates --host support. Update the install first
+    (nucsub update, or copy webpanel/server.py from a current checkout), then
+    re-run this script. Nothing has been changed."
+fi
+python_ok=$(command -v python3 || true)
+[ -n "$python_ok" ] || die "python3 not found"
+"$python_ok" -c "import ast,sys; ast.parse(open(sys.argv[1],encoding='utf-8').read())" "$SRV" \
+    || die "installed $SRV is not valid Python; refusing to continue"
+ok "installed panel supports --host and parses cleanly"
+
 rollback() {
+    [ "$ROLLBACK_ARMED" = "1" ] || return 0
+    ROLLBACK_ARMED=0
     say "rolling back"
     cp -a "$BACKUP" "$UNIT_PATH" 2>/dev/null
     rm -f "$SUDOERS"
     systemctl daemon-reload 2>/dev/null
-    systemctl restart "$UNIT" 2>/dev/null && ok "previous unit restored" || bad "manual rollback needed"
+    if systemctl restart "$UNIT" 2>/dev/null && systemctl is-active --quiet "$UNIT"; then
+        ok "previous unit restored and service is active"
+    else
+        bad "ROLLBACK FAILED - restore manually with:"
+        printf '        cp -a %s %s && systemctl daemon-reload && systemctl restart %s\n' \
+            "$BACKUP" "$UNIT_PATH" "$UNIT"
+    fi
 }
-trap 'rollback' ERR
+trap rollback ERR
+
+ROLLBACK_ARMED=1
 
 say "2/6  creating the unprivileged system user"
 if ! id -u "$WEB_USER" >/dev/null 2>&1; then
@@ -87,6 +140,9 @@ chown "$WEB_USER:$WEB_USER" "$INSTALL_DIR/config.json"      || true
 touch "$INSTALL_DIR/.webport"
 chown "$WEB_USER:$WEB_USER" "$INSTALL_DIR/.webport"
 chmod 644 "$INSTALL_DIR/.webport"
+# The panel must be able to traverse into the install dir to read its own code
+# and the CLI, but never write to the tree itself.
+chmod o+x "$INSTALL_DIR" 2>/dev/null || true
 # The panel must be able to read its own code, but never write it.
 chown -R "root:$WEB_USER" "$INSTALL_DIR/webpanel"
 chmod -R "g+rX,o-rwx" "$INSTALL_DIR/webpanel"
@@ -171,6 +227,15 @@ RUNAS="$(systemctl show -p User --value "$UNIT")"
 [ "$RUNAS" = "$WEB_USER" ] || die "service is running as '$RUNAS', expected '$WEB_USER'"
 ok "running as $RUNAS (not root)"
 
+# The env file must live on disk, not in /run, or the panel breaks on reboot
+# because EnvironmentFile=- silently tolerates a missing file.
+[ -f "$ENV_PATH" ] || die "env file missing at $ENV_PATH"
+case "$ENV_PATH" in
+    /run|/tmp|/var/run|/dev/shm) die "env file $ENV_PATH is volatile and would be lost on reboot" ;;
+esac
+systemctl is-enabled --quiet "$UNIT" || die "service is not enabled; it would not return after a reboot"
+ok "env file persists and service is enabled for boot"
+
 # The escalation path must work, otherwise theme actions are broken.
 if ! sudo -u "$WEB_USER" sudo -n "$INSTALL_DIR/cli/nucsub" status >/dev/null 2>&1; then
     die "sudoers escalation does not work -- theme actions would fail"
@@ -178,6 +243,7 @@ fi
 ok "sudoers escalation works"
 
 trap - ERR
+ROLLBACK_ARMED=0
 say "done"
 cat <<EOF
 
