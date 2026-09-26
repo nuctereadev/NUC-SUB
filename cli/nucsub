@@ -18,7 +18,6 @@ XUI_DB="$([ -f /etc/x-ui/x-ui.db ] && echo /etc/x-ui/x-ui.db || echo /etc/3x-ui/
 XUI_SERVICE="x-ui"
 SUB_THEME_KEY="subThemeDir"
 WEB_BASE="$INSTALL_DIR/webpanel"
-WEB_SERVICE="xui-sub-panel"
 WEB_PORT_FILE="$INSTALL_DIR/.webport"
 WEB_TOKEN_FILE="$INSTALL_DIR/.webpanel-token"
 CONFIG_FILE="$INSTALL_DIR/config.json"
@@ -28,6 +27,25 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
 NUC_SUB_VERSION="2.2.0"
+
+# ------------------------------------------------------------ update engine ---
+# "Update NUC-SUB" tracks the real upstream git revision instead of a manually
+# bumped version string, because the version is rarely bumped between releases
+# while the code changes on every commit. $NUC_REPO_GIT is only used for update
+# (ls-remote + commit tarball); every other feature keeps using $REPO_URL.
+NUC_REPO_GIT="${NUC_SUB_REPO_GIT:-https://github.com/nuctereadev/NUC-SUB}"
+NUC_BRANCH="${NUC_SUB_BRANCH:-main}"
+# Source of the commit tarball. Overridable so the update path can be tested
+# against a local mirror without hitting GitHub.
+NUC_TARBALL_BASE="${NUC_SUB_TARBALL_BASE:-https://codeload.github.com/${NUC_REPO_GIT#https://github.com/}}"
+UPDATE_COMMIT_FILE="$INSTALL_DIR/.nucsub-commit"   # commit currently installed
+UPDATE_STAGE="$INSTALL_DIR/.update-stage"          # scratch, holds the fetched tree
+UPDATE_BACKUP="$INSTALL_DIR/.update-backup"        # rollback copy of the last apply
+# The on-PATH entry point. Overridable so the test suite does not need /usr/bin.
+NUCSUB_BIN="${NUC_SUB_BIN:-/usr/bin/nucsub}"
+# The web panel systemd unit. Overridable so a test or a parallel install never
+# rewrites/restarts the unit that belongs to the main installation.
+WEB_SERVICE="${NUC_SUB_WEB_SERVICE:-xui-sub-panel}"
 
 # Every theme known to the project (used to offer on-demand downloads).
 XUI_THEMES=(volt amber aria command ember gold graphite indigo lime mint nova olive onyx pulse slate teal zenith azure cobalt lagoon linen stark copper emerald ocean marine tide abyss dusk prisma coal steel comet)
@@ -1016,6 +1034,25 @@ web_panel_status() {
         echo -e "  ${RED}● Stopped${NC}"
         return 1
     fi
+}
+
+# Whether the web panel that is currently running is *this* installation's panel.
+# `web_panel_status` is intentionally loose (any running server.py / an active
+# unit counts), which is right for a human-facing status line but wrong for the
+# updater: it must only restart and health-check the panel that serves
+# $INSTALL_DIR, otherwise an update of a secondary/parallel install would poke an
+# unrelated service.
+web_panel_managed_here() {
+    if [[ -f "$INSTALL_DIR/.webpanel.pid" ]]; then
+        local pid; pid="$(cat "$INSTALL_DIR/.webpanel.pid" 2>/dev/null || true)"
+        [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null && return 0
+    fi
+    if command -v systemctl >/dev/null 2>&1 && systemctl is-active --quiet "$WEB_SERVICE" 2>/dev/null; then
+        if systemctl cat "$WEB_SERVICE" 2>/dev/null | grep -qF "$INSTALL_DIR"; then
+            return 0
+        fi
+    fi
+    return 1
 }
 
 # Detect the server's primary outbound IPv4 so the printed login URL is usable
@@ -2393,37 +2430,357 @@ cmd_diag_report() {  # cmd_diag_report [N] — show the latest/historical diagno
 }
 
 # ----------------------------------------------------------- Update / Uninstall ---
+# The update engine below replaces the old "download cli/nucsub and re-run
+# install.sh" logic. That approach could never delete a file that upstream
+# removed, kept a stale copy of everything else, blindly re-ran the installer
+# (which touches panel config), and reported success even when the installer
+# had failed. It now:
+#   * resolves the real upstream commit (git ls-remote, API fallback),
+#   * fetches the tarball of *that exact commit* into a staging directory,
+#   * validates the tree before touching the running install,
+#   * backs up and then synchronizes the source roots with rsync --delete so
+#     files deleted upstream disappear locally instead of lingering,
+#   * refuses to delete anything that belongs to the user (see
+#     update_is_user_data), and never touches runtime state,
+#   * rolls back and reports a real error if any step fails.
+
+# Repo-relative directories that are pure source code and are fully managed by
+# the update (rsync --delete applies to them).
+update_is_source_root() {
+    case "$1" in
+        cli|webpanel) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Repo-relative paths that are user/runtime data. The update must never remove
+# or overwrite these, even if they somehow sit inside a source root.
+update_is_user_data() {
+    case "$1" in
+        config.json|panel.conf|.webpanel-token|.webpanel-env|.webport|.webpanel.pid) return 0 ;;
+        webpanel.log|.nucsub-commit|.nucsub-manifest|.update-backup|.update-stage) return 0 ;;
+        branding|branding/*|diag|diag/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Themes are download-on-demand: only the ones already on disk are refreshed so
+# an update does not pull all 33 themes down, while a theme deleted upstream is
+# removed locally (otherwise an orphaned, unreachable theme would linger).
+update_theme_dirs() { find "$THEMES_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort || true; }
+update_pg_templates() { ls -1 "$PG_THEMES_DIR" 2>/dev/null | sed 's/\.html$//' | sort || true; }
+
+# Resolve the upstream commit of the tracked branch. git ls-remote is tried
+# first (no auth, no rate limit); the REST API is the fallback.
+update_remote_commit() {
+    local sha=""
+    if command -v git >/dev/null 2>&1; then
+        sha="$(git ls-remote --heads "$NUC_REPO_GIT" "$NUC_BRANCH" 2>/dev/null | awk 'NR==1{print $1}')" || true
+    fi
+    if [[ ! "$sha" =~ ^[0-9a-f]{7,40}$ ]]; then
+        local api="https://api.github.com/repos/${NUC_REPO_GIT#https://github.com/}/commits/$NUC_BRANCH"
+        sha="$(curl -fsSL -m 25 "$api" 2>/dev/null | sed -n 's/.*"sha": *"\([0-9a-f]\{40\}\)".*/\1/p' | head -n1)" || true
+    fi
+    [[ "$sha" =~ ^[0-9a-f]{7,40}$ ]] && printf '%s' "$sha"
+}
+
+update_local_commit() { [[ -f "$UPDATE_COMMIT_FILE" ]] && tr -d '[:space:]' < "$UPDATE_COMMIT_FILE" || true; }
+
+update_short() { printf '%.7s' "$1"; }
+
+# Refuse to run when the tool that makes a safe update possible is missing.
+update_preflight() {
+    local missing=()
+    command -v curl >/dev/null 2>&1 || missing+=("curl")
+    command -v rsync >/dev/null 2>&1 || missing+=("rsync")
+    command -v tar >/dev/null 2>&1 || missing+=("tar")
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        fail "Update needs these tools but they are not installed: ${missing[*]}"
+        echo -e "  ${DIM}Install them first, e.g.: apt-get install -y ${missing[*]}${NC}"
+        return 1
+    fi
+}
+
+# Download + extract the exact commit into a clean staging dir.
+update_fetch_stage() {  # <commit>
+    local sha="$1" tarball="$2" root
+    rm -rf "$UPDATE_STAGE"; mkdir -p "$UPDATE_STAGE"
+    if ! curl -fsSL -m 120 --retry 2 --retry-delay 2 \
+            "$NUC_TARBALL_BASE/tar.gz/$sha" -o "$tarball"; then
+        fail "Could not download update $sha from GitHub."
+        return 1
+    fi
+    if ! tar -xzf "$tarball" -C "$UPDATE_STAGE" 2>/dev/null; then
+        fail "Downloaded update archive is corrupt or truncated."
+        rm -f "$tarball"; return 1
+    fi
+    root="$(find "$UPDATE_STAGE" -mindepth 1 -maxdepth 1 -type d | head -n1)"
+    if [[ -z "$root" || ! -d "$root/cli" ]]; then
+        fail "Downloaded update does not look like a NUC-SUB source tree."
+        return 1
+    fi
+    printf '%s' "$root"
+}
+
+# A tree that cannot even parse must never reach the live install.
+update_validate_stage() {  # <stage-root>
+    local root="$1"
+    local missing=()
+    [[ -f "$root/cli/nucsub" ]]                 || missing+=("cli/nucsub")
+    [[ -f "$root/webpanel/server.py" ]]          || missing+=("webpanel/server.py")
+    [[ -s "$root/webpanel/index.html" ]]         || missing+=("webpanel/index.html")
+    [[ -f "$root/install.sh" ]]                  || missing+=("install.sh")
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        fail "Update is incomplete, missing: ${missing[*]}"
+        return 1
+    fi
+    if ! bash -n "$root/cli/nucsub" 2>/dev/null; then
+        fail "Update contains a syntactically broken CLI (cli/nucsub)."
+        return 1
+    fi
+    if command -v python3 >/dev/null 2>&1; then
+        if ! python3 -c "import ast,sys; ast.parse(open(sys.argv[1],encoding='utf-8').read())" \
+                "$root/webpanel/server.py" 2>/dev/null; then
+            fail "Update contains a syntactically broken web panel (webpanel/server.py)."
+            return 1
+        fi
+    fi
+    return 0
+}
+
+# Sync $3/ from the staging tree over $2/ in the install.
+# --checksum is essential: rsync's default quick check is size+mtime, so a real
+# upstream change that keeps the file size and lands in the same second as the
+# previous commit would be skipped and the old code would keep running while the
+# update still reported success. The tree is tiny, so verifying content is cheap.
+update_rsync_flags() { printf '%s' "-a --delete --checksum --exclude __pycache__/ --exclude *.pyc"; }
+
+update_sync_tree() {  # <stage-root> <target-relative> <stage-subdir>
+    local root="$1" target="$2" sub="$3"
+    local flags; flags="$(update_rsync_flags)"
+    # shellcheck disable=SC2086
+    rsync $flags "$root/$sub/" "$INSTALL_DIR/$target/"
+}
+
+update_guard_deletions() {  # <stage-root> <target-relative> <stage-subdir>
+    local root="$1" target="$2" sub="$3" listing
+    # shellcheck disable=SC2086
+    listing="$(rsync -a --delete --checksum --dry-run --itemize-changes \
+        --exclude '__pycache__/' --exclude '*.pyc' \
+        "$root/$sub/" "$INSTALL_DIR/$target/" 2>/dev/null | grep '^\*deleting' | sed 's/^\*deleting *//')" || return 0
+    local victim
+    while IFS= read -r victim; do
+        [[ -z "$victim" ]] && continue
+        if update_is_user_data "$victim" || update_is_user_data "$target/$victim"; then
+            fail "Refusing to update: it would delete user data ($target/$victim)."
+            return 1
+        fi
+    done <<< "$listing"
+    return 0
+}
+
+# Copy the running install aside so a failed apply can be undone.
+update_backup_current() {
+    rm -rf "$UPDATE_BACKUP"; mkdir -p "$UPDATE_BACKUP"
+    cp -a "$INSTALL_DIR/cli" "$UPDATE_BACKUP/cli" 2>/dev/null || return 1
+    cp -a "$INSTALL_DIR/webpanel" "$UPDATE_BACKUP/webpanel" 2>/dev/null || true
+    cp -a "$INSTALL_DIR/install.sh" "$UPDATE_BACKUP/install.sh" 2>/dev/null || true
+    [[ -d "$THEMES_DIR" ]] && cp -a "$THEMES_DIR" "$UPDATE_BACKUP/themes" 2>/dev/null || true
+    [[ -d "$INSTALL_DIR/pasarguard-themes" ]] && cp -a "$INSTALL_DIR/pasarguard-themes" "$UPDATE_BACKUP/pasarguard-themes" 2>/dev/null || true
+    printf '%s' "$(cat "$UPDATE_COMMIT_FILE" 2>/dev/null || true)" > "$UPDATE_BACKUP/.nucsub-commit"
+    return 0
+}
+
+update_restore_backup() {
+    [[ -d "$UPDATE_BACKUP/cli" ]] || return 1
+    warn "Restoring the previous version..."
+    rm -rf "$INSTALL_DIR/cli" "$INSTALL_DIR/webpanel"
+    cp -a "$UPDATE_BACKUP/cli" "$INSTALL_DIR/cli"
+    [[ -d "$UPDATE_BACKUP/webpanel" ]] && cp -a "$UPDATE_BACKUP/webpanel" "$INSTALL_DIR/webpanel"
+    [[ -d "$UPDATE_BACKUP/themes" ]] && { rm -rf "$THEMES_DIR"; cp -a "$UPDATE_BACKUP/themes" "$THEMES_DIR"; }
+    [[ -d "$UPDATE_BACKUP/pasarguard-themes" ]] && { rm -rf "$INSTALL_DIR/pasarguard-themes"; cp -a "$UPDATE_BACKUP/pasarguard-themes" "$INSTALL_DIR/pasarguard-themes"; }
+    [[ -f "$UPDATE_BACKUP/install.sh" ]] && cp -a "$UPDATE_BACKUP/install.sh" "$INSTALL_DIR/install.sh"
+    if [[ -s "$UPDATE_BACKUP/.nucsub-commit" ]]; then
+        cp -a "$UPDATE_BACKUP/.nucsub-commit" "$UPDATE_COMMIT_FILE"
+    else
+        rm -f "$UPDATE_COMMIT_FILE"
+    fi
+    ln -sf "$INSTALL_DIR/cli/nucsub" "$NUCSUB_BIN" 2>/dev/null || true
+    return 0
+}
+
+# Final proof that the new code is what is actually running: syntax of the
+# installed CLI, the panel answering with the preserved token, and the real
+# commit recorded on disk.
+update_verify_installed() {  # <expected-commit>
+    local expected="$1" port
+    bash -n "$INSTALL_DIR/cli/nucsub" 2>/dev/null || { fail "Installed CLI is not valid."; return 1; }
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "import ast,sys; ast.parse(open(sys.argv[1],encoding='utf-8').read())" \
+            "$INSTALL_DIR/webpanel/server.py" 2>/dev/null || { fail "Installed web panel is not valid."; return 1; }
+    fi
+    if [[ -n "$expected" ]] && [[ "$(update_local_commit)" != "$expected" ]]; then
+        fail "Commit record mismatch (expected $expected, got $(update_local_commit))."
+        return 1
+    fi
+    if web_panel_managed_here; then
+        port="$(cat "$WEB_PORT_FILE" 2>/dev/null || true)"
+        [[ -n "$port" ]] || port=8080
+        if [[ -f "$WEB_TOKEN_FILE" ]]; then
+            local code
+            # The panel only accepts "Authorization: Bearer <token>" (or the
+            # token cookie / ?token=). Any other header is a hard 401, which
+            # would make every real update look like a failed install.
+            code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 \
+                    -H "Authorization: Bearer $(cat "$WEB_TOKEN_FILE")" \
+                    "http://127.0.0.1:$port/api/status" 2>/dev/null || true)"
+            case "$code" in
+                200) ;;
+                *) fail "Web panel health check failed (HTTP ${code:-no response})."; return 1 ;;
+            esac
+        fi
+    fi
+    return 0
+}
+
 cmd_update() {
     require_root
     title "Update NUC-SUB"; sep
     local force=0
     [[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && force=1
-    local tmp
-    tmp="$(mktemp)"
-    info "Fetching latest nucsub from GitHub..."
-    if ! curl -fsSL -m 40 "$REPO_URL/cli/nucsub" -o "$tmp"; then
-        warn "Could not fetch latest nucsub."
-        rm -f "$tmp"; return 1
+    update_preflight || return 1
+
+    info "Checking for updates..."
+    local remote local_sha
+    remote="$(update_remote_commit)"
+    if [[ -z "$remote" ]]; then
+        fail "Could not reach GitHub to check for a new version."
+        echo -e "  ${DIM}Check your internet connection and try again.${NC}"
+        return 1
     fi
-    local local_ver remote_ver
-    remote_ver="$(sed -n 's/^NUC_SUB_VERSION="\([^"]*\)".*/\1/p' "$tmp" | head -n 1)"
-    local_ver="$(sed -n 's/^NUC_SUB_VERSION="\([^"]*\)".*/\1/p' "$INSTALL_DIR/cli/nucsub" | head -n 1)"
-    if [[ "$force" -eq 0 && "$remote_ver" == "$local_ver" ]] && cmp -s "$tmp" "$INSTALL_DIR/cli/nucsub"; then
-        ok "Already up to date (v$local_ver)."
-        rm -f "$tmp"; return 0
+    local_sha="$(update_local_commit)"
+    if [[ -z "$local_sha" ]]; then
+        local_sha="unknown"
+    else
+        local_sha="$(update_short "$local_sha")"
     fi
-    info "Updating: v${local_ver:-?} → v${remote_ver:-?}"
-    install -m 755 "$tmp" "$INSTALL_DIR/cli/nucsub"
-    chmod +x "$INSTALL_DIR/cli/nucsub"
-    ln -sf "$INSTALL_DIR/cli/nucsub" /usr/bin/nucsub
-    local ish="$INSTALL_DIR/install.sh"
-    curl -fsSL -m 40 "$REPO_URL/install.sh" -o "$ish" || true
-    if [[ -f "$ish" ]]; then
-        info "Refreshing web panel assets + all themes..."
-        XUI_SUB_NONINTERACTIVE=1 NUC_SUB_PANEL="$PANEL" SKIP_MENU=1 bash "$ish" </dev/null 2>&1 | tail -n 8 || true
+    ok "Current version: $local_sha"
+    ok "Latest version: $(update_short "$remote")"
+
+    if [[ "$force" -eq 0 && "$local_sha" != "unknown" && "$local_sha" == "$(update_short "$remote")" ]]; then
+        ok "NUC-SUB is already up to date."
+        return 0
     fi
-    rm -f "$tmp"
-    ok "Update complete — now NUC-SUB v${remote_ver:-latest}."
+
+    info "New version detected"
+    info "Downloading update $(update_short "$remote")..."
+    local tarball stage
+    tarball="$(mktemp)"
+    stage="$(update_fetch_stage "$remote" "$tarball")" || { rm -f "$tarball"; return 1; }
+    rm -f "$tarball"
+
+    info "Validating update..."
+    update_validate_stage "$stage" || { rm -rf "$UPDATE_STAGE"; return 1; }
+
+    # Guard before anything is written: dry-run each sync and abort if the
+    # delete side would touch user data.
+    update_guard_deletions "$stage" "cli" "cli" || { rm -rf "$UPDATE_STAGE"; return 1; }
+    update_guard_deletions "$stage" "webpanel" "webpanel" || { rm -rf "$UPDATE_STAGE"; return 1; }
+
+    local backup
+    backup="$UPDATE_BACKUP"
+    info "Preparing update..."
+    update_backup_current || { fail "Could not create a rollback backup."; rm -rf "$UPDATE_STAGE"; return 1; }
+
+    info "Synchronizing files..."
+    if ! update_sync_tree "$stage" "cli" "cli"; then
+        fail "Failed to synchronize the CLI."; update_restore_backup || true; rm -rf "$UPDATE_STAGE"; return 1
+    fi
+    if ! update_sync_tree "$stage" "webpanel" "webpanel"; then
+        fail "Failed to synchronize the web panel."; update_restore_backup || true; rm -rf "$UPDATE_STAGE"; return 1
+    fi
+    # Stale bytecode from the previous release can shadow the new source.
+    find "$INSTALL_DIR/cli" "$INSTALL_DIR/webpanel" -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+    find "$INSTALL_DIR/cli" "$INSTALL_DIR/webpanel" -name '*.pyc' -type f -delete 2>/dev/null || true
+    # Normalise modes instead of trusting whatever the archive happened to carry
+    # (git stores 664 on a umask-002 box), so permissions are identical on every
+    # install: dirs traversable, data files readable, CLI executable.
+    find "$INSTALL_DIR/cli" "$INSTALL_DIR/webpanel" -type d -exec chmod 755 {} + 2>/dev/null || true
+    find "$INSTALL_DIR/cli" "$INSTALL_DIR/webpanel" -type f -exec chmod 644 {} + 2>/dev/null || true
+    if [[ -f "$stage/install.sh" ]]; then
+        install -m 755 "$stage/install.sh" "$INSTALL_DIR/install.sh" || true
+    fi
+    chmod 755 "$INSTALL_DIR/cli/nucsub" 2>/dev/null || true
+    ln -sf "$INSTALL_DIR/cli/nucsub" "$NUCSUB_BIN" 2>/dev/null \
+        || warn "Could not refresh $NUCSUB_BIN — run this as root to fix it."
+
+    # Refresh only the themes that are already installed (download-on-demand
+    # stays intact) and drop any theme that upstream deleted.
+    local t p dropped=""
+    for t in $(update_theme_dirs); do
+        if [[ -d "$stage/themes/$t" ]]; then
+            update_sync_tree "$stage" "themes/$t" "themes/$t" 2>/dev/null || true
+            find "$THEMES_DIR/$t" -type d -exec chmod 755 {} + 2>/dev/null || true
+            find "$THEMES_DIR/$t" -type f -exec chmod 644 {} + 2>/dev/null || true
+        else
+            info "Removing obsolete theme: $t"
+            rm -rf "${THEMES_DIR:?}/$t"
+            dropped="$dropped $t"
+        fi
+    done
+    if [[ -d "$PG_THEMES_DIR" && -d "$stage/pasarguard-themes/subscription" ]]; then
+        for p in $(update_pg_templates); do
+            if [[ -f "$stage/pasarguard-themes/subscription/$p.html" ]]; then
+                install -m 644 "$stage/pasarguard-themes/subscription/$p.html" \
+                    "$PG_THEMES_DIR/$p.html" 2>/dev/null || true
+            else
+                info "Removing obsolete template: $p"
+                rm -f "$PG_THEMES_DIR/$p.html"
+            fi
+        done
+    fi
+
+    # Record the commit only after the tree is in place.
+    printf '%s' "$remote" > "$UPDATE_COMMIT_FILE"
+
+    # The freshly synced injection code must be what actually lands in the
+    # active theme, otherwise the panel would keep rendering the old release.
+    if [[ -n "$dropped" ]] && [[ -d "${DEPLOY_DIR:?}/$(basename "$(current_theme_dir 2>/dev/null || echo x)")" ]]; then
+        warn "The active theme was removed upstream; the deployed copy is kept so the panel keeps working."
+    fi
+    reapply_active || warn "Could not re-apply settings to the active theme."
+
+    info "Reloading services..."
+    if web_panel_managed_here; then
+        local port dbpath
+        port="$(cat "$WEB_PORT_FILE" 2>/dev/null || true)"
+        dbpath=""
+        [[ "$PANEL" == "pasarguard" ]] || dbpath="$XUI_DB"
+        # Regenerate the unit so systemd changes shipped upstream really apply.
+        web_panel_install_service "$port" "$dbpath" >/dev/null 2>&1 || true
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        if systemctl restart "$WEB_SERVICE" >/dev/null 2>&1; then
+            :
+        else
+            warn "Could not restart $WEB_SERVICE via systemd."
+        fi
+        sleep 2
+    fi
+
+    info "Validating installation..."
+    if ! update_verify_installed "$remote"; then
+        update_restore_backup || warn "Rollback could not fully restore the previous version."
+        # Restore the previous service state as well.
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl restart "$WEB_SERVICE" >/dev/null 2>&1 || true
+        rm -rf "$UPDATE_STAGE"
+        fail "Update failed validation — the previous version was restored."
+        return 1
+    fi
+
+    rm -rf "$UPDATE_STAGE" "$backup"
+    ok "NUC-SUB updated successfully ($(update_short "$remote"))."
+    echo -e "  ${DIM}Run 'nucsub menu' to use the new version.${NC}"
 }
 
 cmd_uninstall() {
@@ -2460,7 +2817,7 @@ cmd_uninstall() {
     systemctl daemon-reload
     pkill -f "python3.*server.py.*--port" 2>/dev/null || true
 
-    rm -f /usr/bin/nucsub
+    rm -f "$NUCSUB_BIN"
     rm -rf "$INSTALL_DIR"
     rm -rf "$DEPLOY_DIR"
     rm -rf /root/nucsub-src
