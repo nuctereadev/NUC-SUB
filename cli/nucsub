@@ -503,9 +503,20 @@ pg_restart_panel() {
         # --force-recreate: `docker compose up -d` alone does NOT re-apply the
         # env_file when the container config hash is unchanged, leaving the .env
         # default out of sync with the running panel.
-        ( cd "$dir" && docker compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
-            || ( cd "$dir" && docker-compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
-            || true
+        if ( cd "$dir" && docker compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
+            || ( cd "$dir" && docker-compose up -d --force-recreate pasarguard ) >/dev/null 2>&1; then
+            :
+        else
+            # Swallowing this is how a broken .env survived a whole apply: the
+            # compose error (unreadable dotenv, bad service name) was discarded,
+            # the code went on to `docker restart`, the restart succeeded, and
+            # the theme silently never took effect.
+            local cerr=""
+            cerr="$( cd "$dir" && docker compose up -d --force-recreate pasarguard 2>&1 )" || true
+            warn "docker compose up failed -- the panel .env may be unparseable:"
+            printf '%s\n' "$cerr" | sed 's/^/    /' | tail -5
+            return 1
+        fi
     fi
     if command -v docker >/dev/null 2>&1; then
         c="$(pg_app_container)"
@@ -535,9 +546,17 @@ pg_env_apply() {  # pg_env_apply <theme-name | __builtin__ | "">
         tmpl="SUBSCRIPTION_PAGE_TEMPLATE=\"\""
     fi
     python3 - "$PG_ENV_FILE" "$tmpl" "$PG_TEMPLATE_BASE" <<'PY'
-import sys
+import re, sys
 p, val, base = sys.argv[1], sys.argv[2], sys.argv[3]
-dirval = 'CUSTOM_TEMPLATES_DIRECTORY="%s"' % base.rstrip('/') + '/'
+# The trailing slash has to live INSIDE the quotes. Writing it outside produced
+# CUSTOM_TEMPLATES_DIRECTORY="/var/lib/pasarguard/templates"/ , and Docker
+# Compose's dotenv parser rejects trailing content after the closing quote: it
+# fails the whole file ("unexpected character /"), so env_file stops injecting
+# anything at all. The panel then boots without SUBSCRIPTION_PAGE_TEMPLATE,
+# every page falls back to raw base64, and `docker compose up` itself fails --
+# which the restart helper swallowed, so `nucsub apply` reported success while
+# changing nothing.
+dirval = 'CUSTOM_TEMPLATES_DIRECTORY="%s/"' % base.rstrip('/')
 lines = open(p, encoding='utf-8').read().splitlines()
 out = []
 done_tpl = done_dir = False
@@ -555,6 +574,31 @@ if not done_tpl:
 if not done_dir:
     out.append(dirval)
 open(p, 'w', encoding='utf-8').write('\n'.join(out) + '\n')
+
+# Second pass: refuse to leave a .env that Compose cannot parse. A malformed
+# line does not just fail on its own -- it makes Docker reject the ENTIRE file,
+# so env_file silently injects nothing and the panel boots with no template
+# configured. Catch our own value before it can do that.
+bad = []
+for n, line in enumerate(open(p, encoding='utf-8').read().splitlines(), 1):
+    t = line.strip()
+    if not t or t.startswith('#') or '=' not in t:
+        continue
+    k, _, v = t.partition('=')
+    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', k.strip()):
+        bad.append(f'line {n}: invalid key {k.strip()!r}')
+        continue
+    v = v.strip()
+    # A quoted value must be the whole value: no trailing text after the quote.
+    if len(v) > 1 and v[0] == v[-1] == '"' and '"' in v[1:-1]:
+        bad.append(f'line {n}: unescaped quote inside value')
+    elif v.startswith('"') and not v.endswith('"'):
+        bad.append(f'line {n}: unterminated quoted value')
+    elif v.endswith('"') and not v.startswith('"') and '"' in v[:-1]:
+        bad.append(f'line {n}: trailing content after the closing quote')
+if bad:
+    sys.stderr.write('refusing to write a malformed .env:\n  ' + '\n  '.join(bad) + '\n')
+    sys.exit(1)
 PY
 }
 
