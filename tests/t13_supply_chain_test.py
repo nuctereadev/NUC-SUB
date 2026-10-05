@@ -617,6 +617,96 @@ def test_security_docs_match_reality() -> None:
           "same repository as the manifest" in flat and "rewrite the other" in flat)
 
 
+def _function_arity_problems(src: str) -> list[str]:
+    """Flag functions that reference $N but are only ever called with fewer args.
+
+    `set -u` turns a missing positional parameter into a fatal error mid-install,
+    and one of these shipped through the entire suite: verify_manifest_signature()
+    declared `local sig="$1" pubkey="$2"` and was called with one argument, so
+    every install died at "Fetching source from GitHub". Only a static argument
+    count catches it without executing the installer, which needs root and Linux.
+
+    Deliberately conservative: a function is reported only when at least one
+    simple call site is recognised *and* every recognised one is short. Anything
+    it cannot parse (indirect calls, "$@", multi-line invocations) is skipped,
+    because a false positive here would train people to ignore the check.
+    """
+    lines = src.splitlines()
+    defs: dict[str, tuple[int, int]] = {}          # name -> (def line, max param)
+    cur: str | None = None
+    for i, ln in enumerate(lines, 1):
+        m = re.match(r"^\s*([a-z_][a-z0-9_]*)\(\)\s*\{", ln)
+        if m:
+            cur = m.group(1)
+            defs.setdefault(cur, (i, 0))
+            continue
+        if cur and re.match(r"^\s*\}\s*$", ln):
+            cur = None
+            continue
+        if cur:
+            for pm in re.finditer(r'"\$(\d+)"', ln):
+                defs[cur] = (defs[cur][0], max(defs[cur][1], int(pm.group(1))))
+
+    problems: list[str] = []
+    for name, (defline, maxp) in defs.items():
+        if maxp == 0:
+            continue
+        seen: list[int] = []
+        for i, ln in enumerate(lines, 1):
+            if i == defline or not re.search(r"\b" + re.escape(name) + r"\b", ln):
+                continue
+            if re.match(r"^\s*#", ln):
+                continue
+            rest = re.sub(r"^\s*" + re.escape(name) + r"\b", "", ln).strip()
+            if rest.startswith("()") or not rest.startswith('"'):
+                continue
+            args = re.findall(r'"[^"]*"', rest)
+            if "$@" in rest:
+                seen.append(maxp)          # unknown but not provably short
+                continue
+            seen.append(len(args))
+        if seen and all(n < maxp for n in seen):
+            problems.append(f"{name}() at line {defline} uses ${maxp} "
+                            f"but every call passes at most {min(seen)}")
+    return problems
+
+
+def test_no_short_positional_param_calls() -> None:
+    """set -u safety: no function may read a parameter its callers never pass."""
+    for label, path in (("install.sh", INSTALL_SH), ("cli/nucsub", CLI)):
+        problems = _function_arity_problems(read(path))
+        check(f"{label} has no function reading an unpassed positional param",
+              not problems, "; ".join(problems))
+
+
+def test_unbound_param_detector_actually_detects() -> None:
+    """Prove the detector above can fail, on the exact bug that shipped."""
+    buggy = (
+        "load_it() {\n"
+        '    verify_manifest_signature() {\n'
+        '        local sig="$1" pubkey="$2" ms\n'
+        "        echo \"$sig $pubkey $ms\"\n"
+        "    }\n"
+        "    MANIFEST=x\n"
+        "    verify_manifest_signature \"$MANIFEST\"\n"
+        "}\n"
+    )
+    problems = _function_arity_problems(buggy)
+    check("detector catches the shipped unbound-parameter bug", len(problems) == 1,
+          f"got {problems!r}")
+    check("detector reports verify_manifest_signature by name",
+          any("verify_manifest_signature" in p for p in problems), f"got {problems!r}")
+
+    fixed = buggy.replace('    local sig="$1" pubkey="$2" ms\n', "    local ms\n")
+    check("detector stays quiet on the fixed form",
+          not _function_arity_problems(fixed))
+
+    # A function that legitimately uses $1 must not be flagged.
+    good = 'f() {\n    local a="$1"\n    echo "$a"\n}\nf "x"\n'
+    check("detector does not flag correctly-called functions",
+          not _function_arity_problems(good))
+
+
 def main() -> int:
     test_manifest_covers_shipped_files()
     test_manifest_generator_agrees()
@@ -632,6 +722,8 @@ def main() -> int:
     test_no_broken_download_urls()
     test_version_and_ref_are_consistent()
     test_security_docs_match_reality()
+    test_no_short_positional_param_calls()
+    test_unbound_param_detector_actually_detects()
 
     passed = sum(1 for okk, _ in results if okk)
     for okk, name in results:

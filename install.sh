@@ -214,8 +214,11 @@ verify_downloaded() {  # verify_downloaded <repo-path> <file-on-disk>
 # -- an attacker who can rewrite the manifest can rewrite the key too. The
 # defence is the pinned key id below plus a fingerprint in README.md that the
 # reader compares over an independent channel. See README.md > Supply chain.
+# Takes no arguments: the manifest path is $MANIFEST and the signature and key
+# are fetched into a scratch dir here. Declaring unused $1/$2 would abort the
+# whole install under `set -u`.
 verify_manifest_signature() {
-    local sig="$1" pubkey="$2" ms actual_id required="${NUC_SUB_REQUIRE_SIG:-0}"
+    local ms actual_id required="${NUC_SUB_REQUIRE_SIG:-0}"
     local t; t="$(mktemp -d)"
 
     if ! curl -fsSL "$REPO_URL/MANIFEST.sha256.minisig" -o "$t/sig" 2>/dev/null; then
@@ -300,7 +303,7 @@ load_manifest() {
         echo -e "${RED}✗ MANIFEST.sha256 is missing or malformed - refusing to install.${NC}"
         exit 1
     fi
-    verify_manifest_signature "$MANIFEST"
+    verify_manifest_signature
     echo -e "${DIM}  verified against MANIFEST.sha256 (${NUC_SUB_REF})${NC}"
 }
 
