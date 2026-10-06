@@ -282,14 +282,27 @@ class Handler(BaseHTTPRequestHandler):
         return self.server_version
 
     # -- response headers ---------------------------------------------------
-    # Baseline headers applied to every response. The CSP deliberately omits
-    # script-src: the panel is one inline <script> plus inline onclick=
-    # handlers, so a script-src policy is not enforceable without a refactor.
-    # The subset below is drop-in and still blocks plugin abuse, <base>
-    # hijacking and framing.
+    # Baseline headers applied to every response.
+    #
+    # CSP: every directive the page needs is spelled out, because a missing
+    # script-src/style-src does NOT leave them unrestricted -- both fall back
+    # to default-src 'self', which blocks the panel's single inline <script>,
+    # its inline onclick= handlers and its inline style="display:none" view
+    # toggles. The result is a dead login button with the login view and the
+    # dashboard painted on top of each other, while every CSP assertion still
+    # passes. The panel is a single-origin, token-gated admin page with no
+    # third-party subresources, so 'unsafe-inline' is the accepted price of a
+    # working UI; object/base/frame/form restrictions are unchanged, and the
+    # uploaded brand logo needs the data: scheme in img-src.
     SECURITY_HEADERS = (
         ("Content-Security-Policy",
-         "default-src 'self'; object-src 'none'; base-uri 'none'; "
+         "default-src 'self'; "
+         "script-src 'self' 'unsafe-inline'; "
+         "style-src 'self' 'unsafe-inline'; "
+         "img-src 'self' data:; "
+         "font-src 'self'; "
+         "connect-src 'self'; "
+         "object-src 'none'; base-uri 'none'; "
          "frame-ancestors 'none'; form-action 'self'"),
         ("X-Content-Type-Options", "nosniff"),
         ("X-Frame-Options", "DENY"),

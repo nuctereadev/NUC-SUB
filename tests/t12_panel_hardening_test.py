@@ -95,6 +95,46 @@ def main():
         check("CSP has object-src 'none'", "object-src 'none'" in csp, csp)
         check("CSP has base-uri 'none'", "base-uri 'none'" in csp, csp)
         check("CSP has frame-ancestors 'none'", "frame-ancestors 'none'" in csp, csp)
+        # A CSP that exists is not a CSP that lets the panel run. The page is
+        # one inline <script> plus inline onclick= handlers and inline
+        # style="display:none" view toggles, and a missing script-src/style-src
+        # silently falls back to default-src 'self' -- which blocks all three,
+        # leaving a dead login button with the login view and the dashboard
+        # rendered on top of each other while the checks above still pass.
+        # Assert the directives the page actually depends on, by name.
+        html_src = open(os.path.join(ROOT, "webpanel", "index.html"),
+                        encoding="utf-8").read()
+
+        def csp_dir(csp_value, name):
+            for part in csp_value.split(";"):
+                bits = part.strip().split()
+                if bits and bits[0] == name:
+                    return bits[1:]
+            return None
+
+        script_src = csp_dir(csp, "script-src")
+        style_src = csp_dir(csp, "style-src")
+        img_src = csp_dir(csp, "img-src")
+        check("CSP declares script-src explicitly (no default-src fallback)",
+              script_src is not None, csp)
+        check("CSP permits the inline script and inline handlers",
+              script_src is not None and "'self'" in script_src
+              and "'unsafe-inline'" in script_src, str(script_src))
+        check("CSP declares style-src explicitly", style_src is not None, csp)
+        check("CSP permits the inline view toggles",
+              style_src is not None and "'unsafe-inline'" in style_src,
+              str(style_src))
+        check("CSP permits the uploaded data: logo",
+              img_src is not None and "data:" in img_src, str(img_src))
+        check("CSP keeps the baseline restrictions",
+              "default-src 'self'" in csp and "object-src 'none'" in csp
+              and "base-uri 'none'" in csp, csp)
+        # The page must still be the thing the policy is tuned for; otherwise
+        # this block starts asserting a policy nobody uses.
+        check("index.html still relies on inline script/handlers/styles",
+              "<script>" in html_src and "onclick=" in html_src
+              and 'style="' in html_src)
+
         check("Referrer-Policy is no-referrer",
               h.get("Referrer-Policy") == "no-referrer", h.get("Referrer-Policy"))
         check("HSTS present", "max-age" in h.get("Strict-Transport-Security", ""),
