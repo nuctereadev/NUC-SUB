@@ -6,6 +6,30 @@
 # =============================================================================
 set -euo pipefail
 
+# Fingerprint of this script as it was when the shell started reading it. The
+# interactive menu re-checks it on every pass: if `nucsub update` replaced the
+# file underneath us, this shell is now reading a new file at old byte offsets
+# and must be restarted rather than allowed to execute a mix of two versions.
+NUC_SUB_SELF_SHA=""
+if [[ -f "${BASH_SOURCE[0]:-$0}" ]]; then
+    NUC_SUB_SELF_SHA="$(sha256sum "${BASH_SOURCE[0]:-$0}" 2>/dev/null | cut -d' ' -f1 || true)"
+fi
+
+self_changed() {
+    local f="${BASH_SOURCE[0]:-$0}" now
+    [[ -z "$NUC_SUB_SELF_SHA" || ! -f "$f" ]] && return 1
+    now="$(sha256sum "$f" 2>/dev/null | cut -d' ' -f1 || true)"
+    [[ -n "$now" && "$now" != "$NUC_SUB_SELF_SHA" ]]
+}
+
+self_restart_notice() {
+    echo -e "${YELLOW}nucsub was updated while this menu was open.${NC}"
+    echo -e "${DIM}Restarting so the menu runs the current version.${NC}"
+    echo ""
+    sleep 2
+    exec "${BASH_SOURCE[0]:-$0}" "$@"
+}
+
 # ------------------------------------------------------------------ config ---
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; CYAN='\033[0;36m'; MAGENTA='\033[0;35m'; NC='\033[0m'
 BOLD='\033[1m'; DIM='\033[2m'
@@ -15,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.6}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.7}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -37,7 +61,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.6"
+NUC_SUB_VERSION="2.2.7"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1650,6 +1674,7 @@ web_token_menu() {  # main-menu option 4 — full token management
 # ------------------------------------------------------------- Web panel menu ---
 web_panel_menu() {
     while true; do
+        self_changed && self_restart_notice "$@"
         clr
         print_header
         title "Web Panel Management"
@@ -3005,11 +3030,60 @@ update_verify_installed() {  # <expected-commit>
     return 0
 }
 
+is_live_menu_session() {  # is_live_menu_session <cmdline> — true for an open menu
+    local cmd="${1:-}"
+    [[ -z "$cmd" ]] && return 1
+    # Must actually be a shell running us, not something that merely mentions the
+    # path (an editor, a grep, a pager). `#!/usr/bin/env bash` means argv is
+    # [env, bash, <script>, ...], so accept the interpreter too.
+    local -a w
+    read -r -a w <<<"$cmd"
+    local base="${w[0]##*/}"
+    case "$base" in
+        bash | sh | dash | env | nucsub) ;;
+        *) return 1 ;;
+    esac
+    # last word ending in `nucsub` is the script path
+    local i last=-1
+    for ((i = 0; i < ${#w[@]}; i++)); do
+        [[ "${w[i]##*/}" == nucsub ]] && last=$i
+    done
+    (( last < 0 )) && return 1
+    local after="${w[*]:last+1}"
+    # a bare `nucsub` and an explicit `nucsub menu` are interactive sessions;
+    # anything else is a one-shot command that finishes on its own
+    [[ -z "$after" || "$after" == "menu" ]] && return 0
+    return 1
+}
+
+update_warn_live_sessions() {
+    # Replacing cli/nucsub while an interactive menu is open corrupts that
+    # session. bash reads a script lazily, by byte offset, so a shell that
+    # started against the old file keeps reading at the OLD offsets out of the
+    # NEW file. The result is a session that runs a mix of both versions and
+    # fails on lines that no longer say what they used to say -- which is how a
+    # fixed bug kept reporting itself as "line 1331: SETTINGS_FILE: unbound
+    # variable" long after line 1331 stopped referencing it.
+    local pids="" pid cmd
+    for pid in $(pgrep -f nucsub 2>/dev/null || true); do
+        [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
+        cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
+        is_live_menu_session "$cmd" || continue
+        pids+=" $pid"
+    done
+    [[ -z "$pids" ]] && return 0
+    warn "Another nucsub menu is still running (pid:$pids)."
+    echo -e "  ${DIM}Updating now would leave that session reading a mix of the old${NC}"
+    echo -e "  ${DIM}and new CLI, and it will fail on unrelated lines. Close it first.${NC}"
+    return 1
+}
+
 cmd_update() {
     require_root
     title "Update NUC-SUB"; sep
     local force=0
     [[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && force=1
+    update_warn_live_sessions && return 1
     update_preflight || return 1
 
     info "Checking for updates..."
@@ -3201,6 +3275,9 @@ cmd_uninstall() {
 cmd_menu() {
     [[ "$PANEL" == "3xui" ]] && find_sqlite
     while true; do
+        # an update under our feet leaves this shell reading a new file at old
+        # byte offsets; bail out to a fresh process before it executes nonsense
+        self_changed && self_restart_notice "$@"
         draw_menu
         read -r choice || { echo -e "\n${DIM}Goodbye!${NC}\n"; return 0; }
         case "$choice" in

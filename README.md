@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.6/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.6/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.7/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.7/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -79,7 +79,7 @@ Three layers, each covering what the one above it cannot:
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| Pinned ref (`v2.2.6`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| Pinned ref (`v2.2.7`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
 | `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
 | minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
 
@@ -314,7 +314,7 @@ what the installer prints:
 #     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
-#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.6/MINISIGN_PUBKEY
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.7/MINISIGN_PUBKEY
 #     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
@@ -352,12 +352,12 @@ To publish a key:
 | Applying a theme fails with a fetch error   | The server cannot reach `raw.githubusercontent.com`; check outbound HTTPS. |
 | Web panel is not reachable                  | Start it with `nucsub webpanel start` and open the printed Firewall port. |
 | Subscription page shows the panel default   | Run `nucsub apply <name>` again; confirm the panel is running.            |
-| Subscription page returns HTTP 500 in the browser | Stale theme from before `v2.2.6`; the expire-days expression was broken. See below. |
+| Subscription page returns HTTP 500 in the browser | Stale theme from before `v2.2.4`; the expire-days expression was broken. See below. |
 | `sqlite3: not found`                     | The installer should install it; otherwise install the `sqlite3` package. |
 
 ### Blank subscription page on Pasarguard
 
-A theme applied before `v2.2.6` returns `500 Internal Server Error` for **every
+A theme applied before `v2.2.4` returns `500 Internal Server Error` for **every
 user whose account has an expiry date**, and renders fine for users without one.
 That asymmetry is why it can look intermittent. Re-apply the theme to pick up
 the fixed template:
@@ -384,6 +384,36 @@ and the comparison raised `TypeError` and the page 500'd. It now reads:
 `tests/t15_pg_template_render_test.py` renders all 33 themes against every
 expiry shape to keep this from coming back. If you edited a theme by hand, apply
 the same two changes to your copy.
+
+### A fixed error that keeps coming back after an update
+
+Symptom: you run `nucsub update`, then a menu you already had open reports an
+error from a bug that the update is supposed to have fixed — often naming a line
+number that no longer matches the file, e.g.
+
+```
+/usr/bin/nucsub: line 1331: SETTINGS_FILE: unbound variable
+```
+
+This is not a stale install. `nucsub update` rewrites `cli/nucsub` while your
+menu is still running, and bash reads a script lazily, by byte offset. The shell
+that started against the old file keeps reading at the *old* offsets out of the
+*new* file, so it executes a mix of both versions. Line 1331 of the updated
+file may be an unrelated `useradd` call while the shell still runs the old
+line 1331.
+
+Check which version you are really running:
+
+```bash
+nucsub --version
+git -C /opt/nuc-sub log --oneline -1
+sed -n '1331p' "$(readlink -f "$(command -v nucsub)")"
+```
+
+Since `v2.2.7` this cannot silently happen: both menus re-fingerprint the CLI on
+every pass and re-exec when it changed, and `nucsub update` refuses to run while
+another menu session is live. If you are on an older release, the immediate
+remedy is to close the menu and start a new one.
 
 ---
 
