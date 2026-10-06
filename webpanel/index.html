@@ -671,7 +671,7 @@
                 </div>
 
                 <div class="field-hint" data-i18n="set.logo.hint">
-                  حداکثر ~1 مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF
+                  حداکثر ۴ مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF / SVG
                 </div>
 
                 <div class="field-error" id="logo-err" role="alert"></div>
@@ -866,7 +866,7 @@ const I18N={fa:{
   'set.brand.ph':'NUCTEREA',
   'set.logo.label':'لوگوی برند',
   'set.logo.ph':'انتخاب فایل لوگو',
-  'set.logo.hint':'حداکثر ~1 مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF',
+  'set.logo.hint':'حداکثر ۴ مگابایت پس از ویرایش — PNG / JPG / WEBP / GIF / SVG',
   'set.saveBrand':'ذخیره برندینگ',
   'set.saveAll':'ذخیره',
   'set.removeLogo':'حذف لوگو',
@@ -908,7 +908,7 @@ const I18N={fa:{
   'js.logoInvalid':'لوگوی واردشده نامعتبر است',
   'js.logoNotImage':'فایل انتخاب‌شده تصویر واقعی نیست (PNG/JPG/WEBP/GIF/SVG)',
   'js.logoSvgUnsafe':'این SVG حاوی کد اجرایی یا ارجاع خارجی است و پذیرفته نشد',
-  'js.logoTooLarge':'لوگو بیش از حد بزرگ است (حداکثر ۱ مگابایت)',
+  'js.logoTooLarge':'لوگو بیش از حد بزرگ است (حداکثر ۴ مگابایت)',
   'js.payloadTooLarge':'حجم درخواست بیش از حد مجاز است',
   'js.saveFailed':'خطای داخلی در ذخیره‌سازی',
   'js.logoRemoved':'لوگو حذف شد',
@@ -919,7 +919,7 @@ const I18N={fa:{
   'ed.cancel':'لغو',
   'ed.confirm':'تأیید',
   'ed.done':'لوگو آماده است',
-  'ed.tooBig':'حجم فایل بیش از حد مجاز است (حداکثر ۲ مگابایت)',
+  'ed.tooBig':'حجم فایل بیش از حد مجاز است (حداکثر ۴ مگابایت)',
   'ed.notImage':'فایل انتخاب‌شده تصویر معتبر نیست (PNG/JPG/WEBP/GIF)',
   'lang.btnTitle':'تغییر زبان'
 },en:{
@@ -975,7 +975,7 @@ const I18N={fa:{
   'set.brand.ph':'NUCTEREA',
   'set.logo.label':'Brand logo',
   'set.logo.ph':'Choose logo file',
-  'set.logo.hint':'Max ~1 MiB after editing — PNG / JPG / WEBP / GIF',
+  'set.logo.hint':'Max 4 MiB after editing — PNG / JPG / WEBP / GIF / SVG',
   'set.saveBrand':'Save branding',
   'set.saveAll':'Save',
   'set.removeLogo':'Remove logo',
@@ -1017,7 +1017,7 @@ const I18N={fa:{
   'js.logoInvalid':'Invalid logo',
   'js.logoNotImage':'Selected file is not a real image (PNG/JPG/WEBP/GIF/SVG)',
   'js.logoSvgUnsafe':'This SVG contains script or external references and was rejected',
-  'js.logoTooLarge':'Logo too large (max 1 MiB)',
+  'js.logoTooLarge':'Logo too large (max 4 MiB)',
   'js.payloadTooLarge':'Request too large',
   'js.saveFailed':'Internal save error',
   'js.logoRemoved':'Logo removed',
@@ -1028,7 +1028,7 @@ const I18N={fa:{
   'ed.cancel':'Cancel',
   'ed.confirm':'Confirm',
   'ed.done':'Logo is ready',
-  'ed.tooBig':'File too large (max 2 MiB)',
+  'ed.tooBig':'File too large (max 4 MiB)',
   'ed.notImage':'Selected file is not a valid image (PNG/JPG/WEBP/GIF)',
   'lang.btnTitle':'Switch language'
 }}; 
@@ -1397,16 +1397,22 @@ function bindLogoUpload(){
     const f=inp.files&&inp.files[0];
     if(!f)return;
     clearErr('logo-err');
-    if(f.size>2*1048576){
+    if(f.size>4*1048576){
       $('logo-err').textContent=t('ed.tooBig');showToast(t('ed.tooBig'),true);
       inp.value='';return;
     }
     f.arrayBuffer().then(buf=>{
       const u8=new Uint8Array(buf);
-      if(sniffImgType(u8)){
-        const fr=new FileReader();
-        fr.onload=()=>openLogoEditor(fr.result);
-        fr.readAsDataURL(f);
+      const mime=sniffImgType(u8);
+      if(mime){
+        // Declare the type from the magic bytes, never from f.type: the OS
+        // guesses it and is often wrong (or blank), and the server re-checks
+        // the declared type against the bytes it decodes.
+        let bin='';
+        for(let i=0;i<u8.length;i+=0x8000){
+          bin+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));
+        }
+        openLogoEditor('data:'+mime+';base64,'+btoa(bin));
         return;
       }
       // No raster magic bytes: the only remaining accepted format is SVG.
@@ -1531,7 +1537,7 @@ function confirmLogoEdit(){
     drawLogoEditorAt(sizes[i]);
     url=c.toDataURL('image/png');
     const comma=url.indexOf(','),b64=comma>=0?url.slice(comma+1):'';
-    if(Math.floor(b64.length*3/4)<=1048576)break;
+    if(Math.floor(b64.length*3/4)<=4*1048576)break;
   }
   ST.logo=url;
   ST.logoDirty=true;ST.logoRemoved=false;

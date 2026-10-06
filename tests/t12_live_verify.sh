@@ -21,12 +21,20 @@ UID_PROC=$(awk '/^Uid:/{print $2}' /proc/$PID/status 2>/dev/null)
 [ "$UID_PROC" != "0" ]; ck "process uid is non-zero ($UID_PROC)" $?
 
 echo "== binding =="
-ss -tlnp 2>/dev/null | grep -q "127.0.0.1:$PORT"; ck "listening on 127.0.0.1:$PORT" $?
-ss -tlnp 2>/dev/null | grep -qE "0\.0\.0\.0:$PORT|\*:$PORT"; \
-  [ $? -ne 0 ]; ck "NOT listening on 0.0.0.0:$PORT" $?
-curl -fsS -m 5 "http://127.0.0.1:$PORT/" -o /dev/null 2>/dev/null; ck "answers on loopback" $?
-curl -fsS -m 4 "http://$PUBIP:$PORT/" -o /dev/null 2>/dev/null; \
-  [ $? -ne 0 ]; ck "refuses the public IP $PUBIP:$PORT" $?
+# The bind address is a deployment choice (loopback behind a tunnel, or public
+# behind the token gate), so assert against what this install declares instead
+# of a hardcoded assumption.
+NP_HOST=$(sed -n 's/^NP_HOST=//p' /opt/nuc-sub/.webpanel-env 2>/dev/null | tr -d '"')
+[ -n "$NP_HOST" ] || NP_HOST=127.0.0.1
+curl -fsS -m 5 "http://127.0.0.1:$PORT/" -o /dev/null 2>/dev/null; ck "answers on loopback (NP_HOST=$NP_HOST)" $?
+if [ "$NP_HOST" = "0.0.0.0" ]; then
+  curl -fsS -m 4 "http://$PUBIP:$PORT/" -o /dev/null 2>/dev/null; ck "public bind: answers on $PUBIP:$PORT" $?
+else
+  curl -fsS -m 4 "http://$PUBIP:$PORT/" -o /dev/null 2>/dev/null; \
+    [ $? -ne 0 ]; ck "loopback bind: refuses the public IP $PUBIP:$PORT" $?
+  ss -tlnp 2>/dev/null | grep -qE "0\.0\.0\.0:$PORT|\*:$PORT"; \
+    [ $? -ne 0 ]; ck "NOT listening on 0.0.0.0:$PORT" $?
+fi
 
 echo "== security headers (live) =="
 H=$(curl -sI -m 5 "http://127.0.0.1:$PORT/" 2>/dev/null)
@@ -49,10 +57,30 @@ sudo -u nucsub-web sudo -n /opt/nuc-sub/cli/nucsub reset --force >/dev/null 2>&1
 sudo -u nucsub-web test -w /opt/nuc-sub/webpanel/server.py; [ $? -ne 0 ]; ck "cannot write its own code" $?
 sudo -u nucsub-web test -r /opt/nuc-sub/.webpanel-token; ck "can read the admin token" $?
 stat -c '%U' /opt/nuc-sub/.webpanel-token | grep -q '^root$'; ck "token stays root-owned" $?
+sudo -u nucsub-web test -w /opt/nuc-sub/config.json; ck "can write config.json (saves work)" $?
+sudo -u nucsub-web test -w /opt/nuc-sub; [ $? -ne 0 ]; ck "install tree stays read-only" $?
+
+echo "== settings save =="
+# The reported bug: every save came back as an internal storage error because
+# the panel could not write the install dir. Save the current settings straight
+# back -- idempotent, and it exercises that exact write path.
+TOKEN=$(cat /opt/nuc-sub/.webpanel-token 2>/dev/null)
+G=$(curl -s -m 5 -H "Authorization: Bearer $TOKEN" "http://127.0.0.1:$PORT/api/settings")
+echo "$G" | grep -q '"settings"'; ck "authenticated GET /api/settings" $?
+BODY=$(echo "$G" | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin).get("settings", {})))' 2>/dev/null)
+[ -n "$BODY" ]; ck "settings payload is readable" $?
+CODE=$(curl -s -o /tmp/t21-save.json -w '%{http_code}' -m 15 -X POST \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  --data "$BODY" "http://127.0.0.1:$PORT/api/settings")
+[ "$CODE" = "200" ]; ck "settings save returns 200 (got ${CODE:-none})" $?
+grep -q '"ok": *true' /tmp/t21-save.json; ck "save reports ok" $?
+journalctl -u xui-sub-panel --since '-3 min' --no-pager 2>/dev/null \
+  | grep -q 'settings POST save failed'; [ $? -ne 0 ]; ck "no save failure in the journal" $?
 
 echo "== persistence =="
 [ -f /opt/nuc-sub/.webpanel-env ]; ck "env file exists (not in tmpfs)" $?
-grep -q 'NP_HOST=127.0.0.1' /opt/nuc-sub/.webpanel-env; ck "NP_HOST=127.0.0.1 persisted" $?
+grep -qE '^NP_HOST=(127\.0\.0\.1|0\.0\.0\.0)$' /opt/nuc-sub/.webpanel-env; ck "NP_HOST persisted and sane ($NP_HOST)" $?
+systemctl cat xui-sub-panel 2>/dev/null | grep -q 'EnvironmentFile=-/opt/nuc-sub/.webpanel-env'; ck "unit still reads the env file" $?
 
 echo "== leftovers =="
 ls /root/up_server.py /root/up_index.html >/dev/null 2>&1 && { printf '  \033[33mnote\033[0m staging files still in /root\n'; }

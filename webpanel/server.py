@@ -49,8 +49,8 @@ LOG = logging.getLogger("nuc-sub-webpanel")
 # ---------------------------------------------------------------------------
 SAFE_SETTINGS_KEYS = {"telegram_channel", "brand_name", "brand_logo"}
 BRAND_NAME_MAX = 30
-MAX_LOGO_BYTES = 1_048_576            # 1 MiB of decoded image payload
-MAX_POST_BODY = 2_400_000             # room for base64(1 MiB) + other fields
+MAX_LOGO_BYTES = 4_194_304            # 4 MiB of decoded image payload
+MAX_POST_BODY = 6_000_000             # room for base64(4 MiB) + other fields
 TELEGRAM_RE = re.compile(r"^https://t\.me/[A-Za-z0-9_]{5,}$")
 # brand name is injected into a single-quoted JS string in themes, and rendered
 # via textContent — so no quotes/backslashes/control characters are allowed.
@@ -78,19 +78,50 @@ def load_settings():
         SETTINGS = {}
 
 def save_settings():
+    """Persist SETTINGS to config.json.
+
+    The atomic tmp+replace write is the happy path, but the panel runs
+    unprivileged (nucsub-web) while the install directory belongs to root and
+    is deliberately not writable -- otherwise the panel could rewrite the CLI
+    it escalates with. Creating config.json.tmp in there raises EACCES even
+    though the panel owns config.json itself, and that used to fail *every*
+    settings save with "internal storage error". So: serialise first, try the
+    atomic write, and fall back to rewriting the file in place when the
+    directory will not take a new file. chmod is best-effort for the same
+    reason -- the CLI, running as root, may own the file.
+    """
     path = _settings_path()
     if not path:
         return
+    # Serialise before touching the file: a failure here must never truncate
+    # the existing settings.
+    payload = json.dumps(SETTINGS, indent=2, ensure_ascii=False)
     d = os.path.dirname(path)
     if d and not os.path.isdir(d):
-        os.makedirs(d, mode=0o700, exist_ok=True)
+        try:
+            os.makedirs(d, mode=0o700, exist_ok=True)
+        except OSError:
+            pass  # nothing we are allowed to create; the write says why
     tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(SETTINGS, f, indent=2, ensure_ascii=False)
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, path)
-    os.chmod(path, 0o600)
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(payload)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(payload)
+            f.flush()
+            os.fsync(f.fileno())
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass  # not the owner (the CLI writes it as root); mode stays restrictive
 
 # ---------------------------------------------------------------------------
 # Validation helpers
@@ -157,33 +188,44 @@ def svg_danger_reason(raw):
     return ""
 
 def validate_logo_data_url(value):
-    """Validate a data:image/...;base64,... logo URL. Returns (ok, err_index, raw_len)."""
+    """Validate a data:image/...;base64,... logo URL.
+
+    Returns (ok, err, raw_len, data_url). On success data_url is the payload
+    re-declared from its own magic bytes: the client's label is only
+    file.type, which the OS guesses and routinely gets wrong (a .jpg that is
+    really a PNG, a download with no type at all), so trusting it rejected
+    perfectly good files as "not a real image". The bytes decide the type;
+    the client only has to claim *some* image.
+    """
     if not value:
-        return True, "", 0
+        return True, "", 0, ""
     if not value.startswith("data:image/"):
-        return False, "invalid", len(value)
+        return False, "invalid", len(value), ""
     m = re.match(r"^data:(image/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=\r\n]+)$", value)
     if not m:
-        return False, "invalid", len(value)
-    declared, b64part = m.group(1), m.group(2)
+        return False, "invalid", len(value), ""
+    # Wrapped base64 is legal MIME text; validate=True would reject the line
+    # breaks, so drop them before decoding.
+    b64 = re.sub(r"[\r\n]+", "", m.group(2))
     try:
-        raw = base64.b64decode(b64part, validate=True)
+        raw = base64.b64decode(b64, validate=True)
     except Exception:  # noqa: BLE001
-        return False, "invalid", len(value)
+        return False, "invalid", len(value), ""
     if not raw:
-        return False, "invalid", 0
+        return False, "invalid", 0, ""
     if len(raw) > MAX_LOGO_BYTES:
-        return False, "too_large", len(raw)
+        return False, "too_large", len(raw), ""
     real = sniff_image_bytes(raw)
     if not real:
-        return False, "not_image", len(raw)
-    if declared not in ALLOWED_IMAGE_MIMES or declared != real:
-        return False, "mime_mismatch", len(raw)
+        return False, "not_image", len(raw), ""
+    if real not in ALLOWED_IMAGE_MIMES:
+        return False, "mime_mismatch", len(raw), ""
     if real == "image/svg+xml":
         reason = svg_danger_reason(raw)
         if reason:
-            return False, "svg_unsafe", len(raw)
-    return True, "", len(raw)
+            return False, "svg_unsafe", len(raw), ""
+    canon = base64.b64encode(raw).decode("ascii")
+    return True, "", len(raw), "data:%s;base64,%s" % (real, canon)
 
 def is_valid_url(url):
     """Basic URL validation for telegram channel."""
@@ -356,6 +398,26 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _discard_body(self, nbytes):
+        """Consume an unread request body so the client can receive our reply.
+
+        Closing a socket with bytes still queued in the receive buffer sends a
+        RST, which drops the response we just wrote -- the sender never learns
+        it was too big. Bounded so a forged Content-Length cannot make the
+        panel read without end; past the bound we answer and close instead.
+        """
+        left = min(nbytes, MAX_POST_BODY * 2)
+        while left > 0:
+            try:
+                chunk = self.rfile.read(min(left, 65536))
+            except OSError:
+                break
+            if not chunk:
+                break
+            left -= len(chunk)
+        if left > 0:
+            self.close_connection = True
+
     def _send_file(self, rel):
         base = os.path.realpath(ARGS.base)
         full = os.path.realpath(os.path.join(base, rel.lstrip("/")))
@@ -452,15 +514,25 @@ class Handler(BaseHTTPRequestHandler):
         # server never answers, so this alone blocks the "simple request"
         # CSRF class even for a browser holding the token cookie.
         ctype = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
-        if ctype != "application/json":
-            self._send_json({"error": "content_type_must_be_application_json"}, 415)
-            return
         try:
             content_len = int(self.headers.get("Content-Length", 0) or 0)
         except (TypeError, ValueError):
+            content_len = -1
+        if ctype != "application/json":
+            if content_len > 0:
+                self._discard_body(content_len)
+            self._send_json({"error": "content_type_must_be_application_json"}, 415)
+            return
+        if content_len < 0:
+            self.close_connection = True
             self._send_json({"error": "bad_content_length"}, 400)
             return
         if content_len > MAX_POST_BODY:
+            # Consume first, answer second: a client that is still sending when
+            # the response goes out gets its connection reset and never sees
+            # the 413 -- which is what made an oversized logo look like a dead
+            # connection instead of the size error it is.
+            self._discard_body(content_len)
             _log("settings POST rejected: payload %dB > %dB", content_len, MAX_POST_BODY)
             self._send_json({"error": "payload_too_large"}, 413)
             return
@@ -527,13 +599,14 @@ class Handler(BaseHTTPRequestHandler):
                         SETTINGS[k] = ""
                         updated[k] = ""
                     continue
-                ok, err, rawlen = validate_logo_data_url(v)
+                ok, err, rawlen, normalized = validate_logo_data_url(v)
                 if not ok:
                     _log("settings POST rejected brand_logo (%s): %d bytes", err, rawlen)
                     self._send_json({"error": "brand_logo_" + err}, 400)
                     return
-                SETTINGS[k] = v
-                updated[k] = v
+                # Store the re-declared data URL, not what the browser sent.
+                SETTINGS[k] = normalized
+                updated[k] = normalized
 
         try:
             save_settings()

@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.3.6}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.7}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -66,7 +66,7 @@ LOGOS_DIR="$BRAND_DIR/logos"
 # this exact: a recycled pid has a different starttime, so an entry left behind
 # by a killed session can never be mistaken for a live one.
 MENU_SESSION_DIR="${NUC_SUB_MENU_SESSION_DIR:-/run/nucsub/menu-sessions}"
-NUC_SUB_VERSION="2.3.6"
+NUC_SUB_VERSION="2.3.7"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1915,8 +1915,8 @@ logo_verify() {  # logo_verify <file>
     [[ -r "$f" ]] || { fail "File is not readable: $f"; return 1; }
     size="$(stat -c%s "$f" 2>/dev/null || wc -c < "$f")"
     if [[ "$size" -eq 0 ]]; then fail "File is empty: $f"; return 1; fi
-    if [[ "$size" -gt 1048576 ]]; then
-        fail "Logo is ${size} bytes — larger than the 1 MiB limit. Resize it and try again."
+    if [[ "$size" -gt 4194304 ]]; then
+        fail "Logo is ${size} bytes — larger than the 4 MiB limit. Resize it and try again."
         return 1
     fi
     real="$(logo_sniff "$f")"
@@ -2006,17 +2006,20 @@ cmd_brand() {
             val="${2:-}"
             [[ -n "$val" ]] || fail "No logo data URL provided."
             [[ "$val" == data:image/* ]] || fail "Logo must be a data:image URL."
-            [[ "${#val}" -le 1050000 ]] || fail "Logo too large (max ~1 MiB)."
-            # Same content rules as logo_verify()/the web panel: real type is
-            # sniffed, the declared MIME must match, and SVGs must be inert.
-            local verdict
+            [[ "${#val}" -le 5600000 ]] || fail "Logo too large (max 4 MiB)."
+            # Same content rules as logo_verify() and the web panel: the real
+            # type is sniffed from the bytes and SVGs must be inert. The
+            # declared MIME is not trusted and not required to match -- the
+            # panel stores the re-declared type, and a label from the OS is
+            # routinely wrong -- so the stored value is normalised here too.
+            local verdict real b64
             verdict="$(printf '%s' "$val" | python3 -c '
 import base64, re, sys
 v = sys.stdin.read().strip()
 m = re.match(r"^data:(image/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$", v)
 if not m:
     print("invalid"); raise SystemExit
-declared, b64 = m.group(1), m.group(2)
+b64 = m.group(2)
 try:
     raw = base64.b64decode(b64, validate=True)
 except Exception:
@@ -2035,8 +2038,6 @@ else:
     real = ""
 if not real:
     print("not_image"); raise SystemExit
-if real != declared:
-    print("mime_mismatch"); raise SystemExit
 if real == "image/svg+xml":
     t = raw.decode("utf-8", "replace")
     t = re.sub(r"<!--.*?-->", " ", t, flags=re.DOTALL)
@@ -2052,19 +2053,20 @@ if real == "image/svg+xml":
     ]:
         if re.search(pat, t, re.IGNORECASE):
             print("svg_unsafe:" + label); raise SystemExit
-print("ok")
+print("ok:" + real)
 ' 2>/dev/null)" || verdict="invalid"
             case "$verdict" in
-                ok) : ;;
+                ok:*) real="${verdict#ok:}"
+                      b64="${val#*base64,}"
+                      config_set brand_logo "data:${real};base64,${b64}"
+                      ok "Brand logo set."
+                      reapply_active
+                      ;;
                 invalid) fail "Logo data is not a valid image data URL (refused)." ;;
                 not_image) fail "Logo data is not a real PNG/JPEG/GIF/WebP/SVG image (refused)." ;;
-                mime_mismatch) fail "Declared image type does not match the actual data (refused)." ;;
                 svg_unsafe:*) fail "SVG rejected: it contains a ${verdict#svg_unsafe:}. Only plain, self-contained artwork is allowed." ;;
                 *) fail "Logo data could not be validated (refused)." ;;
             esac
-            config_set brand_logo "$val"
-            ok "Brand logo set."
-            reapply_active
             ;;
         clear-logo|remove-logo)
             require_root

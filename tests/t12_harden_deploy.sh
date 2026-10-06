@@ -136,7 +136,17 @@ say "3/6  fixing file ownership"
 # user gets group-read. config.json and .webport are written by the panel.
 chown "root:$WEB_USER" "$INSTALL_DIR/.webpanel-token" || die "chown token failed"
 chmod 640 "$INSTALL_DIR/.webpanel-token"                    || die "chmod token failed"
-chown "$WEB_USER:$WEB_USER" "$INSTALL_DIR/config.json"      || true
+# config.json must exist and be panel-owned BEFORE the first save: the install
+# directory stays root-owned (step below), so the panel can never create a new
+# file in it -- a missing config.json means every "save settings" fails with
+# EACCES and the panel reports an internal storage error.
+CFG="$INSTALL_DIR/config.json"
+if [ ! -f "$CFG" ]; then
+    printf '{}\n' > "$CFG" || die "cannot create $CFG"
+    ok "created $CFG (empty settings)"
+fi
+chown "$WEB_USER:$WEB_USER" "$CFG" || die "chown config.json failed"
+chmod 600 "$CFG"                    || die "chmod config.json failed"
 touch "$INSTALL_DIR/.webport"
 chown "$WEB_USER:$WEB_USER" "$INSTALL_DIR/.webport"
 chmod 644 "$INSTALL_DIR/.webport"
@@ -147,7 +157,7 @@ chmod o+x "$INSTALL_DIR" 2>/dev/null || true
 chown -R "root:$WEB_USER" "$INSTALL_DIR/webpanel"
 chmod -R "g+rX,o-rwx" "$INSTALL_DIR/webpanel"
 ok "ownership set"
-stat -c '     %a %U:%G %n' "$INSTALL_DIR/config.json" \
+stat -c '     %a %U:%G %n' "$CFG" \
     "$INSTALL_DIR/.webpanel-token" "$INSTALL_DIR/.webport"
 
 say "4/6  installing the least-privilege sudoers policy"
@@ -241,6 +251,19 @@ if ! sudo -u "$WEB_USER" sudo -n "$INSTALL_DIR/cli/nucsub" status >/dev/null 2>&
     die "sudoers escalation does not work -- theme actions would fail"
 fi
 ok "sudoers escalation works"
+
+# Saving settings must actually work, or the panel reports an internal storage
+# error on every save. The install dir is deliberately root-owned (the panel
+# must not rewrite the CLI it escalates with), so config.json has to be
+# panel-owned and writable on its own.
+if ! sudo -u "$WEB_USER" test -w "$INSTALL_DIR/config.json"; then
+    die "$WEB_USER cannot write $INSTALL_DIR/config.json -- every settings save would fail"
+fi
+ok "panel can write its own settings file"
+if sudo -u "$WEB_USER" test -w "$INSTALL_DIR"; then
+    die "$WEB_USER can write the install tree -- privilege separation is gone"
+fi
+ok "install tree stays read-only for $WEB_USER"
 
 trap - ERR
 ROLLBACK_ARMED=0
