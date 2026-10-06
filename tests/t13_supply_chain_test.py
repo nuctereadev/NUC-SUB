@@ -608,7 +608,8 @@ def test_security_docs_match_reality() -> None:
     check("README does not claim the panel binds to all interfaces",
           "binds to all interfaces" not in readme)
     check("README documents the loopback + SSH tunnel access",
-          "127.0.0.1" in readme and "ssh -L" in readme)
+          "127.0.0.1" in readme
+          and re.search(r"-L \d+:127\.0\.0\.1:\d+", readme) is not None)
     check("README states the same-host checksum limit",
           "*not* an attacker who can rewrite both" in flat)
     check("README admits a same-host signature is not authentication",

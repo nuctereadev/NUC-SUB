@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.7}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.8}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -61,7 +61,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.7"
+NUC_SUB_VERSION="2.2.8"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1289,6 +1289,37 @@ web_panel_managed_here() {
     return 1
 }
 
+# The address the operator can actually ssh to, as `user@host`. Used to print a
+# copy-pasteable tunnel command: printing a literal `<this-server>` placeholder
+# just makes the operator stop and go find the address by hand, and it reads as
+# a broken URL.
+web_panel_ssh_target() {
+    local host="" cip cport sport
+    # SSH_CONNECTION is "client_ip client_port server_ip server_port"; the third
+    # field is the address they already reached us on, which is by definition
+    # routable from their machine.
+    if [[ -n "${SSH_CONNECTION:-}" ]]; then
+        read -r cip cport host sport <<<"$SSH_CONNECTION"
+    fi
+    if [[ -z "$host" || "$host" == "0.0.0.0" || "$host" == "::" ]]; then
+        # console access: ask the network, then fall back to the interfaces
+        host="$(curl -fsS -m 5 https://api.ipify.org 2>/dev/null || true)"
+        # a probe that answers with a loopback or unspecified address is not
+        # telling us anything useful; fall through instead of printing it
+        case "$host" in
+            "" | 127.* | 0.0.0.0 | ::1 | :: | localhost) host="" ;;
+        esac
+    fi
+    if [[ -z "$host" ]]; then
+        # `hostname -I` is one space-separated line; squeeze all whitespace so a
+        # stray leading space cannot hide an address from the filters
+        host="$(hostname -I 2>/dev/null | tr -s '[:space:]' '\n' \
+            | grep -vE '^(127\.|::1$|0\.0\.0\.0$)' | grep -v ':' | head -1 || true)"
+    fi
+    [[ -z "$host" ]] && host="$(hostname 2>/dev/null || echo localhost)"
+    printf '%s@%s' "${SUDO_USER:-${USER:-root}}" "$host"
+}
+
 # The host to print in the login URL. When the panel binds loopback (the
 # default) a public IP would be actively wrong, because nothing is listening
 # there -- the URL has to name the tunnel endpoint instead.
@@ -1500,11 +1531,20 @@ cmd_webpanel() {
                 fi
             fi
             echo ""
-            echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
-            if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" != "0.0.0.0" ]]; then
-                echo -e "  ${DIM}The panel listens on loopback only. From your machine run:${NC}"
-                echo -e "  ${BOLD}    ssh -L $port:127.0.0.1:$port <this-server>${NC}"
-                echo -e "  ${DIM}then open the URL above.${NC}"
+            if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" == "0.0.0.0" ]]; then
+                echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
+                echo -e "  ${DIM}The panel is bound to every interface, so this address is"
+                echo -e "  ${DIM}reachable from anywhere that can route to this server.${NC}"
+            else
+                local target; target="$(web_panel_ssh_target)"
+                echo -e "  ${CYAN}Login URL : ${BOLD}http://127.0.0.1:$port/${NC}"
+                echo -e "  ${DIM}The panel listens on loopback only, so that URL works on the"
+                echo -e "  ${DIM}server itself. To reach it from your own machine, tunnel it:${NC}"
+                echo ""
+                echo -e "  ${BOLD}  ssh -N -L $port:127.0.0.1:$port $target${NC}"
+                echo ""
+                echo -e "  ${DIM}Leave that running, then open${NC} ${BOLD}http://127.0.0.1:$port/${NC} ${DIM}in your browser.${NC}"
+                echo -e "  ${DIM}On Windows the same command works in PowerShell or Git Bash.${NC}"
             fi
             echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
             echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
