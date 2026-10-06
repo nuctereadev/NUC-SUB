@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.3/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.3/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.4/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.4/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -79,7 +79,7 @@ Three layers, each covering what the one above it cannot:
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| Pinned ref (`v2.2.3`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| Pinned ref (`v2.2.4`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
 | `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
 | minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
 
@@ -314,7 +314,7 @@ what the installer prints:
 #     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
-#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.3/MINISIGN_PUBKEY
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.4/MINISIGN_PUBKEY
 #     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
@@ -352,12 +352,12 @@ To publish a key:
 | Applying a theme fails with a fetch error   | The server cannot reach `raw.githubusercontent.com`; check outbound HTTPS. |
 | Web panel is not reachable                  | Start it with `nucsub webpanel start` and open the printed Firewall port. |
 | Subscription page shows the panel default   | Run `nucsub apply <name>` again; confirm the panel is running.            |
-| Subscription page returns HTTP 500 in the browser | Stale theme from before `v2.2.3`; the expire-days expression was broken. See below. |
+| Subscription page returns HTTP 500 in the browser | Stale theme from before `v2.2.4`; the expire-days expression was broken. See below. |
 | `sqlite3: not found`                     | The installer should install it; otherwise install the `sqlite3` package. |
 
 ### Blank subscription page on Pasarguard
 
-A theme applied before `v2.2.3` returns `500 Internal Server Error` for **every
+A theme applied before `v2.2.4` returns `500 Internal Server Error` for **every
 user whose account has an expiry date**, and renders fine for users without one.
 That asymmetry is why it can look intermittent. Re-apply the theme to pick up
 the fixed template:
