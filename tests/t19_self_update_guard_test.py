@@ -97,6 +97,13 @@ done
 with tempfile.TemporaryDirectory() as d:
     f = pathlib.Path(d) / "nucsub"
     f.write_text(BODY, "utf-8")
+    # the shipped self_restart_notice re-execs the script by path, so the script
+    # has to be executable. Without this the re-exec dies with EACCES (rc=126)
+    # and the test reports a broken guard on any platform that enforces the bit
+    try:
+        f.chmod(0o755)
+    except OSError:
+        pass
     try:
         r = subprocess.run([BASH, str(f)], capture_output=True, text=True,
                            timeout=45)
