@@ -49,16 +49,25 @@ FEATURE_SCRIPT = """<!-- nuc-bs -->
     tBtn.style.display='';
     var s=tBtn.querySelector('span');if(s&&!s.getAttribute('data-dyn'))s.textContent=lbl;
   }
-  var nameEl=document.querySelector('.brand-name,.subscription-brand,.brand-title,.site-name');
+  var mk=document.querySelector('.brand-mark,.brand-logo,.app-logo,.top-logo,.logo-img,.brand-icon,.logo,.mark');
+  var nameEl=document.querySelector('.brand-name,.subscription-brand,.brand-title,.site-name,.nuc-brand-name,.brandname,.logo-text,.brand-text h1,.brand-text strong');
   var nameOk=ok(N);
   if(nameEl&&nameOk)nameEl.textContent=N;
-  var mk=document.querySelector('.brand-mark,.brand-logo,.app-logo,.top-logo,.logo-img,.brand-icon');
-  if(mk&&ok(L)&&!mk.firstElementChild){
-    mk.innerHTML='';
+  if(nameEl&&nameOk){
+    var nb=nameEl.parentElement;
+    if(nb){for(var bi=0;bi<nb.children.length;bi++){var bs=nb.children[bi];if(bs===nameEl||bs===mk)continue;if(bs.className&&String(bs.className).search(/mark|logo|brand-icon/i)!==-1)continue;bs.style.display='none';}}
+  }
+  if(mk&&ok(L)){
+    var tgt=mk;
+    for(var ci=0;ci<mk.children.length;ci++){
+      var cc=mk.children[ci];
+      if(cc.className&&String(cc.className).search(/mark|icon|logo/i)!==-1&&String(cc.className).search(/text/i)===-1){tgt=cc;break;}
+    }
+    while(tgt.firstChild)tgt.removeChild(tgt.firstChild);
     var im=document.createElement('img');
     im.src=L;im.alt=nameOk?N:'logo';
     im.style.cssText='width:100%;height:100%;object-fit:contain;display:block';
-    mk.appendChild(im);
+    tgt.appendChild(im);
   }
   var needChip=(!mk&&ok(L))||(!nameEl&&nameOk);
   if(needChip){
