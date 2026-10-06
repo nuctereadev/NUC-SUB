@@ -117,48 +117,126 @@ with tempfile.TemporaryDirectory() as d:
             "after re-exec the menu still does not consider itself current "
             f"(output: {out.strip()[:120]!r})")
 
-# ---- 2. the session classifier ---------------------------------------------
-cls = grab("is_live_menu_session")
-if cls:
-    cases = [
-        ("/usr/bin/nucsub menu", True, "an open main menu"),
-        ("/usr/bin/env bash /usr/bin/nucsub menu", True,
-         "an open menu launched through the shebang"),
-        ("bash /opt/nuc-sub/cli/nucsub", True, "a bare interactive menu"),
-        ("bash /opt/nuc-sub/cli/nucsub menu", True, "an open menu via bash"),
-        ("/usr/bin/nucsub apply gold", False, "a one-shot apply"),
-        ("/usr/bin/nucsub webpanel start", False, "a one-shot webpanel start"),
-        ("", False, "an empty cmdline"),
-        ("vim /opt/nuc-sub/cli/nucsub", False, "an editor holding the file"),
-        ("grep -r nucsub /opt", False, "a grep that merely mentions it"),
-    ]
-    script = ("set -euo pipefail\n"
-              "is_live_menu_session() {\n" + cls + "}\n"
-              'for c in "$@"; do\n'
-              '  if is_live_menu_session "$c"; then echo "Y:$c"; else echo "N:$c"; fi\n'
-              "done\n")
+# ---- 2. the session registry, for real ---------------------------------------
+# The live-session check must be a fact, not a guess. It used to be a pgrep +
+# /proc/cmdline classifier, and that was wrong in both directions: it let an
+# update through while a menu was open, and it blocked updates when no menu was
+# open at all -- silently, with nothing but exit status 1. So the test below
+# runs the registry for real, against real pids, including a pid that is alive
+# but whose recorded starttime does not match, and an entry for a pid that does
+# not exist at all.
+#
+# This needs a working /proc/<pid>/stat. Git Bash emulates /proc for its own
+# processes only, so field 22 is not readable for an unrelated pid and every
+# negative case here would pass for the wrong reason. Rather than report a
+# green that means nothing, the section says it was skipped.
+FUNCS = {n: grab(n) for n in ("proc_starttime", "menu_session_register",
+                              "menu_session_unregister", "menu_live_session_pids")}
+REGISTERED = False
+if not all(FUNCS.values()):
+    failures.append(
+        "could not extract the session-registry functions from cli/nucsub")
+else:
+    probe = ("set -euo pipefail\n"
+             + "proc_starttime() {\n" + FUNCS["proc_starttime"] + "\n}\n"
+             + 'st="$(proc_starttime $PPID 2>/dev/null || true)"\n'
+             + '[[ "$st" =~ ^[0-9]+$ ]] && echo "USABLE:$st"\n')
+    with tempfile.TemporaryDirectory() as d0:
+        p0 = pathlib.Path(d0) / "probe.sh"
+        p0.write_text(probe, "utf-8")
+        r0 = subprocess.run([BASH, str(p0)], capture_output=True, text=True,
+                            timeout=45)
+    if "USABLE:" not in r0.stdout:
+        print("SKIP  session-registry checks: /proc/<other-pid>/stat is not "
+              "readable here, so the pid-reuse cases cannot be observed")
+        print("      (Git Bash exposes /proc for its own process only)")
+        REGISTERED = False
+    else:
+        REGISTERED = True
+
+if REGISTERED:
+    REG = ("set -euo pipefail\n"
+           "MENU_SESSION_DIR=\"$1\"\n"
+           "CYAN=''; DIM=''; NC=''\n"
+           "warn() { echo WARN; }\n"
+           + "".join(f"{n}() {{\n{b}\n}}\n" for n, b in FUNCS.items())
+           + 'echo "self: $$"\n'
+             'echo "registered: [$(menu_live_session_pids)]"\n')
     with tempfile.TemporaryDirectory() as d2:
-        p = pathlib.Path(d2) / "cls.sh"
-        p.write_text(script, "utf-8")
-        args = [c for c, _, _ in cases]
-        r = subprocess.run([BASH, str(p), *args], capture_output=True, text=True,
-                           timeout=45)
-    got = {}
-    for line in r.stdout.splitlines():
-        if len(line) >= 2 and line[1] == ":" and line[0] in "YN":
-            got[line[2:]] = line[0] == "Y"
-    for cmdline, want, why in cases:
-        if not got:
-            failures.append(
-                "the classifier script produced no output at all "
-                f"(stderr: {(r.stderr or '').strip()[:200]!r})")
-            break
-        if cmdline not in got:
-            failures.append(f"classifier never saw {cmdline!r}")
-        elif got[cmdline] != want:
-            failures.append(
-                f"classifier says {'menu' if got[cmdline] else 'not a menu'} for "
-                f"{why}: {cmdline!r}")
+        sleeper = pathlib.Path(d2) / "sleeper.sh"
+        sleeper.write_text("sleep 30\n", "utf-8")
+        holder = subprocess.Popen([BASH, str(sleeper)],
+                                  stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL)
+        sessions = pathlib.Path(d2) / "sessions"
+
+        def run(script: str) -> tuple[int, str, str]:
+            p = pathlib.Path(d2) / "reg.sh"
+            p.write_text(script, "utf-8")
+            r = subprocess.run([BASH, str(p), str(sessions)],
+                               capture_output=True, text=True, timeout=45)
+            return r.returncode, r.stdout, r.stderr
+
+        def field(out: str, name: str) -> str | None:
+            for line in out.splitlines():
+                if line.startswith(name + ":"):
+                    return line.split(":", 1)[1].strip()
+            return None
+
+        try:
+            # 2a. nothing registered -> no live sessions, update may proceed
+            rc, out, err = run(REG)
+            if field(out, "registered") != "[]":
+                failures.append(
+                    "an empty registry is not reported as empty: "
+                    f"{out.strip()[:160]!r} (stderr {err.strip()[:120]!r})")
+
+            # 2b. a real registration -> that exact pid comes back
+            rc, out, err = run(REG + "menu_session_register\n"
+                                     'echo "after: [$(menu_live_session_pids)]"\n')
+            me = field(out, "self")
+            if field(out, "after") != f"[{me}]":
+                failures.append(
+                    "a menu session that registered itself is not reported as "
+                    f"live: {out.strip()[:200]!r}")
+
+            # 2c. alive, but the recorded starttime is not this process's --
+            #     exactly the recycled-pid case, and exactly what the old
+            #     pgrep classifier could not tell apart
+            sessions.mkdir(parents=True, exist_ok=True)
+            (sessions / str(holder.pid)).write_text(
+                f"{holder.pid} 123456\n", "utf-8")
+            rc, out, err = run(REG)
+            if field(out, "registered") != "[]":
+                failures.append(
+                    "a registry entry whose starttime does not match was "
+                    f"accepted as a live menu: {out.strip()[:200]!r}")
+            if (sessions / str(holder.pid)).exists():
+                failures.append(
+                    "a stale registry entry is not cleaned up, so it can only "
+                    "accumulate")
+
+            # 2d. an entry for a pid that does not exist at all
+            (sessions / "999999").write_text("999999 424242\n", "utf-8")
+            rc, out, err = run(REG)
+            if field(out, "registered") != "[]":
+                failures.append(
+                    "a registry entry for a dead pid is reported as live: "
+                    f"{out.strip()[:200]!r}")
+            if (sessions / "999999").exists():
+                failures.append("an entry for a dead pid is not cleaned up")
+
+            # 2e. unregister really removes the entry
+            rc, out, err = run(REG + "menu_session_register\n"
+                                     "menu_session_unregister\n"
+                                     'echo "after: [$(menu_live_session_pids)]"\n')
+            if field(out, "after") != "[]":
+                failures.append(
+                    "menu_session_unregister does not remove the session: "
+                    f"{out.strip()[:200]!r}")
+        finally:
+            holder.kill()
+            holder.wait(timeout=20)
 
 # ---- 3. wiring --------------------------------------------------------------
 cu = grab("cmd_update")
@@ -171,10 +249,36 @@ for fn in ("cmd_menu", "web_panel_menu"):
     if "self_changed" not in grab(fn):
         failures.append(f"{fn} does not re-check whether the CLI was replaced")
 
+# a session that never registers itself cannot be protected by anything
+cm = grab("cmd_menu")
+if "menu_session_register" not in cm:
+    failures.append(
+        "cmd_menu never registers the session, so `nucsub update` cannot know "
+        "it is open")
+elif "menu_session_unregister" not in cm:
+    failures.append(
+        "cmd_menu registers a session but never unregisters it, so the "
+        "registry only ever grows")
+elif "EXIT" not in cm:
+    failures.append(
+        "cmd_menu unregisters without an EXIT trap, so quitting the menu with "
+        "q still leaves the session registered")
+elif cm.index("menu_session_register") > cm.index("self_changed"):
+    failures.append(
+        "cmd_menu registers its session only after the self-change check, so "
+        "the re-exec path re-registers as a new process (fine) but the very "
+        "first entry is not announced until later than it should be")
+
 if "self_changed" not in src.split("cmd_menu")[0]:
     failures.append("self_changed/self_restart_notice are not defined near the top")
 
-print("checked: menu re-exec guard (executed), session classifier (9 cmdlines), "
+for fn in ("proc_starttime", "menu_session_register", "menu_session_unregister",
+           "menu_live_session_pids"):
+    if f"{fn}() {{" not in src:
+        failures.append(f"{fn} is referenced but never defined")
+
+print("checked: menu re-exec guard (executed), session registry "
+      f"({'real pids' if REGISTERED else 'skipped, no /proc starttime here'}), "
       "update/menu wiring")
 if failures:
     print(f"\nFAIL: {len(failures)} problem(s)")

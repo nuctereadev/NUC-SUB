@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.3.1}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.2}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -61,7 +61,12 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.3.1"
+# Registry of the menu sessions that are open right now. One file per session,
+# holding "pid starttime". Starttime (field 22 of /proc/pid/stat) is what makes
+# this exact: a recycled pid has a different starttime, so an entry left behind
+# by a killed session can never be mistaken for a live one.
+MENU_SESSION_DIR="${NUC_SUB_MENU_SESSION_DIR:-/run/nucsub/menu-sessions}"
+NUC_SUB_VERSION="2.3.2"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -3098,30 +3103,57 @@ update_verify_installed() {  # <expected-commit>
     return 0
 }
 
-is_live_menu_session() {  # is_live_menu_session <cmdline> — true for an open menu
-    local cmd="${1:-}"
-    [[ -z "$cmd" ]] && return 1
-    # Must actually be a shell running us, not something that merely mentions the
-    # path (an editor, a grep, a pager). `#!/usr/bin/env bash` means argv is
-    # [env, bash, <script>, ...], so accept the interpreter too.
-    local -a w
-    read -r -a w <<<"$cmd"
-    local base="${w[0]##*/}"
-    case "$base" in
-        bash | sh | dash | env | nucsub) ;;
-        *) return 1 ;;
-    esac
-    # last word ending in `nucsub` is the script path
-    local i last=-1
-    for ((i = 0; i < ${#w[@]}; i++)); do
-        [[ "${w[i]##*/}" == nucsub ]] && last=$i
+proc_starttime() {  # proc_starttime <pid> — the kernel's start time for that pid
+    # Field 22 of /proc/pid/stat. The second field is the executable name in
+    # parentheses and may itself contain spaces and parentheses, so cut the
+    # line at the last ')' before counting fields.
+    local stat rest
+    stat="$(cat "/proc/$1/stat" 2>/dev/null)" || return 1
+    rest="${stat##*') '}"
+    [[ "$rest" == "$stat" ]] && return 1
+    # shellcheck disable=SC2086
+    set -- $rest
+    [[ -n "${20:-}" ]] || return 1
+    printf '%s' "${20}"
+}
+
+menu_session_register() {  # called by every interactive session, on entry
+    local st
+    mkdir -p "$MENU_SESSION_DIR" 2>/dev/null || return 0
+    st="$(proc_starttime $$ 2>/dev/null)" || return 0
+    printf '%s %s\n' "$$" "$st" >"$MENU_SESSION_DIR/$$" 2>/dev/null || true
+    return 0
+}
+
+menu_session_unregister() {
+    rm -f "$MENU_SESSION_DIR/$$" 2>/dev/null || true
+    return 0
+}
+
+menu_live_session_pids() {  # pids of menu sessions that are open right now
+    # Deliberately NOT a pgrep/cmdline guess. Guessing from /proc was wrong in
+    # both directions: it let an update through while a menu was open, and it
+    # blocked updates when nothing was open, killing them with a bare exit code
+    # and no message. A session that registered itself and is still the same
+    # process is a fact, not a guess.
+    local f pid recorded now pids=""
+    [[ -d "$MENU_SESSION_DIR" ]] || return 0
+    for f in "$MENU_SESSION_DIR"/*; do
+        [[ -f "$f" ]] || continue
+        read -r pid recorded <"$f" 2>/dev/null || { rm -f "$f" 2>/dev/null || true; continue; }
+        if [[ ! "$pid" =~ ^[0-9]{1,10}$ || ! "$recorded" =~ ^[0-9]+$ ]]; then
+            rm -f "$f" 2>/dev/null || true
+            continue
+        fi
+        now="$(proc_starttime "$pid" 2>/dev/null)" || { rm -f "$f" 2>/dev/null || true; continue; }
+        if [[ -z "$now" || "$now" != "$recorded" ]]; then
+            # dead, or the pid was recycled by an unrelated process
+            rm -f "$f" 2>/dev/null || true
+            continue
+        fi
+        pids+=" $pid"
     done
-    (( last < 0 )) && return 1
-    local after="${w[*]:last+1}"
-    # a bare `nucsub` and an explicit `nucsub menu` are interactive sessions;
-    # anything else is a one-shot command that finishes on its own
-    [[ -z "$after" || "$after" == "menu" ]] && return 0
-    return 1
+    printf '%s' "${pids# }"
 }
 
 update_warn_live_sessions() {
@@ -3132,13 +3164,8 @@ update_warn_live_sessions() {
     # fails on lines that no longer say what they used to say -- which is how a
     # fixed bug kept reporting itself as "line 1331: SETTINGS_FILE: unbound
     # variable" long after line 1331 stopped referencing it.
-    local pids="" pid cmd
-    for pid in $(pgrep -f nucsub 2>/dev/null || true); do
-        [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
-        cmd="$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)"
-        is_live_menu_session "$cmd" || continue
-        pids+=" $pid"
-    done
+    local pids
+    pids="$(menu_live_session_pids)"
     [[ -z "$pids" ]] && return 0
     warn "Another nucsub menu is still running (pid:$pids)."
     echo -e "  ${DIM}Updating now would leave that session reading a mix of the old${NC}"
@@ -3342,6 +3369,10 @@ cmd_uninstall() {
 # ----------------------------------------------------------- Interactive Menu ---
 cmd_menu() {
     [[ "$PANEL" == "3xui" ]] && find_sqlite
+    # Announce this session so `nucsub update` refuses to run underneath it.
+    # Registered once, on entry, and removed on exit however the session ends.
+    menu_session_register
+    trap 'menu_session_unregister' EXIT
     while true; do
         # an update under our feet leaves this shell reading a new file at old
         # byte offsets; bail out to a fresh process before it executes nonsense
