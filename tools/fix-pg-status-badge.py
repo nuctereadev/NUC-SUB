@@ -2,7 +2,7 @@
 """
 Stop the status badge from being force-green, and stop it losing its translation.
 
-The injected Pasarguard bridge ends with this block in all 33 themes:
+The injected Pasarguard bridge ends with this block in every theme:
 
     var badge=document.querySelector('[data-i18n="st_active"]');
     if(badge){
@@ -37,16 +37,45 @@ The replacement:
   * only colours genuinely exceptional states, and does it with a class plus a
     CSS custom property so the theme still controls the shape.
 
-Writes bytes with newline="\\n" on purpose: these files are manifest-hashed and
-git-committed, and CRLF in the checkout makes the release fail its own
-MANIFEST.sha256 (see tools/fix-pg-expire-templates.py).
+WHY THIS TOUCHES TWO TREES
+
+The Pasarguard themes exist twice in this repo:
+
+    pasarguard-themes/subscription/   the 33 themes that ship in MANIFEST.sha256
+    demo/site/pg/                     the 33 themes served by the demo site
+
+They are separate committed copies, not generated from each other, and an
+earlier revision of this fix only rewrote the first one. The bug therefore
+survived on the demo site, which is where it was actually reported from. Both
+trees are rewritten here, and tests/t17_status_badge_test.py scans the whole
+repo so a third copy cannot hide the same bug again.
+
+The 3x-ui trees (build/xui-33/, demo/site/xui/) carry no injected bridge and
+are left untouched.
+
+Matching is newline-agnostic and output is written with LF.
+
+Two reasons, both learned the hard way here:
+
+  * pasarguard-themes is manifest-hashed and git-committed, so CRLF in the
+    checkout makes the release fail its own MANIFEST.sha256 -- that is what
+    broke v2.2.2 (see tools/fix-pg-expire-templates.py).
+
+  * demo/site/pg arrives from a Windows checkout as CRLF, because
+    core.autocrlf=true and the fixer had never rewritten those files. An
+    LF-only search pattern therefore matched zero blocks in the demo tree while
+    the tool cheerfully reported "0 rewritten" and the bug survived. So the
+    text is normalised to LF before matching, and CRLF is rejected afterwards
+    instead of being assumed absent.
 """
 import pathlib
-import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-THEMES = ROOT / "pasarguard-themes" / "subscription"
+TREES = (
+    ROOT / "pasarguard-themes" / "subscription",
+    ROOT / "demo" / "site" / "pg",
+)
 
 OLD = (
     "  var badge=document.querySelector('[data-i18n=\"st_active\"]');\n"
@@ -65,7 +94,7 @@ NEW = (
     "    // Only translate away from the state the theme was designed for. `active`\n"
     "    // keeps its own data-i18n string and its own styling, so a green pill is\n"
     "    // no longer pasted onto themes that have no green in them.\n"
-    # Persian labels, written as literal UTF-8 (not \\xNN escapes: this is a
+    # Persian labels, written as literal UTF-8 (not \xNN escapes: this is a
     # <script> body, not a JS string literal in an HTML attribute, so escapes
     # would survive into the page as visible garbage).
     "    var nucFa={active:'فعال',on_hold:'نگهداری',limited:'محدود',expired:'منقضی',disabled:'غیرفعال'};\n"
@@ -81,44 +110,54 @@ NEW = (
     "  }\n"
 )
 
+# Patterns that must not survive anywhere in the repository.
+FORBIDDEN = (
+    "var c=map[status]||'#16a34a'",
+    "background=c;badge.style.borderColor=c",
+    "badge.textContent=status;",
+    "map={active:'#16a34a'",
+)
+
 
 def main() -> int:
-    hits = 0
-    touched: list[str] = []
-    for p in sorted(THEMES.glob("*.html")):
-        raw = p.read_bytes()
-        txt = raw.decode("utf-8")
-        if OLD not in txt:
-            continue
-        n = txt.count(OLD)
-        out = txt.replace(OLD, NEW)
-        # normalise to LF so the manifest matches what git stores
-        lf = out.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
-        p.write_bytes(lf)
-        hits += n
-        touched.append(p.name)
+    total = 0
+    for tree in TREES:
+        hits = 0
+        n_themes = 0
+        for p in sorted(tree.glob("*.html")):
+            n_themes += 1
+            # normalise first: a Windows checkout hands us CRLF, and an
+            # LF-only pattern would silently match nothing
+            txt = p.read_bytes().decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+            if OLD not in txt:
+                continue
+            hits += txt.count(OLD)
+            p.write_bytes(txt.replace(OLD, NEW).encode("utf-8"))
+        rel = tree.relative_to(ROOT)
+        print(f"  {rel}: {hits} block(s) rewritten across {n_themes} theme(s)")
+        total += hits
 
-    print(f"rewrote {hits} status-badge block(s) across {len(touched)} theme(s)")
+    print(f"total: {total} block(s) rewritten")
 
-    # verify
+    # verify repo-wide, not just in the two trees we know about
     problems = []
-    for p in sorted(THEMES.glob("*.html")):
-        s = p.read_bytes().decode("utf-8")
-        if "background=c;badge.style.borderColor=c" in s:
-            problems.append(f"{p.name}: still force-colours the badge inline")
-        if "badge.textContent=status;" in s:
-            problems.append(f"{p.name}: still overwrites the badge with the raw enum")
-        if "var c=map[status]||'#16a34a'" in s:
-            problems.append(f"{p.name}: still defaults the badge to #16a34a")
-        if b"\r\n" in p.read_bytes():
-            problems.append(f"{p.name}: CRLF crept back in")
+    for p in ROOT.rglob("*.html"):
+        if ".git" in p.parts:
+            continue
+        try:
+            s = p.read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        for bad in FORBIDDEN:
+            if bad in s:
+                problems.append(f"{p.relative_to(ROOT)}: still contains {bad!r}")
 
     if problems:
         print("ERROR:")
-        for x in problems:
+        for x in sorted(set(problems)):
             print("  -", x)
         return 1
-    print("verified: no inline green, enum text preserved for `active`, LF endings")
+    print("verified: the force-green status badge is gone from every .html in the repo")
     return 0
 
 
