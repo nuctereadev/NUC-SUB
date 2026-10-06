@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.3.2}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.3}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -3178,7 +3178,14 @@ cmd_update() {
     title "Update NUC-SUB"; sep
     local force=0
     [[ "${1:-}" == "-f" || "${1:-}" == "--force" ]] && force=1
-    update_warn_live_sessions && return 1
+    # Stated as an if rather than `guard && return 1`: with the && form this
+    # function aborted with a bare exit status 1 and no output on the server,
+    # on runs where the guard itself had just reported an empty session list
+    # (bash -x showed it returning 0 and cmd_update returning 1 immediately
+    # after). Whatever the interaction was, it is not worth carrying: the
+    # condition is the same, and `if` cannot be read as anything but
+    # "abort when the guard says no".
+    if update_warn_live_sessions; then :; else return 1; fi
     update_preflight || return 1
 
     info "Checking for updates..."

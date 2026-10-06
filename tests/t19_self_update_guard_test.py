@@ -244,6 +244,14 @@ if "update_warn_live_sessions" not in cu:
     failures.append("cmd_update never checks for a live menu session")
 elif cu.index("update_warn_live_sessions") > cu.index("update_preflight"):
     failures.append("cmd_update checks for live sessions after its preflight")
+elif "&& return 1" in cu.split("update_warn_live_sessions")[1].split("\n")[0]:
+    # `guard && return 1` aborted the update on the server with a bare exit
+    # status 1 and no message, on runs where the guard had reported no live
+    # session. The condition may be written any number of ways; this one is not
+    # one of them.
+    failures.append(
+        "cmd_update aborts with the short-circuit && form, which is the form "
+        "that failed silently on the server")
 
 for fn in ("cmd_menu", "web_panel_menu"):
     if "self_changed" not in grab(fn):
