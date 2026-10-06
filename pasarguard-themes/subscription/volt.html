@@ -814,11 +814,11 @@ html[dir="ltr"] .info-banner {
         <div class="gauge-stat-label" data-i18n="statUsed">مصرف</div>
       </div>
       <div class="gauge-stat">
-        <div class="gauge-stat-value" id="totalDisplay">{% if user.data_limit %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
+        <div class="gauge-stat-value" id="totalDisplay">{% if user.data_limit > 0 %}{{ user.data_limit | bytesformat }}{% else %}∞{% endif %}</div>
         <div class="gauge-stat-label" data-i18n="statTotal">کل</div>
       </div>
       <div class="gauge-stat">
-        <div class="gauge-stat-value" id="remainDisplay">{% if user.data_limit %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{% if user.data_limit %}{{ (user.data_limit - user.used_traffic) | bytesformat }}{% else %}∞{% endif %}{% endif %}{% else %}∞{% endif %}</div>
+        <div class="gauge-stat-value" id="remainDisplay">{% if user.data_limit > 0 %}{% set remaining = user.data_limit - user.used_traffic %}{% if remaining < 0 %}0 B{% else %}{{ remaining | bytesformat }}{% endif %}{% else %}∞{% endif %}</div>
         <div class="gauge-stat-label" data-i18n="statRemain">باقی</div>
       </div>
     </div>
@@ -958,7 +958,7 @@ html[dir="ltr"] .info-banner {
 <script>
 var D = {
   expire: {% if user.expire %}{{ user.expire | datetime | tojson }}{% else %}null{% endif %},
-  total: {% if user.data_limit %}{{ user.data_limit }}{% else %}0{% endif %},
+  total: {% if user.data_limit > 0 %}{{ user.data_limit }}{% else %}0{% endif %},
   used: {% if user.used_traffic %}{{ user.used_traffic }}{% else %}0{% endif %},
   up: null, down: null
 };
@@ -1102,7 +1102,7 @@ function applyI18n(l){
   var per = 0;
   
   if(total > 0){
-    per = Math.min(100, (used / total) * 100);
+    per = Math.max(0, Math.min(100, (used / total) * 100));
     var gaugeFill = findEl('gaugeFill');
     var gaugePercent = findEl('gaugePercent');
     if(gaugeFill && gaugePercent) {

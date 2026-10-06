@@ -1111,7 +1111,7 @@ function applyI18n(l){
   var per = 0;
   
   if(total > 0){
-    per = Math.min(100, (used / total) * 100);
+    per = Math.max(0, Math.min(100, (used / total) * 100));
     var gaugeFill = findEl('gaugeFill');
     var gaugePercent = findEl('gaugePercent');
     if(gaugeFill && gaugePercent) {

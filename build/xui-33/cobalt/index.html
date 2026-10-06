@@ -3105,6 +3105,12 @@ var qrcode = function() {
     });
     card.appendChild(btn);
   });
+
+  var firstCard2 = document.querySelector('[data-link]');
+  var topQr = document.getElementById('qrBtn');
+  if(topQr && firstCard2){
+    topQr.addEventListener('click', function(){ showQr(firstCard2.getAttribute('data-link')); });
+  }
 })();
 </script>
 

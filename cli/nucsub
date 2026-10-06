@@ -767,19 +767,32 @@ cmd_pg_diagnose() {  # print the whole Pasarguard template resolution chain so a
 PG_CREDS_USER=""; PG_CREDS_PASS=""
 
 inject_tokens() {  # inject_tokens <file> <channel> — fill every @@ slot in-place (telegram + brand)
-    local f="$1" chan="$2" name logo
+    local f="$1" chan="$2" name logo vf
     [[ -f "$f" ]] || return 1
     name="$(config_get brand_name)"
     logo="$(config_get brand_logo)"
-    python3 - "$f" "$chan" "$name" "$logo" <<'PY'
-import sys
-p, chan, name, logo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-s = open(p, encoding='utf-8').read()
-open(p, 'w', encoding='utf-8').write(
-    s.replace('@@TG_CHANNEL@@', chan)
-     .replace('@@BRAND_NAME@@', name)
-     .replace('@@BRAND_LOGO@@', logo)
-)
+    # Brand values travel through a temp file, never argv: a data-URL/base64
+    # logo can exceed ARG_MAX and turn every fill into
+    # 'python3: Argument list too long' (E2BIG), which silently skipped the
+    # token injection while the surrounding copy/swaps kept "succeeding".
+    vf="$(mktemp)" || return 1
+    printf '%s\0%s\0%s\0' "$chan" "$name" "$logo" > "$vf"
+    python3 - "$f" "$vf" <<'PY'
+import os, sys
+p, vf = sys.argv[1], sys.argv[2]
+try:
+    raw = open(vf, 'rb').read().split(b'\x00')
+    vals = [x.decode('utf-8') for x in raw]
+    chan, name, logo = (vals + ['', '', ''])[:3]
+    s = open(p, encoding='utf-8').read()
+    open(p, 'w', encoding='utf-8').write(
+        s.replace('@@TG_CHANNEL@@', chan)
+         .replace('@@BRAND_NAME@@', name)
+         .replace('@@BRAND_LOGO@@', logo)
+    )
+finally:
+    try: os.remove(vf)
+    except OSError: pass
 PY
 }
 
@@ -791,21 +804,30 @@ pg_inject_tg() {  # pg_inject_tg <deployed-file> — fill the @@TG_CHANNEL@@ + b
 }
 
 inject_tg() {  # inject_tg <src-index.html> <dst-index.html> — copy pristine then fill every @@ slot (telegram + brand)
-    local src="$1" dst="$2" tg name logo
+    local src="$1" dst="$2" tg name logo vf
     [[ -f "$src" && -f "$dst" ]] || return 1
     tg="$(config_get telegram_channel)"
     name="$(config_get brand_name)"
     logo="$(config_get brand_logo)"
     cp -f "$src" "$dst"
-    python3 - "$dst" "$tg" "$name" "$logo" <<'PY'
-import sys
-p, chan, name, logo = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-s = open(p, encoding='utf-8').read()
-open(p, 'w', encoding='utf-8').write(
-    s.replace('@@TG_CHANNEL@@', chan)
-     .replace('@@BRAND_NAME@@', name)
-     .replace('@@BRAND_LOGO@@', logo)
-)
+    vf="$(mktemp)" || return 1
+    printf '%s\0%s\0%s\0' "$tg" "$name" "$logo" > "$vf"
+    python3 - "$dst" "$vf" <<'PY'
+import os, sys
+p, vf = sys.argv[1], sys.argv[2]
+try:
+    raw = open(vf, 'rb').read().split(b'\x00')
+    vals = [x.decode('utf-8') for x in raw]
+    chan, name, logo = (vals + ['', '', ''])[:3]
+    s = open(p, encoding='utf-8').read()
+    open(p, 'w', encoding='utf-8').write(
+        s.replace('@@TG_CHANNEL@@', chan)
+         .replace('@@BRAND_NAME@@', name)
+         .replace('@@BRAND_LOGO@@', logo)
+    )
+finally:
+    try: os.remove(vf)
+    except OSError: pass
 PY
 }
 
