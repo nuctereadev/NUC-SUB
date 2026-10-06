@@ -5,6 +5,7 @@ the security fixes behave as intended. Read-only against the real install.
 """
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -147,17 +148,48 @@ def main():
         s, _, _ = req(base + "/%2e%2e/%2e%2e/etc/passwd")
         check("encoded path traversal blocked", s in (403, 404), "got %s" % s)
 
-        # --- loopback bind is the default ---------------------------------
+        # --- public bind + token as the gate --------------------------------
         out = subprocess.run(
             [sys.executable, os.path.join(tmp, "webpanel", "server.py"), "--help"],
             capture_output=True, text=True, timeout=20)
         check("--host flag exists", "--host" in out.stdout, out.stdout[:200])
-        check("default host is loopback",
-              'os.environ.get("NUC_SUB_WEB_HOST", "127.0.0.1")' in
-              open(SERVER, encoding="utf-8").read())
-        check("source no longer hardcodes a 0.0.0.0 bind",
-              'ThreadingHTTPServer(("0.0.0.0"' not in
-              open(SERVER, encoding="utf-8").read())
+        ssrc = open(SERVER, encoding="utf-8").read()
+        check("default host is every interface",
+              'os.environ.get("NUC_SUB_WEB_HOST", "0.0.0.0")' in ssrc)
+        check("loopback is still reachable as an explicit opt-in",
+              'NUC_SUB_WEB_HOST=127.0.0.1' in ssrc)
+        check("source does not hardcode the bind past the flag default",
+              'ThreadingHTTPServer(("0.0.0.0"' not in ssrc)
+# A public bind is only defensible because these hold. Assert them here
+        # so flipping the default can never quietly become "open to everyone".
+        # Each is anchored to the code that enforces it: a bare "return False
+        # appears somewhere" check passes even when the guard itself is flipped.
+        failclosed = re.search(r"if not expected:(.*?)return (True|False)", ssrc, re.S)
+        check("auth fails closed when no usable token exists",
+              failclosed is not None and failclosed.group(2) == "False",
+              "the missing-token path does not return False")
+        check("auth compares the token with a constant-time compare",
+              "hmac.compare_digest" in ssrc)
+        # parse_qs is legitimately used for other API parameters, so the real
+        # invariant is narrower: the token must be read only from the
+        # Authorization header or the cookie, never from the query string.
+        m = re.search(r"def _authorized\(self\):(.*?)\n    def ", ssrc, re.S)
+        auth_body = m.group(1) if m else ""
+        # the body documents *why* the query form is rejected, so match code
+        # lines only -- otherwise the explanation trips its own assertion
+        auth_code = "\n".join(ln for ln in auth_body.splitlines()
+                              if ln.strip() and not ln.strip().startswith("#"))
+        check("token is read from the Authorization header",
+              'self.headers.get("Authorization"' in auth_code, auth_code[:160])
+        check("token is read from the cookie",
+              'self.headers.get("Cookie"' in auth_code)
+        check("token is never read from the query string",
+              bool(auth_code) and not re.search(r"\b(qs|query|parse_qs)\b",
+                                                auth_code),
+              "the auth path touches the query string")
+        check("the CLI defaults the bind to public too",
+              "${NUC_SUB_WEB_HOST:-0.0.0.0}" in
+              open(os.path.join(ROOT, "cli", "nucsub"), encoding="utf-8").read())
 
         # --- privilege separation wiring -----------------------------------
         src = open(SERVER, encoding="utf-8").read()

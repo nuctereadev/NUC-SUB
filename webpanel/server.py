@@ -675,10 +675,12 @@ def main():
     global ARGS, SETTINGS_FILE, HOST_PORT, INSTALL_DIR
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
-    ap.add_argument("--host", default=os.environ.get("NUC_SUB_WEB_HOST", "127.0.0.1"),
-                    help="bind address; defaults to loopback so the admin panel "
-                         "is not exposed to the network. Set NUC_SUB_WEB_HOST=0.0.0.0 "
-                         "to opt in to a public bind (put TLS in front first).")
+    ap.add_argument("--host", default=os.environ.get("NUC_SUB_WEB_HOST", "0.0.0.0"),
+                    help="bind address; defaults to every interface so the panel is "
+                         "reachable at the server's address, with the access token "
+                         "as the gate (every /api/ route is bearer-guarded and fails "
+                         "closed if no token exists). Set NUC_SUB_WEB_HOST=127.0.0.1 "
+                         "to keep it loopback-only behind an SSH tunnel or a proxy.")
     ap.add_argument("--token")
     ap.add_argument("--base", default=".")
     ap.add_argument("--cli", default="")

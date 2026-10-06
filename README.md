@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.9/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.9/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -79,7 +79,7 @@ Three layers, each covering what the one above it cannot:
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| Pinned ref (`v2.2.9`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| Pinned ref (`v2.3.0`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
 | `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
 | minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
 
@@ -270,10 +270,17 @@ receiving normal subscription configs; only the human-facing page changes.
 - Releases carry a detached minisign signature over the manifest, verified
   before any payload is written, with the key id pinned in the installer. See
   [Supply chain](#supply-chain).
-- The web panel binds to `127.0.0.1` only and runs as the unprivileged
-  `nucsub-web` user. It is reachable exclusively through an SSH tunnel.
-  `nucsub webpanel start` prints the command with your real address already
-  filled in, taken from the SSH session it was started from:
+- The web panel binds to every interface so you can open it straight at the
+  server's address, and the access token is the gate: every `/api/*` route is
+  guarded by a constant-time token comparison and **fails closed** if no token
+  exists, so starting the panel can never leave it open. Nothing but the login
+  page is reachable without the token, and the panel process itself runs as the
+  unprivileged `nucsub-web` user, so a stolen token is not root.
+- The token lives in `/opt/nuc-sub/.webpanel-token`, root-owned and readable by
+  `nucsub-web` only; the panel re-reads it on every request, so rotating it with
+  the CLI takes effect immediately.
+- To keep it private instead, set `NUC_SUB_WEB_HOST=127.0.0.1`, restart the
+  panel, and reach it through an SSH tunnel:
 
   ```
   ssh -N -L 8080:127.0.0.1:8080 root@your.server.ip
@@ -284,9 +291,6 @@ receiving normal subscription configs; only the human-facing page changes.
 - The panel escalates to root through a single sudoers policy limited to
   `nucsub status|list|reset|apply|remove`. A shell, a `bash -c`, or any extra
   argument is refused, and the panel cannot write its own code.
-- The web panel token lives in `/opt/nuc-sub/.webpanel-token`, root-owned and
-  group-readable only by `nucsub-web`; the panel re-reads it when it changes, so
-  rotating it with the CLI takes effect immediately.
 - Every API endpoint requires the `Authorization: Bearer <token>` header; the
   token is compared with `hmac.compare_digest` to prevent timing attacks, and it
   is never accepted as a URL query parameter.
@@ -322,7 +326,7 @@ what the installer prints:
 #     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
-#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.9/MINISIGN_PUBKEY
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/MINISIGN_PUBKEY
 #     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
@@ -418,7 +422,7 @@ git -C /opt/nuc-sub log --oneline -1
 sed -n '1331p' "$(readlink -f "$(command -v nucsub)")"
 ```
 
-Since `v2.2.9` this cannot silently happen: both menus re-fingerprint the CLI on
+Since `v2.3.0` this cannot silently happen: both menus re-fingerprint the CLI on
 every pass and re-exec when it changed, and `nucsub update` refuses to run while
 another menu session is live. If you are on an older release, the immediate
 remedy is to close the menu and start a new one.

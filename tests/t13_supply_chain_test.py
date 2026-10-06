@@ -607,9 +607,11 @@ def test_security_docs_match_reality() -> None:
           "NoNewPrivileges" in readme and "deliberately" in readme)
     check("README does not claim the panel binds to all interfaces",
           "binds to all interfaces" not in readme)
-    check("README documents the loopback + SSH tunnel access",
-          "127.0.0.1" in readme
-          and re.search(r"-L \d+:127\.0\.0\.1:\d+", readme) is not None)
+    check("README states the token is the gate for the public bind",
+          "token is the gate" in flat)
+    check("README documents the SSH tunnel as the private option",
+          re.search(r"-L \d+:127\.0\.0\.1:\d+", readme) is not None
+          and "NUC_SUB_WEB_HOST=127.0.0.1" in readme)
     check("README states the same-host checksum limit",
           "*not* an attacker who can rewrite both" in flat)
     check("README admits a same-host signature is not authentication",

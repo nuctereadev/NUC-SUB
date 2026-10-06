@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.9}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.0}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -61,7 +61,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.9"
+NUC_SUB_VERSION="2.3.0"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1289,6 +1289,20 @@ web_panel_managed_here() {
     return 1
 }
 
+# The address the panel binds, in one place. Default is every interface: the
+# panel is meant to be opened at the server's address, and the access token --
+# enforced on every /api/* route, failing closed when no token exists -- is the
+# gate. Set NUC_SUB_WEB_HOST=127.0.0.1 to keep it reachable only through an SSH
+# tunnel or a local reverse proxy.
+web_panel_bind() {
+    printf '%s' "${NUC_SUB_WEB_HOST:-0.0.0.0}"
+}
+
+web_panel_is_public() {
+    local b; b="$(web_panel_bind)"
+    [[ "$b" == "0.0.0.0" || "$b" == "::" ]]
+}
+
 # The address the operator can actually ssh to, as `user@host`. Used to print a
 # copy-pasteable tunnel command: printing a literal `<this-server>` placeholder
 # just makes the operator stop and go find the address by hand, and it reads as
@@ -1324,7 +1338,7 @@ web_panel_ssh_target() {
 # default) a public IP would be actively wrong, because nothing is listening
 # there -- the URL has to name the tunnel endpoint instead.
 web_panel_host() {
-    local bind="${NUC_SUB_WEB_HOST:-127.0.0.1}"
+    local bind; bind="$(web_panel_bind)"
     if [[ "$bind" == "0.0.0.0" || "$bind" == "::" ]]; then
         local h="${SUB_PANEL_HOST:-}"
         if [[ -n "$h" && "$h" != "0.0.0.0" ]]; then echo "$h"; return 0; fi
@@ -1357,10 +1371,10 @@ web_panel_install_service() {
     local dbaro=""
     [[ -n "$dbpath" && -e "$dbpath" ]] && dbaro="--db $dbpath"
     umask 077
-    # Bind to loopback by default: the admin panel must not be reachable from
-    # the network just because it was started. NUC_SUB_WEB_HOST=0.0.0.0 is an
-    # explicit opt-in for people who put TLS and a firewall in front of it.
-    local webhost="${NUC_SUB_WEB_HOST:-127.0.0.1}"
+    # Bind every interface by default so the panel opens at the server's
+    # address; the token is the gate. NUC_SUB_WEB_HOST=127.0.0.1 opts back into
+    # loopback-only when a TLS terminator or firewall is not in front of it.
+    local webhost; webhost="$(web_panel_bind)"
     # NOTE: the admin token is deliberately NOT written here. The server reads
     # $WEB_TOKEN_FILE directly, so this env file used to be a second copy that
     # could drift from the real one (and it leaked the token into the unit
@@ -1466,10 +1480,13 @@ web_panel_print_access() {
     token=""
     [[ -f "$WEB_TOKEN_FILE" ]] && token="$(<"$WEB_TOKEN_FILE")"
     echo ""
-    if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" == "0.0.0.0" ]]; then
+    if web_panel_is_public; then
         echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
-        echo -e "  ${DIM}The panel is bound to every interface, so this address is"
-        echo -e "  ${DIM}reachable from anywhere that can route to this server.${NC}"
+        echo -e "  ${DIM}Reachable at this address from anywhere that can route to"
+        echo -e "  ${DIM}this server. Everything except the login page is behind the"
+        echo -e "  ${DIM}token below; without it the API refuses every request.${NC}"
+        echo -e "  ${DIM}Prefer it private? Set NUC_SUB_WEB_HOST=127.0.0.1 and reach it"
+        echo -e "  ${DIM}through an SSH tunnel instead.${NC}"
     else
         target="$(web_panel_ssh_target)"
         echo -e "  ${CYAN}Login URL : ${BOLD}http://127.0.0.1:$port/${NC}"

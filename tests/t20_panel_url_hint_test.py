@@ -139,9 +139,17 @@ if not m:
 if "-N" not in src:
     failures.append("the tunnel command does not use -N, so it blocks the terminal")
 
-# both bind branches must be handled
-if 'NUC_SUB_WEB_HOST:-127.0.0.1}" == "0.0.0.0"' not in src:
-    failures.append("the public-bind branch is gone; 0.0.0.0 would print a loopback URL")
+# both bind branches must be handled, and the public one must not fall back to
+# printing a loopback URL
+if "web_panel_is_public" not in src:
+    failures.append("the public-bind branch is gone; a public panel would print "
+                    "a loopback URL it cannot be reached on")
+if "web_panel_bind" not in src:
+    failures.append("the CLI has no single source of truth for the bind address")
+for name in ("web_panel_host", "web_panel_is_public"):
+    if "${NUC_SUB_WEB_HOST:-" in grab(name):
+        failures.append(f"{name} re-derives the bind default instead of using "
+                        "the single bind helper")
 
 # ---- 3. the command the tool prints must actually work ---------------------
 # `ssh -G` parses the arguments and dumps the effective config without
