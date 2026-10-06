@@ -133,9 +133,9 @@ with tempfile.TemporaryDirectory() as d:
         failures.append("cli/nucsub still prints the <this-server> placeholder")
 
 # ---- 2. the printed command must be well formed ----------------------------
-m = re.search(r'ssh -N -L \$port:127\.0\.0\.1:\$port \$target', src)
-if not m:
-    failures.append("the loopback branch does not print a filled-in tunnel command")
+if "ssh -N -L $port:127.0.0.1:$port $(web_panel_ssh_target)" not in src:
+    failures.append(
+        "the loopback branch does not print a filled-in tunnel command")
 if "-N" not in src:
     failures.append("the tunnel command does not use -N, so it blocks the terminal")
 
@@ -185,34 +185,56 @@ else:
         failures.append("the already-running branch no longer returns early")
 
 if access:
-    with tempfile.TemporaryDirectory() as d2:
-        (pathlib.Path(d2) / ".webport").write_text("9191\n", "utf-8")
-        (pathlib.Path(d2) / ".token").write_text("s3cr3tpanelTOKEN123\n", "utf-8")
-        script = (
-            "set -euo pipefail\n"
-            "CYAN=''; DIM=''; BOLD=''; YELLOW=''; NC=''\n"
-            "WEB_PORT_FILE='DIR/.webport'\n"
-            "WEB_TOKEN_FILE='DIR/.token'\n"
-            "web_panel_ssh_target() { printf 'root@198.51.100.4'; }\n"
-            "web_panel_host() { printf '198.51.100.4'; }\n"
-            "web_panel_print_access() {\n" + access + "}\n"
-            'web_panel_print_access\n').replace("DIR", d2)
-        p2 = pathlib.Path(d2) / "acc.sh"
-        p2.write_text(script, "utf-8")
-        env = {"PATH": os.environ.get("PATH", ""), "USER": "root",
-               "SSH_CONNECTION": "5.114.116.150 1 198.51.100.4 22"}
-        r2 = subprocess.run([BASH, str(p2)], capture_output=True, text=True,
-                            timeout=45, env=env)
-        out2 = r2.stdout
-        if "9191" not in out2:
-            failures.append(
-                f"the printed access block ignores the real port file: {out2[:200]!r}")
-        if "s3cr3tpanelTOKEN123" not in out2:
-            failures.append("the printed access block does not show the token")
-        if "-L 9191:127.0.0.1:9191 root@198.51.100.4" not in out2:
-            failures.append(
-                "the printed access block does not show a usable tunnel for the "
-                f"actual port: {out2[:200]!r}")
+    # run it for real in both bind modes and check the shape of each
+    for public, want_lines, forbidden in (
+            (True, ["Login URL", "http://198.51.100.4:9191", "Token",
+                    "s3cr3tpanelTOKEN123"],
+             ["loopback only", "ssh -N -L"]),
+            (False, ["Login URL", "http://127.0.0.1:9191", "Token",
+                     "ssh -N -L 9191:127.0.0.1:9191 root@198.51.100.4"], [])):
+        with tempfile.TemporaryDirectory() as d2:
+            (pathlib.Path(d2) / ".webport").write_text("9191\n", "utf-8")
+            (pathlib.Path(d2) / ".token").write_text("s3cr3tpanelTOKEN123\n",
+                                                     "utf-8")
+            script = (
+                "set -euo pipefail\n"
+                "CYAN=''; DIM=''; BOLD=''; YELLOW=''; NC=''\n"
+                "WEB_PORT_FILE='DIR/.webport'\n"
+                "WEB_TOKEN_FILE='DIR/.token'\n"
+                "web_panel_bind() { printf 'BIND'; }\n"
+                "web_panel_is_public() { [ 'BIND' = '0.0.0.0' ]; }\n"
+                "web_panel_ssh_target() { printf 'root@198.51.100.4'; }\n"
+                "web_panel_host() { printf '198.51.100.4'; }\n"
+                "web_panel_print_access() {\n" + access + "}\n"
+                'web_panel_print_access\n'
+            ).replace("DIR", d2).replace("BIND",
+                                         "0.0.0.0" if public else "127.0.0.1")
+            p2 = pathlib.Path(d2) / "acc.sh"
+            p2.write_text(script, "utf-8")
+            env = {"PATH": os.environ.get("PATH", ""), "USER": "root",
+                   "SSH_CONNECTION": "5.114.116.150 1 198.51.100.4 22"}
+            r2 = subprocess.run([BASH, str(p2)], capture_output=True, text=True,
+                                timeout=45, env=env)
+            out2 = r2.stdout
+            mode = "public" if public else "loopback"
+            if r2.returncode != 0:
+                failures.append(f"{mode} access block failed: "
+                                f"{(r2.stderr or '').strip()[:160]!r}")
+                continue
+            for frag in want_lines:
+                if frag not in out2:
+                    failures.append(f"{mode} access block is missing {frag!r}: "
+                                    f"{out2[:200]!r}")
+            for frag in forbidden:
+                if frag in out2:
+                    failures.append(f"{mode} access block should not print "
+                                    f"{frag!r}: {out2[:200]!r}")
+            # the whole point: two facts, not a wall of prose
+            body = [ln for ln in out2.splitlines() if ln.strip()]
+            if public and len(body) > 2:
+                failures.append(
+                    f"the public access block should be just the URL and the "
+                    f"token, got {len(body)} lines: {out2[:200]!r}")
 
 print(f"checked: {len(cases)} ssh-target shapes, placeholder removed, "
       "tunnel command accepted by ssh, re-running start still shows access")

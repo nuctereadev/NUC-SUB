@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.3.0}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.1}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -61,7 +61,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.3.0"
+NUC_SUB_VERSION="2.3.1"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1474,7 +1474,7 @@ EOF
 # a re-run of `start`, and `restart` cannot drift apart: the tunnel command is
 # the answer people need most and it used to live inline in one branch.
 web_panel_print_access() {
-    local port token target
+    local port token
     port="$(head -1 "$WEB_PORT_FILE" 2>/dev/null || true)"
     [[ "$port" =~ ^[0-9]{1,5}$ ]] || port="${SUB_PANEL_PORT:-8080}"
     token=""
@@ -1482,26 +1482,14 @@ web_panel_print_access() {
     echo ""
     if web_panel_is_public; then
         echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
-        echo -e "  ${DIM}Reachable at this address from anywhere that can route to"
-        echo -e "  ${DIM}this server. Everything except the login page is behind the"
-        echo -e "  ${DIM}token below; without it the API refuses every request.${NC}"
-        echo -e "  ${DIM}Prefer it private? Set NUC_SUB_WEB_HOST=127.0.0.1 and reach it"
-        echo -e "  ${DIM}through an SSH tunnel instead.${NC}"
     else
-        target="$(web_panel_ssh_target)"
+        # Only reachable through a tunnel, so the command IS the answer here;
+        # there is nothing else to say about the address.
         echo -e "  ${CYAN}Login URL : ${BOLD}http://127.0.0.1:$port/${NC}"
-        echo -e "  ${DIM}The panel listens on loopback only, so that URL works on the"
-        echo -e "  ${DIM}server itself. To reach it from your own machine, tunnel it:${NC}"
-        echo ""
-        echo -e "  ${BOLD}  ssh -N -L $port:127.0.0.1:$port $target${NC}"
-        echo ""
-        echo -e "  ${DIM}Leave that running, then open${NC} ${BOLD}http://127.0.0.1:$port/${NC} ${DIM}in your browser.${NC}"
-        echo -e "  ${DIM}On Windows the same command works in PowerShell or Git Bash.${NC}"
+        echo -e "  ${DIM}loopback only:${NC} ${BOLD}ssh -N -L $port:127.0.0.1:$port $(web_panel_ssh_target)${NC}"
     fi
-    if [[ -n "$token" ]]; then
-        echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
-        echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
-    fi
+    [[ -n "$token" ]] && echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
+    return 0
 }
 
 cmd_webpanel() {

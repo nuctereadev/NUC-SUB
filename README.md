@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.1/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.1/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -79,7 +79,7 @@ Three layers, each covering what the one above it cannot:
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| Pinned ref (`v2.3.0`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| Pinned ref (`v2.3.1`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
 | `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
 | minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
 
@@ -326,7 +326,7 @@ what the installer prints:
 #     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
-#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.0/MINISIGN_PUBKEY
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.3.1/MINISIGN_PUBKEY
 #     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
@@ -422,7 +422,7 @@ git -C /opt/nuc-sub log --oneline -1
 sed -n '1331p' "$(readlink -f "$(command -v nucsub)")"
 ```
 
-Since `v2.3.0` this cannot silently happen: both menus re-fingerprint the CLI on
+Since `v2.3.1` this cannot silently happen: both menus re-fingerprint the CLI on
 every pass and re-exec when it changed, and `nucsub update` refuses to run while
 another menu session is live. If you are on an older release, the immediate
 remedy is to close the menu and start a new one.
