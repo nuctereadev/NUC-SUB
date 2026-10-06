@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.8}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.9}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -61,7 +61,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.8"
+NUC_SUB_VERSION="2.2.9"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1456,6 +1456,37 @@ EOF
     return 0
 }
 
+# How to actually reach the panel right now. Kept as one function so `start`,
+# a re-run of `start`, and `restart` cannot drift apart: the tunnel command is
+# the answer people need most and it used to live inline in one branch.
+web_panel_print_access() {
+    local port token target
+    port="$(head -1 "$WEB_PORT_FILE" 2>/dev/null || true)"
+    [[ "$port" =~ ^[0-9]{1,5}$ ]] || port="${SUB_PANEL_PORT:-8080}"
+    token=""
+    [[ -f "$WEB_TOKEN_FILE" ]] && token="$(<"$WEB_TOKEN_FILE")"
+    echo ""
+    if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" == "0.0.0.0" ]]; then
+        echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
+        echo -e "  ${DIM}The panel is bound to every interface, so this address is"
+        echo -e "  ${DIM}reachable from anywhere that can route to this server.${NC}"
+    else
+        target="$(web_panel_ssh_target)"
+        echo -e "  ${CYAN}Login URL : ${BOLD}http://127.0.0.1:$port/${NC}"
+        echo -e "  ${DIM}The panel listens on loopback only, so that URL works on the"
+        echo -e "  ${DIM}server itself. To reach it from your own machine, tunnel it:${NC}"
+        echo ""
+        echo -e "  ${BOLD}  ssh -N -L $port:127.0.0.1:$port $target${NC}"
+        echo ""
+        echo -e "  ${DIM}Leave that running, then open${NC} ${BOLD}http://127.0.0.1:$port/${NC} ${DIM}in your browser.${NC}"
+        echo -e "  ${DIM}On Windows the same command works in PowerShell or Git Bash.${NC}"
+    fi
+    if [[ -n "$token" ]]; then
+        echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
+        echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
+    fi
+}
+
 cmd_webpanel() {
     local action="${1:-status}"
     case "$action" in
@@ -1464,7 +1495,16 @@ cmd_webpanel() {
             # NOTE: capture instead of piping into `grep -q` — grep exits on the
             # first match, the SIGPIPE then fails the pipeline under pipefail and
             # this guard would be skipped, making start re-launch on a new port.
-            if [[ "$(web_panel_status 2>/dev/null)" == *"Running"* ]]; then warn "Already running."; return; fi
+            if [[ "$(web_panel_status 2>/dev/null)" == *"Running"* ]]; then
+                # Menu option 1 is advertised as "install + run + show URL/token",
+                # and running it again is how an operator asks for that info a
+                # second time. Returning just "Already running." answered none of
+                # it, so the URL people need most -- the tunnel command -- was
+                # unreachable exactly when it was already needed.
+                warn "Already running."
+                web_panel_print_access
+                return
+            fi
             # Auto-install missing web panel assets so start always works.
             if [[ ! -f "$WEB_BASE/server.py" ]]; then
                 info "Web panel files missing — installing from GitHub..."
@@ -1530,24 +1570,7 @@ cmd_webpanel() {
                     return 1
                 fi
             fi
-            echo ""
-            if [[ "${NUC_SUB_WEB_HOST:-127.0.0.1}" == "0.0.0.0" ]]; then
-                echo -e "  ${CYAN}Login URL : ${BOLD}http://$(web_panel_host):$port/${NC}"
-                echo -e "  ${DIM}The panel is bound to every interface, so this address is"
-                echo -e "  ${DIM}reachable from anywhere that can route to this server.${NC}"
-            else
-                local target; target="$(web_panel_ssh_target)"
-                echo -e "  ${CYAN}Login URL : ${BOLD}http://127.0.0.1:$port/${NC}"
-                echo -e "  ${DIM}The panel listens on loopback only, so that URL works on the"
-                echo -e "  ${DIM}server itself. To reach it from your own machine, tunnel it:${NC}"
-                echo ""
-                echo -e "  ${BOLD}  ssh -N -L $port:127.0.0.1:$port $target${NC}"
-                echo ""
-                echo -e "  ${DIM}Leave that running, then open${NC} ${BOLD}http://127.0.0.1:$port/${NC} ${DIM}in your browser.${NC}"
-                echo -e "  ${DIM}On Windows the same command works in PowerShell or Git Bash.${NC}"
-            fi
-            echo -e "  ${CYAN}Token     : ${YELLOW}$token${NC}"
-            echo -e "  ${DIM}Use this token on the login page to enter the panel.${NC}"
+            web_panel_print_access
             ;;
         stop)
             require_root

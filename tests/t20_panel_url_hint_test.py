@@ -154,8 +154,60 @@ if "18443" not in fwd or "8080" not in fwd:
     failures.append(
         f"the printed tunnel form is not a valid ssh -L forward: {fwd[:160]!r}")
 
+# ---- 4. re-running start must still show the access info --------------------
+# Menu option 1 is "install + run + show URL/token", so running it when the
+# panel is already up is how an operator asks for that info again. It used to
+# print only "Already running." and return.
+access = grab("web_panel_print_access")
+cu = grab("cmd_webpanel")
+
+already = cu.split("Already running.", 1)
+if len(already) < 2:
+    failures.append("the already-running branch is gone")
+else:
+    # bound the branch to the closing `fi` of that one-line if, not to the next
+    # `;;` -- the rest of the start path also prints the access block, so a
+    # looser boundary would make this assertion unfalsifiable
+    branch = already[1].split("\n            fi", 1)[0]
+    if "web_panel_print_access" not in branch:
+        failures.append(
+            "re-running `webpanel start` on a live panel does not show the "
+            "URL/token/tunnel any more")
+    if not re.search(r"\breturn\b", branch):
+        failures.append("the already-running branch no longer returns early")
+
+if access:
+    with tempfile.TemporaryDirectory() as d2:
+        (pathlib.Path(d2) / ".webport").write_text("9191\n", "utf-8")
+        (pathlib.Path(d2) / ".token").write_text("s3cr3tpanelTOKEN123\n", "utf-8")
+        script = (
+            "set -euo pipefail\n"
+            "CYAN=''; DIM=''; BOLD=''; YELLOW=''; NC=''\n"
+            "WEB_PORT_FILE='DIR/.webport'\n"
+            "WEB_TOKEN_FILE='DIR/.token'\n"
+            "web_panel_ssh_target() { printf 'root@198.51.100.4'; }\n"
+            "web_panel_host() { printf '198.51.100.4'; }\n"
+            "web_panel_print_access() {\n" + access + "}\n"
+            'web_panel_print_access\n').replace("DIR", d2)
+        p2 = pathlib.Path(d2) / "acc.sh"
+        p2.write_text(script, "utf-8")
+        env = {"PATH": os.environ.get("PATH", ""), "USER": "root",
+               "SSH_CONNECTION": "5.114.116.150 1 198.51.100.4 22"}
+        r2 = subprocess.run([BASH, str(p2)], capture_output=True, text=True,
+                            timeout=45, env=env)
+        out2 = r2.stdout
+        if "9191" not in out2:
+            failures.append(
+                f"the printed access block ignores the real port file: {out2[:200]!r}")
+        if "s3cr3tpanelTOKEN123" not in out2:
+            failures.append("the printed access block does not show the token")
+        if "-L 9191:127.0.0.1:9191 root@198.51.100.4" not in out2:
+            failures.append(
+                "the printed access block does not show a usable tunnel for the "
+                f"actual port: {out2[:200]!r}")
+
 print(f"checked: {len(cases)} ssh-target shapes, placeholder removed, "
-      "tunnel command accepted by ssh")
+      "tunnel command accepted by ssh, re-running start still shows access")
 if failures:
     print(f"\nFAIL: {len(failures)} problem(s)")
     for f in failures:
