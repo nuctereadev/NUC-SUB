@@ -492,10 +492,11 @@ pg_env_effective() {  # pg_env_effective <name|__builtin__|""> — is the runnin
 }
 
 pg_restart_panel() {
-    # Applies .env changes reliably: try compose first (recreates the app
-    # container with the new env), then force a container restart so every
-    # deployment style picks the change up. Returns 0 only when something ran.
-    local dir="" c="" restarted=""
+    # Applies .env changes reliably: recreate the app container with compose so
+    # the new env_file takes effect, and fall back to a plain restart for
+    # deployments without compose. Returns 0 only when the panel was actually
+    # brought up on the new environment.
+    local dir="" c=""
     for _pgd in /opt/pasarguard /var/lib/pasarguard /root/pasarguard; do
         [[ -f "$_pgd/docker-compose.yml" || -f "$_pgd/docker-compose.yaml" ]] && { dir="$_pgd"; break; }
     done
@@ -505,19 +506,31 @@ pg_restart_panel() {
         # default out of sync with the running panel.
         if ( cd "$dir" && docker compose up -d --force-recreate pasarguard ) >/dev/null 2>&1 \
             || ( cd "$dir" && docker-compose up -d --force-recreate pasarguard ) >/dev/null 2>&1; then
-            :
-        else
-            # Swallowing this is how a broken .env survived a whole apply: the
-            # compose error (unreadable dotenv, bad service name) was discarded,
-            # the code went on to `docker restart`, the restart succeeded, and
-            # the theme silently never took effect.
-            local cerr=""
-            cerr="$( cd "$dir" && docker compose up -d --force-recreate pasarguard 2>&1 )" || true
-            warn "docker compose up failed -- the panel .env may be unparseable:"
-            printf '%s\n' "$cerr" | sed 's/^/    /' | tail -5
-            return 1
+            # Success: --force-recreate has already produced a brand-new
+            # container started with the new env_file, so the theme is live.
+            #
+            # Do NOT also `docker restart` it. That second start-up was a
+            # separate failure point: when it failed, or when the container
+            # lookup came back empty in between, `restarted` stayed empty and
+            # this function returned 1, so every apply printed "Panel restart
+            # failed" even though compose had just recreated the panel
+            # correctly. Worse, the extra restart was pure downtime, and while
+            # the panel was flapping the served template lagged behind
+            # SUBSCRIPTION_PAGE_TEMPLATE, which is what made a theme switch look
+            # like it had not been applied.
+            unset _pgd
+            return 0
         fi
+        # Swallowing this is how a broken .env survived a whole apply: the
+        # compose error (unreadable dotenv, bad service name) must be shown.
+        local cerr=""
+        cerr="$( cd "$dir" && docker compose up -d --force-recreate pasarguard 2>&1 )" || true
+        warn "docker compose up failed -- the panel .env may be unparseable:"
+        printf '%s\n' "$cerr" | sed 's/^/    /' | tail -5
+        unset _pgd
+        return 1
     fi
+    local restarted=""
     if command -v docker >/dev/null 2>&1; then
         c="$(pg_app_container)"
         if [[ -n "$c" ]]; then
@@ -1328,7 +1341,18 @@ EOF
     if [[ "$webuser" != "root" ]]; then
         chown root:"$webuser" "$WEB_TOKEN_FILE" 2>/dev/null || true
         chmod 640 "$WEB_TOKEN_FILE" 2>/dev/null || true
-        chown "$webuser":"$webuser" "$SETTINGS_FILE" 2>/dev/null || true
+        # config.json is the shared settings store (telegram channel, brand
+        # name/logo). This used to say $SETTINGS_FILE, which is the *Python*
+        # global in webpanel/server.py and was never defined in this shell, so
+        # under `set -u` starting the web panel died with
+        # "SETTINGS_FILE: unbound variable". It only showed up on Pasarguard
+        # because the xui installs ran the panel as root, which skips this
+        # whole branch.
+        # Create it first: the panel's save_settings() writes it atomically via
+        # a temp file, which needs the directory writable by the panel user,
+        # and chown on a missing file would silently do nothing.
+        [[ -f "$CONFIG_FILE" ]] || printf '{}\n' > "$CONFIG_FILE" 2>/dev/null || true
+        chown "$webuser":"$webuser" "$CONFIG_FILE" 2>/dev/null || true
         chown "$webuser":"$webuser" "$INSTALL_DIR/webpanel.log" 2>/dev/null || true
         # The panel records its effective port here on every start; without
         # write access the CLI would report a stale port after a restart.
