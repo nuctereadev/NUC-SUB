@@ -950,7 +950,7 @@
         <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
       <div class="label" data-i18n="days_remaining">روزهای باقیمانده</div>
-      <div class="value">{% if user.expire %}{{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }}{% else %}0{% endif %}<span data-i18n="days">روز</span></div>
+      <div class="value">{% if user.expire %}{{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }}{% else %}0{% endif %}<span data-i18n="days">روز</span></div>
     </div>
   </div>
 

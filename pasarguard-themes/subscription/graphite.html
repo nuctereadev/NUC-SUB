@@ -204,7 +204,7 @@ html[lang="en"]{direction:ltr}
             <span class="status-dot"></span>
             <span data-i18n="st_active">فعال</span>
             <span>·</span>
-            <span>{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
+            <span>{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
           </div>
         </div>
       </div>
@@ -249,7 +249,7 @@ html[lang="en"]{direction:ltr}
           <div class="d-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <span class="d-label" data-i18n="expiry">انقضا</span>
         </div>
-        <span class="d-val">{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
+        <span class="d-val">{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
       </div>
       <div class="detail-item">
         <div class="d-left">

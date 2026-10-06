@@ -770,7 +770,7 @@
         <svg class="svg-icon sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       </div>
       <div class="lbl" data-i18n="days_left">روز باقیمانده</div>
-      <div class="val">{% if user.expire %}{{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }}{% else %}0{% endif %}<span data-i18n="day">روز</span></div>
+      <div class="val">{% if user.expire %}{{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }}{% else %}0{% endif %}<span data-i18n="day">روز</span></div>
     </div>
   </div>
 

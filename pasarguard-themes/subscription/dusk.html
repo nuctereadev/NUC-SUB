@@ -789,7 +789,7 @@
       <div class="plan-expiry">
         <div class="label" data-i18n="expires">انقضا</div>
         <div class="date">{% if user.expire %}{{ user.expire | datetime }}{% else %}∞{% endif %}</div>
-        <div class="days-left" data-i18n="days_left">{% if user.expire %}{{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }}{% else %}0{% endif %} روز باقیمانده</div>
+        <div class="days-left" data-i18n="days_left">{% if user.expire %}{{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }}{% else %}0{% endif %} روز باقیمانده</div>
       </div>
     </div>
 

@@ -309,7 +309,7 @@ button{font:inherit}
       <span class="section-title" data-i18n="subscription_details">جزئیات اشتراک</span>
     </div>
     <div class="details">
-      <div class="detail"><div class="detail-label" data-i18n="expiry">تاریخ انقضا</div><div class="detail-value warn">{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</div></div>
+      <div class="detail"><div class="detail-label" data-i18n="expiry">تاریخ انقضا</div><div class="detail-value warn">{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</div></div>
       <div class="detail"><div class="detail-label" data-i18n="status">وضعیت</div><div class="detail-value good" data-i18n="st_active">فعال</div></div>
       <div class="detail"><div class="detail-label" data-i18n="device_limit">محدودیت دستگاه</div><div class="detail-value">{{ user.hwid_limit }}</div></div>
       <div class="detail"><div class="detail-label" data-i18n="username">نام کاربری</div><div class="detail-value ltr">{{ user.username }}</div></div>

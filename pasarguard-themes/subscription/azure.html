@@ -1067,7 +1067,7 @@
                         </div>
                         <span class="detail-label" data-i18n="expiry">تاریخ انقضا</span>
                     </div>
-                    <span class="detail-value">{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
+                    <span class="detail-value">{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</span>
                 </div>
 
                 <div class="detail-row">

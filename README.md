@@ -55,8 +55,8 @@ small.
 Download the installer, check it, then run it as root:
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/install.sh
-curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/install.sh.sha256
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.2/install.sh
+curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.2/install.sh.sha256
 sha256sum -c install.sh.sha256 && bash install.sh
 ```
 
@@ -79,7 +79,7 @@ Three layers, each covering what the one above it cannot:
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| Pinned ref (`v2.2.1`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
+| Pinned ref (`v2.2.2`, never `main`) | Silent branch-tip swaps, CDN mixups | A rewritten tag |
 | `MANIFEST.sha256` per-file check | Corrupt or altered payload bytes | A self-consistent forged manifest |
 | minisign signature + pinned key id | Forged manifests, swapped signing keys | A host serving both a new key *and* a new fingerprint |
 
@@ -314,7 +314,7 @@ what the installer prints:
 #     3F7A9C1E5B2D8406
 #
 #   Verify the key itself once, over a channel you already trust:
-#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.1/MINISIGN_PUBKEY
+#     curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.2/MINISIGN_PUBKEY
 #     sed -n 's/^untrusted comment: *minisign public key *//p' MINISIGN_PUBKEY
 #
 # The installer prints the same id. If they differ, stop.
@@ -352,7 +352,38 @@ To publish a key:
 | Applying a theme fails with a fetch error   | The server cannot reach `raw.githubusercontent.com`; check outbound HTTPS. |
 | Web panel is not reachable                  | Start it with `nucsub webpanel start` and open the printed Firewall port. |
 | Subscription page shows the panel default   | Run `nucsub apply <name>` again; confirm the panel is running.            |
+| Subscription page returns HTTP 500 in the browser | Stale theme from before `v2.2.2`; the expire-days expression was broken. See below. |
 | `sqlite3: not found`                     | The installer should install it; otherwise install the `sqlite3` package. |
+
+### Blank subscription page on Pasarguard
+
+A theme applied before `v2.2.2` returns `500 Internal Server Error` for **every
+user whose account has an expiry date**, and renders fine for users without one.
+That asymmetry is why it can look intermittent. Re-apply the theme to pick up
+the fixed template:
+
+```bash
+nucsub apply volt
+```
+
+The cause was the "days left" expression in all 33 Pasarguard themes:
+
+```jinja
+{{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }}
+```
+
+Pasarguard passes `user.expire` as a `datetime`, so `user.expire - now()` is a
+`timedelta`. Dividing a `timedelta` by an int yields another `timedelta` (not a
+float), and a `timedelta` cannot be ordered against an int, so both `round()`
+and the comparison raised `TypeError` and the page 500'd. It now reads:
+
+```jinja
+{{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }}
+```
+
+`tests/t15_pg_template_render_test.py` renders all 33 themes against every
+expiry shape to keep this from coming back. If you edited a theme by hand, apply
+the same two changes to your copy.
 
 ---
 

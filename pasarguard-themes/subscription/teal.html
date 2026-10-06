@@ -69,7 +69,7 @@ button{font:inherit}
       <h1 class="username">{{ user.username }}</h1>
       <div class="status"><span data-i18n="st_active">فعال</span></div>
       <div class="info-list">
-        <div class="info"><label data-i18n="expiry">تاریخ انقضا</label><strong>{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</strong></div>
+        <div class="info"><label data-i18n="expiry">تاریخ انقضا</label><strong>{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</strong></div>
         <div class="info"><label data-i18n="status">وضعیت</label><strong data-i18n="st_active">فعال</strong></div>
         <div class="info"><label data-i18n="device_limit">محدودیت دستگاه</label><strong>{{ user.hwid_limit }}</strong></div>
         <div class="info"><label data-i18n="username">نام کاربری</label><strong dir="ltr">{{ user.username }}</strong></div>

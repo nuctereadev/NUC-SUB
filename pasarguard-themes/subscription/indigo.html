@@ -62,7 +62,7 @@
   </div>
   <div class="hero-divider"></div>
   <div class="details-grid">
-    <div class="detail"><label data-i18n="expiry">تاریخ انقضا</label><strong>{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</strong></div>
+    <div class="detail"><label data-i18n="expiry">تاریخ انقضا</label><strong>{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</strong></div>
     <div class="detail"><label data-i18n="device_limit">محدودیت دستگاه</label><strong>{{ user.hwid_limit }}</strong></div>
     <div class="detail"><label data-i18n="status">وضعیت</label><strong style="color:var(--ok)" data-i18n="st_active">فعال</strong></div>
     <div class="detail"><label data-i18n="username">نام کاربری</label><strong dir="ltr">{{ user.username }}</strong></div>

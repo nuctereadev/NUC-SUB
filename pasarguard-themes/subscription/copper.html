@@ -534,7 +534,7 @@
         <div class="details-row">
             <div class="detail-cell">
                 <div class="detail-label">تاریخ انقضا</div>
-                <div class="detail-value warn">{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}</div>
+                <div class="detail-value warn">{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}</div>
             </div>
             <div class="detail-cell">
                 <div class="detail-label">وضعیت</div>

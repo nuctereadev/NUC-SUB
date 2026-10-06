@@ -227,7 +227,7 @@ html[lang="en"]{direction:ltr}html[lang="en"] .detail-value,html[lang="en"] .exp
             <div class="status"><span data-i18n="st_active">فعال</span></div>
             <div class="expiry-mini">
               <strong data-i18n="expiry">تاریخ انقضا</strong>
-              {% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}
+              {% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}
             </div>
           </div>
         </div>

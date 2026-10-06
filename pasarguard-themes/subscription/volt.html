@@ -854,7 +854,7 @@ html[dir="ltr"] .info-banner {
     </div>
     <div class="countdown-expire">
       <span class="countdown-expire-label" data-i18n="expireLabel">تاریخ انقضا:</span>
-      <span class="countdown-expire-date" id="expireDate" data-i18n-ex>{% if user.expire %}{% if user.expire %}{{ user.expire | datetime }} ({{ ((user.expire - now()) / 86400) | round(0, 'ceil') | int if (user.expire - now()) > 0 else 0 }} روز باقیمانده){% else %}∞{% endif %}{% else %}∞ نامحدود{% endif %}</span>
+      <span class="countdown-expire-date" id="expireDate" data-i18n-ex>{% if user.expire %}{% if user.expire %}{{ user.expire | datetime }} ({{ (((user.expire - now()).total_seconds()) / 86400) | round(0, 'ceil') | int if user.expire > now() else 0 }} روز باقیمانده){% else %}∞{% endif %}{% else %}∞ نامحدود{% endif %}</span>
     </div>
   </div>
 
