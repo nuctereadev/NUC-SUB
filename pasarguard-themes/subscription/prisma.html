@@ -2940,11 +2940,19 @@ var qrcode = function() {
   var onholdUntil=t('[data-nuc-onhold-until]');
   var badge=document.querySelector('[data-i18n="st_active"]');
   if(badge){
-    badge.textContent=status;
-    badge.removeAttribute('data-i18n');
-    var map={active:'#16a34a',limited:'#dc2626',on_hold:'#8b5cf6',expired:'#f59e0b',disabled:'#6b7280'};
-    var c=map[status]||'#16a34a';
-    try{badge.style.color='#fff';badge.style.background=c;badge.style.borderColor=c;}catch(e){}
+    // Only translate away from the state the theme was designed for. `active`
+    // keeps its own data-i18n string and its own styling, so a green pill is
+    // no longer pasted onto themes that have no green in them.
+    var nucFa={active:'فعال',on_hold:'نگهداری',limited:'محدود',expired:'منقضی',disabled:'غیرفعال'};
+    if(status!=='active'){badge.textContent=nucFa[status]||status;}
+    // Colour only the genuinely exceptional states, and via a custom property
+    // so the theme's own shape, padding and radius still apply.
+    var bad={limited:'#dc2626',on_hold:'#8b5cf6',expired:'#f59e0b',disabled:'#6b7280'};
+    if(bad[status]){
+      badge.style.setProperty('--nuc-state-color',bad[status]);
+      badge.style.color='#fff';badge.style.background=bad[status];
+      badge.style.borderColor=bad[status];
+    }
   }
   if(status!=='active' && status!=='on_hold'){
     document.querySelectorAll('[data-link]').forEach(function(el){el.setAttribute('data-nuc-gated','');});
