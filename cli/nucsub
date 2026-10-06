@@ -15,7 +15,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.2}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.3}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -37,7 +37,7 @@ PANEL_CONF="$INSTALL_DIR/panel.conf"
 # offer a real, browsable folder instead of asking for an opaque path.
 BRAND_DIR="$INSTALL_DIR/branding"
 LOGOS_DIR="$BRAND_DIR/logos"
-NUC_SUB_VERSION="2.2.2"
+NUC_SUB_VERSION="2.2.3"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
