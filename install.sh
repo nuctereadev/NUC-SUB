@@ -15,7 +15,7 @@
 #  away and, if you want, enable the web panel for 3x-ui from option 6.
 #
 #  Usage:
-#    curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.4/install.sh
+#    curl -fsSLO https://raw.githubusercontent.com/nuctereadev/NUC-SUB/v2.2.5/install.sh
 #    sha256sum -c install.sh.sha256
 #    bash install.sh
 #
@@ -50,7 +50,7 @@ BOLD='\033[1m'; DIM='\033[2m'
 # compromised or hijacked one. Pinning the ref makes the fetched set fixed and
 # auditable; MANIFEST.sha256 then proves the bytes match that release.
 # Override with NUC_SUB_REF=<tag|sha> for a different release.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.2.4}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.2.5}"
 REPO_URL="${XUI_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # path to the fetched manifest; empty in local-checkout mode
