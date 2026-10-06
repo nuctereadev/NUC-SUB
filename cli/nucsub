@@ -39,7 +39,7 @@ INSTALL_DIR="${SUB_TEMPLATES_DIR:-/opt/nuc-sub}"
 # root-owned directories and are served to panel users, so resolving a moving
 # branch would mean deploying whatever the tip happened to be, unauthenticated.
 # Every downloaded file is checked against MANIFEST.sha256 from this ref.
-NUC_SUB_REF="${NUC_SUB_REF:-v2.3.7}"
+NUC_SUB_REF="${NUC_SUB_REF:-v2.3.8}"
 REPO_URL="${NUC_SUB_REPO:-https://raw.githubusercontent.com/nuctereadev/NUC-SUB/$NUC_SUB_REF}"
 MANIFEST_URL="$REPO_URL/MANIFEST.sha256"
 MANIFEST=""   # fetched manifest for this run; empty until ensure_manifest runs
@@ -66,7 +66,7 @@ LOGOS_DIR="$BRAND_DIR/logos"
 # this exact: a recycled pid has a different starttime, so an entry left behind
 # by a killed session can never be mistaken for a live one.
 MENU_SESSION_DIR="${NUC_SUB_MENU_SESSION_DIR:-/run/nucsub/menu-sessions}"
-NUC_SUB_VERSION="2.3.7"
+NUC_SUB_VERSION="2.3.8"
 
 # ------------------------------------------------------------ update engine ---
 # "Update NUC-SUB" tracks the real upstream git revision instead of a manually
@@ -1446,6 +1446,12 @@ EOF
             echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub reset"
             echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub apply [A-Za-z0-9_-]*"
             echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub remove [A-Za-z0-9_-]*"
+            # The panel re-applies saved brand/telegram/logo settings into the
+            # active theme after every settings save. Without this grant every
+            # save silently stopped at writing config.json and the themes never
+            # picked the new values up. Fixed arguments, so the grant is as
+            # narrow as the others.
+            echo "$webuser ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub refresh"
         } > "$sd" 2>/dev/null && chmod 440 "$sd" 2>/dev/null || true
     fi
 

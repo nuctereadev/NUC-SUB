@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # Post-deploy verification for the Task 12 hardening.
 pass=0; fail=0
 ck() { if [ "$2" = "0" ]; then printf '  \033[32mPASS\033[0m %s\n' "$1"; pass=$((pass+1));
@@ -9,7 +9,17 @@ PUBIP=$(hostname -I | awk '{print $1}')
 
 echo "== service =="
 [ "$(systemctl is-active xui-sub-panel)" = "active" ]; ck "service active" $?
-[ "$(systemctl is-active x-ui)" = "active" ];            ck "x-ui still active" $?
+# The subscription backend: a systemd x-ui install, or the PasarGuard container.
+# Checking for x-ui alone always fails on a PasarGuard box, where the panel is
+# a Docker container and there is no x-ui unit at all.
+if systemctl cat x-ui >/dev/null 2>&1; then
+    [ "$(systemctl is-active x-ui)" = "active" ]; ck "x-ui still active" $?
+elif command -v docker >/dev/null 2>&1; then
+    docker ps --format '{{.Names}}' 2>/dev/null | grep -qi pasarguard
+    ck "pasarguard panel container still running" $?
+else
+    printf '  \033[33mnote\033[0m no x-ui unit and no docker, backend check skipped\n'
+fi
 [ "$(systemctl is-enabled xui-sub-panel)" = "enabled" ]; ck "service enabled for boot" $?
 
 echo "== identity =="
@@ -52,6 +62,7 @@ c=$(curl -s -o /dev/null -w '%{http_code}' -m 5 "http://127.0.0.1:$PORT/api/stat
 
 echo "== privilege separation =="
 sudo -u nucsub-web sudo -n /opt/nuc-sub/cli/nucsub status >/dev/null 2>&1; ck "sudoers escalation works" $?
+sudo -u nucsub-web sudo -n /opt/nuc-sub/cli/nucsub refresh >/dev/null 2>&1; ck "sudoers refresh escalation works" $?
 sudo -u nucsub-web sudo -n /bin/bash >/dev/null 2>&1; [ $? -ne 0 ]; ck "/bin/bash via sudo is REFUSED" $?
 sudo -u nucsub-web sudo -n /opt/nuc-sub/cli/nucsub reset --force >/dev/null 2>&1; [ $? -ne 0 ]; ck "extra args are REFUSED" $?
 sudo -u nucsub-web test -w /opt/nuc-sub/webpanel/server.py; [ $? -ne 0 ]; ck "cannot write its own code" $?
@@ -74,6 +85,9 @@ CODE=$(curl -s -o /tmp/t21-save.json -w '%{http_code}' -m 15 -X POST \
   --data "$BODY" "http://127.0.0.1:$PORT/api/settings")
 [ "$CODE" = "200" ]; ck "settings save returns 200 (got ${CODE:-none})" $?
 grep -q '"ok": *true' /tmp/t21-save.json; ck "save reports ok" $?
+# A save that cannot re-apply into the themes reports warn=theme_refresh_failed
+# and the new logo/brand never reaches the subscription pages.
+grep -q 'theme_refresh_failed' /tmp/t21-save.json; [ $? -ne 0 ]; ck "save re-applies into the themes (no refresh warning)" $?
 journalctl -u xui-sub-panel --since '-3 min' --no-pager 2>/dev/null \
   | grep -q 'settings POST save failed'; [ $? -ne 0 ]; ck "no save failure in the journal" $?
 

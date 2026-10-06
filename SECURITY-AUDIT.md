@@ -170,8 +170,10 @@ and restarts services.
 *Fix applied:* the panel now runs as a dedicated shell-less system user
 (`nucsub-web`, override with `NUC_SUB_WEB_USER=root`) and escalates only through
 a fixed-argument sudoers policy that grants exactly `status`, `list`, `reset`,
-`apply <name>` and `remove <name>` — with no bare `nucsub` grant, so least
-privilege holds. The token stays `root:nucsub-web 0640`, so only root can mint a
+`apply <name>`, `remove <name>` and `refresh` — with no bare `nucsub` grant, so
+least privilege holds. `refresh` re-applies the already-stored settings into the
+active theme and takes no arguments. The token stays `root:nucsub-web 0640`, so
+only root can mint a
 new one while the panel can still read it. `sudo -n` is used throughout, so a
 broken policy fails closed instead of prompting on a request.
 

@@ -169,6 +169,7 @@ say "4/6  installing the least-privilege sudoers policy"
     echo "$WEB_USER ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub reset"
     echo "$WEB_USER ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub apply [A-Za-z0-9_-]*"
     echo "$WEB_USER ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub remove [A-Za-z0-9_-]*"
+    echo "$WEB_USER ALL=(root) NOPASSWD: $INSTALL_DIR/cli/nucsub refresh"
 } > "$SUDOERS"
 chmod 440 "$SUDOERS"
 chown root:root "$SUDOERS"
@@ -251,6 +252,12 @@ if ! sudo -u "$WEB_USER" sudo -n "$INSTALL_DIR/cli/nucsub" status >/dev/null 2>&
     die "sudoers escalation does not work -- theme actions would fail"
 fi
 ok "sudoers escalation works"
+# `refresh` runs after every settings save. Without this grant the save succeeds
+# but the brand/telegram/logo never reaches the subscription pages.
+if ! sudo -u "$WEB_USER" sudo -n "$INSTALL_DIR/cli/nucsub" refresh >/dev/null 2>&1; then
+    die "sudoers escalation for 'refresh' does not work -- saved settings would never reach the themes"
+fi
+ok "sudoers refresh escalation works"
 
 # Saving settings must actually work, or the panel reports an internal storage
 # error on every save. The install dir is deliberately root-owned (the panel
